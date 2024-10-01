@@ -71,10 +71,10 @@ class AboutActivity : AppCompatActivity() {
 
     // 关于作者
     private fun aboutAuthor() {
-        activityAboutBinding.tvName.text = "\n作者：流星"
+        activityAboutBinding.tvName.text = "\n\n作者：流星"
         val email = "1926879119@qq.com"
         activityAboutBinding.tvEmail.text =
-            Html.fromHtml("\n<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
+            Html.fromHtml("<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
         // 设置可点击
         activityAboutBinding.tvEmail.movementMethod = LinkMovementMethod.getInstance()
         activityAboutBinding.tvEmail.setOnLongClickListener {
@@ -82,7 +82,7 @@ class AboutActivity : AppCompatActivity() {
             SnackbarUtil.showSnackbarShort(activityAboutBinding.tvEmail, "复制成功")
             true
         }
-         val sourceCodeUrl = "https://github.com/"
+         val sourceCodeUrl = "https://github.com/LiuXing0327/LiuXingDaily"
         activityAboutBinding.tvGithub.text =
             Html.fromHtml("<a href='$sourceCodeUrl'>开源地址：$sourceCodeUrl</a>", Html.FROM_HTML_MODE_COMPACT)
         activityAboutBinding.tvGithub.setOnLongClickListener {

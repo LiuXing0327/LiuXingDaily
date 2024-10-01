@@ -35,6 +35,7 @@
                 android:layout_height="wrap_content"/>
 
             <com.google.android.material.textview.MaterialTextView
+                android:layout_marginTop="@dimen/dp_8"
                 android:id="@+id/tv_name"
                 android:textSize="@dimen/sp_18"
                 android:gravity="end"
@@ -42,6 +43,7 @@
                 android:layout_height="wrap_content"/>
 
             <com.google.android.material.textview.MaterialTextView
+                android:layout_marginTop="@dimen/dp_8"
                 android:id="@+id/tv_email"
                 android:textSize="@dimen/sp_18"
                 android:gravity="end"
@@ -49,6 +51,7 @@
                 android:layout_height="wrap_content"/>
 
             <com.google.android.material.textview.MaterialTextView
+                android:layout_marginTop="@dimen/dp_8"
                 android:id="@+id/tv_github"
                 android:textSize="@dimen/sp_18"
                 android:gravity="end"
