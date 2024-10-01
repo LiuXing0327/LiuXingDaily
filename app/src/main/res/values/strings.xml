@@ -1,0 +1,20 @@
+<resources>
+    <!--    <string name="app_name">流星日记</string>-->
+    <string name="app_name">醒悟</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title">标题</string>
+    <string name="daily">日记</string>
+    <string name="change_color">更换颜色</string>
+    <string name="sure">确定</string>
+    <string name="search">搜索</string>
+    <string name="content">内容</string>
+    <string name="delete">删除</string>
+    <string name="save">保存</string>
+    <string name="about">关于</string>
+    <string name="checking_for_new_version">正在检查新版本</string>
+    <string name="new_version">新版本</string>
+    <string name="it_is_the_latest_version">已是最新版本</string>
+    <string name="cancel">取消</string>
+    <string name="failed_to_check_for_updates">检查更新失败</string>
+</resources>

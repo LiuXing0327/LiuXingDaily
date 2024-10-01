@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/daily_navigation"
+    app:startDestination="@id/dailyFragment">
+
+    <fragment
+        android:id="@+id/dailyFragment"
+        android:name="com.liuxing.daily.ui.daily.DailyFragment"
+        android:label="fragment_daily"
+        tools:layout="@layout/fragment_daily" />
+</navigation>
