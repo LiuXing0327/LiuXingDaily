@@ -2,6 +2,10 @@ package com.liuxing.daily
 
 import android.app.Application
 
+/**
+ * Author：流星
+ * Project：流星日记
+ */
 class MyApplication : Application() {
     /**
      * 项目始于 2024-09-29 ，最初想法是在 2024-09-29 晚上萌生的。

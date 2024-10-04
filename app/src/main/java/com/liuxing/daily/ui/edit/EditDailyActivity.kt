@@ -21,6 +21,7 @@ import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 import java.util.Objects
@@ -44,6 +45,7 @@ class EditDailyActivity : AppCompatActivity() {
         initData()
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+        SoftHideKeyBoardUtil(this)
     }
 
     // 初始化数据

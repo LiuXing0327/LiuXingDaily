@@ -1,11 +1,9 @@
 package com.liuxing.daily.entity
 
-import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.Expose
-import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "DAILY_INFO")
 data class DailyEntity(

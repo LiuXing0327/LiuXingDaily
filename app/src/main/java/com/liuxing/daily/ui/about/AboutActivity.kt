@@ -18,7 +18,6 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SnackbarUtil
 
-
 class AboutActivity : AppCompatActivity() {
 
     private lateinit var activityAboutBinding: ActivityAboutBinding

@@ -1,12 +1,14 @@
 package com.liuxing.daily.ui.add
 
-import android.graphics.Color
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.View
+import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -22,8 +24,8 @@ import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
-
 
 class AddDailyActivity : AppCompatActivity() {
 
@@ -44,6 +46,7 @@ class AddDailyActivity : AppCompatActivity() {
         initData()
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+        SoftHideKeyBoardUtil(this)
     }
 
     // 初始化数据
@@ -53,6 +56,7 @@ class AddDailyActivity : AppCompatActivity() {
         setDailyCount()
         initViewModel()
         setDateTime()
+        checkedTitleLength()
     }
 
     // 设置工具栏
@@ -178,9 +182,7 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     // 获取日记字数
-    private fun getDailyCount(): Int {
-        return activityAddDailyBinding.inputTitle.text!!.length.plus(activityAddDailyBinding.inputContent.text!!.length)
-    }
+    private fun getDailyCount(): Int = activityAddDailyBinding.inputTitle.text!!.length.plus(activityAddDailyBinding.inputContent.text!!.length)
 
     // 初始化视图模型
     private fun initViewModel() {
@@ -234,5 +236,17 @@ class AddDailyActivity : AppCompatActivity() {
                 .show()
         }
 
+    }
+
+    // 检查标题长度
+    private fun checkedTitleLength() {
+        activityAddDailyBinding.inputTitle.addTextChangedListener{s->
+            val currentLength = s?.length ?: 0
+            // 如果标题长度大于 30 ，则截取前 30 个字符
+            if (currentLength > 30) {
+                activityAddDailyBinding.inputTitle.setText(s!!.substring(0, 30))
+                activityAddDailyBinding.inputTitle.setSelection(30)
+            }
+        }
     }
 }

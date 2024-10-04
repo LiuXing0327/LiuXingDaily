@@ -16,7 +16,6 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
 
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var activityMainBinding: ActivityMainBinding
