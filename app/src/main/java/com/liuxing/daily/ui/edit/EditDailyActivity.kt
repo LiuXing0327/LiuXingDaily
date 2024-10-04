@@ -50,7 +50,9 @@ class EditDailyActivity : AppCompatActivity() {
         SoftHideKeyBoardUtil(this)
     }
 
-    // 初始化数据
+    /**
+     * 初始化数据
+     */
     private fun initData() {
         setActionBar()
         setDailyTitle()
@@ -65,38 +67,56 @@ class EditDailyActivity : AppCompatActivity() {
         checkedTitleLength()
     }
 
-    // 设置工具栏
+    /**
+     * 设置工具栏
+     */
     private fun setActionBar() {
         setSupportActionBar(activityEditDailyBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
         this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    // 获取日记ID
+    /**
+     * 获取日记ID
+     */
     private fun getDailyId(): Long = intent.getLongExtra("daily_id", 0)
 
-    // 获取日记标题
+    /**
+     * 获取日记标题
+     */
     private fun getDailyTitle(): String? = intent.getStringExtra("daily_title")
 
-    // 设置日记标题
+    /**
+     * 设置日记标题
+     */
     private fun setDailyTitle() = activityEditDailyBinding.inputTitle.setText(getDailyTitle())
 
-    // 获取日记内容
+    /**
+     * 获取日记内容
+     */
     private fun getDailyContent(): String? = intent.getStringExtra("daily_content")
 
-    // 设置日记内容
+    /**
+     * 设置日记内容
+     */
     private fun setDailyContent() = activityEditDailyBinding.inputContent.setText(getDailyContent())
 
-    // 获取日记日期时间
+    /**
+     * 获取日记日期时间
+     */
     private fun getDailyDateTime(): String =
         DateUtil.getDateString(2, Date(intent.getLongExtra("daily_date_time", 0)))
 
-    // 设置日记日期时间
+    /**
+     * 设置日记日期时间
+     */
     private fun setDailyDateTime() {
         activityEditDailyBinding.tvDateTime.text = getDailyDateTime()
     }
 
-    // 设置日记字数
+    /**
+     * 设置日记字数
+     */
     private fun setDailyCount() {
         "${activityEditDailyBinding.inputTitle.text!!.length.plus(activityEditDailyBinding.inputContent.text!!.length)}字".also {
             activityEditDailyBinding.tvDailyCount.text = it
@@ -104,7 +124,9 @@ class EditDailyActivity : AppCompatActivity() {
 
     }
 
-    // 更新日记字数
+    /**
+     * 更新日记字数
+     */
     private fun updateDailyCount() {
         activityEditDailyBinding.inputTitle.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -132,16 +154,22 @@ class EditDailyActivity : AppCompatActivity() {
         })
     }
 
-    // 获取日记背景颜色索引
+    /**
+     * 获取日记背景颜色索引
+     */
     private fun getDailyBackgroundColorIndex(): Int =
         intent.getIntExtra("daily_backgroundColorIndex", 0)
 
-    // 设置日记背景颜色索引
+    /**
+     * 设置日记背景颜色索引
+     */
     private fun setDailyBackgroundColorIndex() {
         backgroundColorIndex = getDailyBackgroundColorIndex()
     }
 
-    // 设置日记背景颜色
+    /**
+     * 设置日记背景颜色
+     */
     private fun setDailyBackgroundColor(index: Int) {
         when (index) {
             1 -> {
@@ -207,7 +235,9 @@ class EditDailyActivity : AppCompatActivity() {
 
     }
 
-    // 初始化菜单
+    /**
+     * 初始化菜单
+     */
     private fun initMenu() {
         val menuHost = this
         menuHost.addMenuProvider(object : MenuProvider {
@@ -289,7 +319,9 @@ class EditDailyActivity : AppCompatActivity() {
         })
     }
 
-    // 判断日记是否为空
+    /**
+     * 判断日记是否为空
+     */
     private fun isDailyNullOrEquals() {
         // 如果文本都为空，则直接退出
         if (activityEditDailyBinding.inputTitle.text!!.trim()
@@ -320,7 +352,9 @@ class EditDailyActivity : AppCompatActivity() {
 
     }
 
-    // 保存日记
+    /**
+     * 保存日记
+     */
     private fun saveDaily() {
         dailyViewModel.updateDaily(
             DailyEntity(
@@ -334,12 +368,16 @@ class EditDailyActivity : AppCompatActivity() {
         finish()
     }
 
-    // 初始化视图模型
+    /**
+     * 初始化视图模型
+     */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
     }
 
-    // 监听返回键
+    /**
+     * 监听返回键
+     */
     private var onBackPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -348,7 +386,9 @@ class EditDailyActivity : AppCompatActivity() {
 
         }
 
-    // 检查标题长度
+    /**
+     * 检查标题长度
+     */
     private fun checkedTitleLength() =
         activityEditDailyBinding.inputTitle.addTextChangedListener { s ->
             StringUtil.checkedEditContentLength(

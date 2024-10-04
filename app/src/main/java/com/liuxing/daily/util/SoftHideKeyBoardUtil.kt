@@ -60,6 +60,6 @@ class SoftHideKeyBoardUtil(activity: Activity) {
     private fun computeUsableHeight(): Int {
         val rect = Rect()
         childOfContent.getWindowVisibleDisplayFrame(rect)
-        return (rect.bottom - rect.top) + 100
+        return (rect.bottom - rect.top) + 200
     }
 }

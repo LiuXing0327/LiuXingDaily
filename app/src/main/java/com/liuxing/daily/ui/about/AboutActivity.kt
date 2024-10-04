@@ -35,7 +35,9 @@ class AboutActivity : AppCompatActivity() {
         initData()
     }
 
-    // 初始化数据
+    /**
+     * 初始化数据
+     */
     private fun initData() {
         setActionBar()
         getAboutText()
@@ -43,7 +45,9 @@ class AboutActivity : AppCompatActivity() {
         initMenu()
     }
 
-    // 设置工具栏
+    /**
+     * 设置工具栏
+     */
     private fun setActionBar() {
         setSupportActionBar(activityAboutBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -53,7 +57,9 @@ class AboutActivity : AppCompatActivity() {
         }
     }
 
-    // 获取关于文本
+    /**
+     * 获取关于文本
+     */
     private fun getAboutText() {
         val assets = assets
         val inputStream = assets.open("AboutText.txt")
@@ -68,7 +74,9 @@ class AboutActivity : AppCompatActivity() {
         activityAboutBinding.tvAboutText.text = sb.toString()
     }
 
-    // 关于作者
+    /**
+     * 关于作者
+     */
     private fun aboutAuthor() {
         activityAboutBinding.tvName.text = "\n\n作者：流星"
         val email = "1926879119@qq.com"

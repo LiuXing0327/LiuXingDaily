@@ -8,6 +8,8 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
@@ -50,7 +52,9 @@ class AddDailyActivity : AppCompatActivity() {
         SoftHideKeyBoardUtil(this)
     }
 
-    // 初始化数据
+    /**
+     * 初始化数据
+     */
     private fun initData() {
         setActionBar()
         initMenu()
@@ -60,14 +64,18 @@ class AddDailyActivity : AppCompatActivity() {
         checkedTitleLength()
     }
 
-    // 设置工具栏
+    /**
+     * 设置工具栏
+     */
     private fun setActionBar() {
         setSupportActionBar(activityAddDailyBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
         this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    // 初始化菜单
+    /**
+     * 初始化菜单
+     */
     private fun initMenu() {
         val menuHost: MenuHost = this
         menuHost.addMenuProvider(object : MenuProvider {
@@ -172,7 +180,9 @@ class AddDailyActivity : AppCompatActivity() {
         })
     }
 
-    // 设置日记字数
+    /**
+     * 设置日记字数
+     */
     private fun setDailyCount() {
         activityAddDailyBinding.inputContent.addTextChangedListener {
             "${getDailyCount()}字".also { activityAddDailyBinding.tvDailyCount.text = it }
@@ -182,16 +192,22 @@ class AddDailyActivity : AppCompatActivity() {
         }
     }
 
-    // 获取日记字数
+    /**
+     * 获取日记字数
+     */
     private fun getDailyCount(): Int =
         activityAddDailyBinding.inputTitle.text!!.length.plus(activityAddDailyBinding.inputContent.text!!.length)
 
-    // 初始化视图模型
+    /**
+     * 初始化视图模型
+     */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
     }
 
-    // 保存日记
+    /**
+     * 保存日记
+     */
     private fun saveDaily() {
         dailyViewModel.insertDaily(
             DailyEntity(
@@ -207,7 +223,9 @@ class AddDailyActivity : AppCompatActivity() {
         finish()
     }
 
-    // 监听返回键
+    /**
+     * 监听返回键
+     */
     private val onBackPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -215,13 +233,17 @@ class AddDailyActivity : AppCompatActivity() {
             }
         }
 
-    // 设置日期时间
+    /**
+     * 设置日期时间
+     */
     private fun setDateTime() {
         activityAddDailyBinding.tvDateTime.text =
             DateUtil.getDateString(2, DateUtil.getCurrentDate())
     }
 
-    // 判断日记是否为空
+    /**
+     * 判断日记是否为空
+     */
     private fun isDailyNull() {
         // 如果文本都为空，则直接退出
         if (activityAddDailyBinding.inputTitle.text!!.trim()
@@ -230,6 +252,7 @@ class AddDailyActivity : AppCompatActivity() {
         ) {
             finish()
         } else {
+            // 如果不为空，就询问是否保存
             MaterialAlertDialogBuilder(this@AddDailyActivity)
                 .setMessage("是否保存这篇日记？")
                 .setPositiveButton("保存") { dialog, which -> saveDaily() }
@@ -240,7 +263,9 @@ class AddDailyActivity : AppCompatActivity() {
 
     }
 
-    // 检查标题长度
+    /**
+     * 检查标题长度
+     */
     private fun checkedTitleLength() =
         activityAddDailyBinding.inputTitle.addTextChangedListener { s ->
             StringUtil.checkedEditContentLength(

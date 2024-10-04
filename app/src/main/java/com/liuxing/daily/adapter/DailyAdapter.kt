@@ -87,6 +87,9 @@ class DailyAdapter : RecyclerView.Adapter<ViewHolder>() {
         onItemLongClickListener = listener
     }
 
+    /**
+     * 设置背景颜色
+     */
     private fun setBackgroundColor(dailyEntity: DailyEntity, holder: ViewHolder) {
         val backgroundColorIndex = dailyEntity.backgroundColorIndex
         when (backgroundColorIndex) {

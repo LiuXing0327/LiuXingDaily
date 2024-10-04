@@ -111,7 +111,9 @@ class DailyFragment : Fragment() {
         )
     }
 
-    // 初始化数据
+    /**
+     * 初始化数据
+     */
     private fun initData() {
         searchViewShowingStatusBarColor(false)
         searchViewFocus()
@@ -124,7 +126,9 @@ class DailyFragment : Fragment() {
         initSearchBar()
     }
 
-    // 搜索视图的焦点监听
+    /**
+     * 搜索视图的焦点监听
+     */
     private fun searchViewFocus() {
         fragmentDailyBinding.searchView.editText.setOnFocusChangeListener { v, hasFocus ->
             searchViewShowingStatusBarColor(hasFocus)
@@ -175,7 +179,10 @@ class DailyFragment : Fragment() {
         requireActivity().window.getDecorView().setSystemUiVisibility(0)
     }
 
-    // 监听返回键
+
+    /**
+     * 监听返回键
+     */
     private val onBackPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -186,7 +193,9 @@ class DailyFragment : Fragment() {
             }
         }
 
-    // 浮动按钮点击事件
+    /**
+     * 浮动按钮点击事件
+     */
     private fun floatingOnClick() {
         fragmentDailyBinding.floatingActionButton.setOnClickListener {
             IntentUtil.startActivity(
@@ -196,7 +205,9 @@ class DailyFragment : Fragment() {
         }
     }
 
-    // 初始化列表
+    /**
+     * 初始化列表
+     */
     private fun initRecyclerView() {
         val linearLayoutManager = LinearLayoutManager(requireActivity())
         fragmentDailyBinding.recyclerView.layoutManager = linearLayoutManager
@@ -205,7 +216,9 @@ class DailyFragment : Fragment() {
         setRecyclerViewData()
     }
 
-    // 设置列表数据
+    /**
+     * 设置列表数据
+     */
     private fun setRecyclerViewData() {
         queryAllDaily = dailyViewModel.queryAllDaily()
         queryAllDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
@@ -217,7 +230,9 @@ class DailyFragment : Fragment() {
         })
     }
 
-    // 设置列表点击事件
+    /**
+     * 设置列表点击事件
+     */
     private fun setRecyclerViewItemOnClick(dailyList: List<DailyEntity>) {
         dailyAdapter.setOnItemClickListener(object : OnItemClickListener {
             override fun OnItemClick(position: Int) {
@@ -237,7 +252,9 @@ class DailyFragment : Fragment() {
         })
     }
 
-    // 初始化搜索列表
+    /**
+     * 初始化搜索列表
+     */
     private fun initSearchRecyclerView() {
         val linearLayoutManagerSearch = LinearLayoutManager(requireActivity())
         fragmentDailyBinding.searchRecyclerView.layoutManager = linearLayoutManagerSearch
@@ -245,7 +262,9 @@ class DailyFragment : Fragment() {
         fragmentDailyBinding.searchRecyclerView.adapter = dailySearchAdapter
     }
 
-    // 设置搜索列表数据
+    /**
+     * 设置搜索列表数据
+     */
     private fun setSearchRecyclerViewData(searchQuery: String) {
         val queryDaily = dailyViewModel.queryDaily("$searchQuery%")
         queryDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
@@ -257,7 +276,9 @@ class DailyFragment : Fragment() {
         })
     }
 
-    // 设置搜索列表点击事件
+    /**
+     * 设置搜索列表点击事件
+     */
     private fun setSearchRecyclerViewItemOnClick(dailyList: List<DailyEntity>) {
         dailySearchAdapter.setOnItemClickListener(object : OnItemClickListener {
             override fun OnItemClick(position: Int) {
@@ -277,13 +298,17 @@ class DailyFragment : Fragment() {
         })
     }
 
-    //初始化搜索视图
+    /**
+     * 初始化搜索视图
+     */
     private fun initSearchView() {
         fragmentDailyBinding.searchView.inflateMenu(R.menu.menu_search_daily)
         searchDaily()
     }
 
-    // 搜索日记
+    /**
+     * 搜索日记
+     */
     private fun searchDaily() {
         // 点击键盘搜索事件
         fragmentDailyBinding.searchView.editText.setOnEditorActionListener { v, actionId, event ->
@@ -300,18 +325,24 @@ class DailyFragment : Fragment() {
         }
     }
 
-    //初始化视图模型
+    /**
+     * 初始化视图模型
+     */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(requireActivity().application)
     }
 
-    // 初始化搜索栏
+    /**
+     * 初始化搜索栏
+     */
     private fun initSearchBar() {
         fragmentDailyBinding.searchBar.inflateMenu(R.menu.menu_search_bar)
         searchBarMenuItemOnClick()
     }
 
-    // 搜索栏菜单点击事件
+    /**
+     * 搜索栏菜单点击事件
+     */
     private fun searchBarMenuItemOnClick() {
         fragmentDailyBinding.searchBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -340,7 +371,9 @@ class DailyFragment : Fragment() {
         }
     }
 
-    // 导入日记启动器
+    /**
+     * 导入日记启动器
+     */
     private val importDailyLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult(),
             object : ActivityResultCallback<ActivityResult> {
@@ -366,7 +399,9 @@ class DailyFragment : Fragment() {
             }
         )
 
-    // 导出所有日记启动器
+    /**
+     * 导出所有日记启动器
+     */
     private val exportAllDailyLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
         object : ActivityResultCallback<ActivityResult> {

@@ -26,13 +26,17 @@ class UpdateLogActivity : AppCompatActivity() {
         initData()
     }
 
-    // 初始化数据
+    /**
+     * 初始化数据
+     */
     private fun initData() {
         setActionBar()
-        setUpdateLog()
+        getUpdateLog()
     }
 
-    // 初始化工具栏
+    /**
+     * 初始化工具栏
+     */
     private fun setActionBar() {
         setSupportActionBar(activityUpdateLogBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -47,8 +51,10 @@ class UpdateLogActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    // 设置更新日志
-    private fun setUpdateLog() {
+    /**
+     * 获取更新日志
+     */
+    private fun getUpdateLog() {
         val assets = assets
         val inputStream = assets.open("UpdateLogText.txt")
         val bytes = ByteArray(inputStream.available())
