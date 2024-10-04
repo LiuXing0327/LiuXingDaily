@@ -25,6 +25,7 @@ import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
+import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 class AddDailyActivity : AppCompatActivity() {
@@ -182,7 +183,8 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     // 获取日记字数
-    private fun getDailyCount(): Int = activityAddDailyBinding.inputTitle.text!!.length.plus(activityAddDailyBinding.inputContent.text!!.length)
+    private fun getDailyCount(): Int =
+        activityAddDailyBinding.inputTitle.text!!.length.plus(activityAddDailyBinding.inputContent.text!!.length)
 
     // 初始化视图模型
     private fun initViewModel() {
@@ -239,14 +241,12 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     // 检查标题长度
-    private fun checkedTitleLength() {
-        activityAddDailyBinding.inputTitle.addTextChangedListener{s->
-            val currentLength = s?.length ?: 0
-            // 如果标题长度大于 30 ，则截取前 30 个字符
-            if (currentLength > 30) {
-                activityAddDailyBinding.inputTitle.setText(s!!.substring(0, 30))
-                activityAddDailyBinding.inputTitle.setSelection(30)
-            }
+    private fun checkedTitleLength() =
+        activityAddDailyBinding.inputTitle.addTextChangedListener { s ->
+            StringUtil.checkedEditContentLength(
+                s,
+                30,
+                activityAddDailyBinding.inputTitle
+            )
         }
-    }
 }

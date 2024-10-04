@@ -15,6 +15,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.addTextChangedListener
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
@@ -22,6 +23,7 @@ import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
+import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 import java.util.Objects
@@ -60,6 +62,7 @@ class EditDailyActivity : AppCompatActivity() {
         setDailyBackgroundColor(getDailyBackgroundColorIndex())
         setDailyBackgroundColorIndex()
         initViewModel()
+        checkedTitleLength()
     }
 
     // 设置工具栏
@@ -343,5 +346,15 @@ class EditDailyActivity : AppCompatActivity() {
                 isDailyNullOrEquals()
             }
 
+        }
+
+    // 检查标题长度
+    private fun checkedTitleLength() =
+        activityEditDailyBinding.inputTitle.addTextChangedListener { s ->
+            StringUtil.checkedEditContentLength(
+                s,
+                30,
+                activityEditDailyBinding.inputTitle
+            )
         }
 }
