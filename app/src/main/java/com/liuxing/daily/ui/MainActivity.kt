@@ -1,5 +1,6 @@
 package com.liuxing.daily.ui
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -30,7 +31,6 @@ class MainActivity : AppCompatActivity() {
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                     insets
                 }*/
-
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
         val handler = Handler(Looper.getMainLooper())

@@ -2,8 +2,10 @@ package com.liuxing.daily.ui.daily
 
 import android.app.Activity
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -27,10 +30,10 @@ import com.liuxing.daily.adapter.DailySearchAdapter
 import com.liuxing.daily.databinding.FragmentDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
-import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.add.AddDailyActivity
 import com.liuxing.daily.ui.edit.EditDailyActivity
-import com.liuxing.daily.util.CheckAppUpdateUtil
+import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -223,9 +226,9 @@ class DailyFragment : Fragment() {
         queryAllDaily = dailyViewModel.queryAllDaily()
         queryAllDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
-                dailyAdapter.setDailyList(value)
+                dailyAdapter.setDailyList(requireContext(), value)
                 dailyList = value
-                setRecyclerViewItemOnClick(value)
+                setRecyclerViewItemOnClick()
             }
         })
     }
@@ -233,19 +236,12 @@ class DailyFragment : Fragment() {
     /**
      * 设置列表点击事件
      */
-    private fun setRecyclerViewItemOnClick(dailyList: List<DailyEntity>) {
+    private fun setRecyclerViewItemOnClick() {
         dailyAdapter.setOnItemClickListener(object : OnItemClickListener {
             override fun OnItemClick(position: Int) {
                 val intent = Intent()
-                intent.putExtra("daily_id", dailyList[position].id)
-                intent.putExtra("daily_title", dailyList[position].title)
-                intent.putExtra("daily_content", dailyList[position].content)
-                intent.putExtra("daily_date_time", dailyList[position].dateTime)
-                intent.putExtra(
-                    "daily_backgroundColorIndex",
-                    dailyList[position].backgroundColorIndex
-                )
-                intent.setClass(requireContext(), EditDailyActivity::class.java)
+                intent.setClass(requireContext(), LookDailyActivity::class.java)
+                intent.putExtra("POSITION", position)
                 requireActivity().startActivity(intent)
             }
 
@@ -269,9 +265,9 @@ class DailyFragment : Fragment() {
         val queryDaily = dailyViewModel.queryDaily("$searchQuery%")
         queryDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
-                dailySearchAdapter.setDailyList(value)
+                dailySearchAdapter.setDailyList(requireContext(), value)
 
-                setSearchRecyclerViewItemOnClick(value)
+                setSearchRecyclerViewItemOnClick()
             }
         })
     }
@@ -279,19 +275,12 @@ class DailyFragment : Fragment() {
     /**
      * 设置搜索列表点击事件
      */
-    private fun setSearchRecyclerViewItemOnClick(dailyList: List<DailyEntity>) {
+    private fun setSearchRecyclerViewItemOnClick() {
         dailySearchAdapter.setOnItemClickListener(object : OnItemClickListener {
             override fun OnItemClick(position: Int) {
                 val intent = Intent()
-                intent.putExtra("daily_id", dailyList[position].id)
-                intent.putExtra("daily_title", dailyList[position].title)
-                intent.putExtra("daily_content", dailyList[position].content)
-                intent.putExtra("daily_date_time", dailyList[position].dateTime)
-                intent.putExtra(
-                    "daily_backgroundColorIndex",
-                    dailyList[position].backgroundColorIndex
-                )
-                intent.setClass(requireContext(), EditDailyActivity::class.java)
+                intent.setClass(requireContext(), LookDailyActivity::class.java)
+                intent.putExtra("POSITION", position)
                 requireActivity().startActivity(intent)
             }
 
@@ -346,9 +335,9 @@ class DailyFragment : Fragment() {
     private fun searchBarMenuItemOnClick() {
         fragmentDailyBinding.searchBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.item_about -> IntentUtil.startActivity(
+                R.id.item_settings -> IntentUtil.startActivity(
                     requireContext(),
-                    AboutActivity::class.java
+                    SettingsActivity::class.java
                 )
 
                 R.id.item_import_daily -> {
@@ -426,4 +415,17 @@ class DailyFragment : Fragment() {
                     })
             }
         })
+
+    override fun onResume() {
+        super.onResume()
+        val sharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+        if (sharedPreferences.getBoolean(
+                "switch_preference_header_display",
+                true
+            ) != dailyAdapter.headerYearMonth
+        ) {
+            setRecyclerViewData()
+        }
+    }
 }

@@ -1,0 +1,14 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="date_time_entries">
+        <item>@string/format_0</item>
+        <item>@string/format_1</item>
+        <item>@string/format_2</item>
+    </string-array>
+
+    <string-array name="date_time_values">
+        <item>@string/format_0</item>
+        <item>@string/format_1</item>
+        <item>@string/format_2</item>
+    </string-array>
+</resources>

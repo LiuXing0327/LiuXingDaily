@@ -17,6 +17,13 @@
         android:theme="@style/Theme.流星日记"
         tools:targetApi="31">
         <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_settings" />
+        <activity
+            android:name=".ui.look.LookDailyActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.updatelog.UpdateLogActivity"
             android:exported="false" />
         <activity

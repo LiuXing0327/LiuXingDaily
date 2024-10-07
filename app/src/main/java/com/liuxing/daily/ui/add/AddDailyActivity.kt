@@ -213,10 +213,10 @@ class AddDailyActivity : AppCompatActivity() {
             DailyEntity(
                 title = activityAddDailyBinding.inputTitle.text.toString(),
                 content = activityAddDailyBinding.inputContent.text.toString(),
-                dateTime = DateUtil.dateStringToDate(
+                dateTime =/* DateUtil.dateStringToDate(
                     activityAddDailyBinding.tvDateTime.text.toString(),
                     2
-                ),
+                )*/1725887489000,
                 backgroundColorIndex = backgroundColorIndex
             )
         )

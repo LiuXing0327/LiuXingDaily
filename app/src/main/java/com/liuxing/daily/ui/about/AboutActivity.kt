@@ -17,6 +17,7 @@ import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SnackbarUtil
+import com.liuxing.daily.util.VersionUtil
 
 class AboutActivity : AppCompatActivity() {
 
@@ -79,6 +80,7 @@ class AboutActivity : AppCompatActivity() {
      */
     private fun aboutAuthor() {
         activityAboutBinding.tvName.text = "\n\n作者：流星"
+        activityAboutBinding.tvVersionName.text = "当前版本：${VersionUtil.getVersionName(this)}"
         val email = "1926879119@qq.com"
         activityAboutBinding.tvEmail.text =
             Html.fromHtml("<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
@@ -89,9 +91,12 @@ class AboutActivity : AppCompatActivity() {
             SnackbarUtil.showSnackbarShort(activityAboutBinding.tvEmail, "复制成功")
             true
         }
-         val sourceCodeUrl = "https://github.com/LiuXing0327/LiuXingDaily"
+        val sourceCodeUrl = "https://github.com/LiuXing0327/LiuXingDaily"
         activityAboutBinding.tvGithub.text =
-            Html.fromHtml("<a href='$sourceCodeUrl'>开源地址：$sourceCodeUrl</a>", Html.FROM_HTML_MODE_COMPACT)
+            Html.fromHtml(
+                "<a href='$sourceCodeUrl'>开源地址：$sourceCodeUrl</a>",
+                Html.FROM_HTML_MODE_COMPACT
+            )
         activityAboutBinding.tvGithub.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, sourceCodeUrl)
             SnackbarUtil.showSnackbarShort(activityAboutBinding.tvGithub, "复制成功")

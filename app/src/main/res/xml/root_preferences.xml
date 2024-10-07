@@ -1,0 +1,48 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/about">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="about_preference"
+            app:title="@string/about" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/update">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="check_update_preference"
+            app:title="@string/check_update" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="update_log_preference"
+            app:title="更新日志" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/daily">
+
+        <!--        <ListPreference
+                    android:defaultValue="@string/format_0"
+                    android:entries="@array/date_time_entries"
+                    android:entryValues="@array/date_time_values"
+                    android:key="date_time_preference"
+                    app:summary="@string/format_0"
+                    android:title="日期时间格式"
+                    app:iconSpaceReserved="false" />-->
+
+        <com.liuxing.daily.view.CustomYearMonthSwitchPreference/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

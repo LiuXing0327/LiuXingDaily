@@ -18,4 +18,28 @@
     <string name="cancel">取消</string>
     <string name="failed_to_check_for_updates">检查更新失败</string>
     <string name="add">添加</string>
+    <string name="title_activity_settings">设置</string>
+    <string name="settings">设置</string>
+    <string name="update">更新</string>
+    <string name="check_update">检查更新</string>
+    <string name="edit">编辑</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+
+    <string name="format_0">yyyy年MM月dd日 HH:mm:ss</string>
+    <string name="format_1">yyyy-MM-dd HH:mm:ss</string>
+    <string name="format_2">yyyy/MM/dd HH:mm:ss</string>
 </resources>

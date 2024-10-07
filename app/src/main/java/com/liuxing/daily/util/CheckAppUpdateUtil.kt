@@ -36,13 +36,7 @@ object CheckAppUpdateUtil {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
                 alertDialog.dismiss()
-                Handler(Looper.getMainLooper()).post {
-                    MaterialAlertDialogBuilder(context)
-                        .setMessage(context.getString(R.string.failed_to_check_for_updates))
-                        .setPositiveButton(context.getString(R.string.sure),null)
-                        .create()
-                        .show()
-                }
+                checkFailedOrNoVersionDialog(context,context.getString(R.string.failed_to_check_for_updates))
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -71,27 +65,27 @@ object CheckAppUpdateUtil {
                             updateDialog.create()
                             updateDialog.show()
                         } else {
-                            Handler(Looper.getMainLooper()).post {
-                                MaterialAlertDialogBuilder(context)
-                                    .setMessage(context.getString(R.string.it_is_the_latest_version))
-                                    .setPositiveButton(context.getString(R.string.sure),null)
-                                    .create()
-                                    .show()
-                            }
+                            checkFailedOrNoVersionDialog(context,context.getString(R.string.it_is_the_latest_version))
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        Handler(Looper.getMainLooper()).post {
-                            MaterialAlertDialogBuilder(context)
-                                .setMessage(context.getString(R.string.failed_to_check_for_updates))
-                                .setPositiveButton(context.getString(R.string.sure),null)
-                                .create()
-                                .show()
-                        }
+                        checkFailedOrNoVersionDialog(context,context.getString(R.string.failed_to_check_for_updates))
                     }
                 }
             }
         })
     }
 
+    /**
+     * 提示不用更新的弹窗或检查失败
+     */
+    private fun checkFailedOrNoVersionDialog(context: Context,message:String){
+        Handler(Looper.getMainLooper()).post {
+            MaterialAlertDialogBuilder(context)
+                .setMessage(message)
+                .setPositiveButton(context.getString(R.string.sure),null)
+                .create()
+                .show()
+        }
+    }
 }

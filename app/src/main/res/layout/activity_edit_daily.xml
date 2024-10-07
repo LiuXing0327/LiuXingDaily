@@ -48,7 +48,7 @@
             android:text="2024/09/30 16:05" />
 
         <com.google.android.material.divider.MaterialDivider
-            android:layout_width="@dimen/dp_2"
+            android:layout_width="@dimen/dp_1"
             android:layout_height="match_parent"
             android:layout_gravity="center_vertical|center"
             android:layout_marginStart="@dimen/dp_8" />
