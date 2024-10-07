@@ -1,6 +1,6 @@
 # LiuXingDaily
 
-## 截图
+## Screenshot
 ![项目截图](screenshot/1.1/V1.1Screenshot_20241007_211704.png)
 ![项目截图](screenshot/1.1/V1.1Screenshot_20241007_211750.png)
 ![项目截图](screenshot/1.1/V1.1Screenshot_20241007_211835.png)
