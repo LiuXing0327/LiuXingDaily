@@ -21,6 +21,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -39,6 +40,7 @@ import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -262,7 +264,7 @@ class DailyFragment : Fragment() {
      * 设置搜索列表数据
      */
     private fun setSearchRecyclerViewData(searchQuery: String) {
-        val queryDaily = dailyViewModel.queryDaily("$searchQuery%")
+        val queryDaily = dailyViewModel.queryDaily("%$searchQuery%")
         queryDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 dailySearchAdapter.setDailyList(requireContext(), value)
@@ -341,17 +343,19 @@ class DailyFragment : Fragment() {
                 )
 
                 R.id.item_import_daily -> {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-                    intent.setType("text/*")
-                    intent.addCategory(Intent.CATEGORY_OPENABLE)
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        setType("text/*")
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
                     importDailyLauncher.launch(intent)
                 }
 
                 R.id.item_export_all_daily -> {
                     if (dailyList.isNotEmpty()) {
-                        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
-                        intent.setType("text/csv")
-                        intent.putExtra(Intent.EXTRA_TITLE, "*daily*.csv")
+                        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                            setType("text/csv")
+                            putExtra(Intent.EXTRA_TITLE, "daily.csv")
+                        }
                         exportAllDailyLauncher.launch(intent)
                     }
                 }
@@ -371,17 +375,29 @@ class DailyFragment : Fragment() {
                     val data = result.data ?: return
                     val uri: Uri = data.data!!
                     CoroutineScope(Dispatchers.IO).launch {
-                        val inputStream = requireActivity().contentResolver.openInputStream(uri)
-                        val bufferedReader = BufferedReader(
-                            InputStreamReader(inputStream)
-                        )
-                        val type = object : TypeToken<List<DailyEntity>>() {}.type
-                        val gson = Gson()
-                        val dailyList: List<DailyEntity> = gson.fromJson(bufferedReader, type)
-                        bufferedReader.close()
-                        Collections.reverse(dailyList)
-                        for (dailyEntity in dailyList) {
-                            dailyViewModel.insertDaily(dailyEntity)
+                        try {
+                            val inputStream = requireActivity().contentResolver.openInputStream(uri)
+                            val bufferedReader = BufferedReader(
+                                InputStreamReader(inputStream)
+                            )
+                            val type = object : TypeToken<List<DailyEntity>>() {}.type
+                            val gson = Gson()
+                            val dailyList: List<DailyEntity> = gson.fromJson(bufferedReader, type)
+                            dailyList.forEach { dailyEntity ->
+                                dailyViewModel.insertDaily(dailyEntity)
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                MaterialAlertDialogBuilder(requireContext()).apply {
+                                    setMessage("导入失败")
+                                    setPositiveButton(
+                                        requireActivity().getString(R.string.sure),
+                                        null
+                                    )
+                                    create()
+                                    show()
+                                }
+                            }
                         }
                     }
                 }
@@ -407,7 +423,7 @@ class DailyFragment : Fragment() {
                                 BufferedWriter(OutputStreamWriter(outputStream))
                             val gson = GsonBuilder()
                                 .excludeFieldsWithoutExposeAnnotation()
-                                .create();
+                                .create()
                             bufferedWriter.write(gson.toJson(value))
                             bufferedWriter.close()
                         }
