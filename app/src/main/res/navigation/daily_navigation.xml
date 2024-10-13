@@ -9,5 +9,14 @@
         android:id="@+id/dailyFragment"
         android:name="com.liuxing.daily.ui.daily.DailyFragment"
         android:label="fragment_daily"
-        tools:layout="@layout/fragment_daily" />
+        tools:layout="@layout/fragment_daily">
+        <action
+            android:id="@+id/action_dailyFragment_to_calendarQueryDailyFragment"
+            app:destination="@id/calendarQueryDailyFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/calendarQueryDailyFragment"
+        android:name="com.liuxing.daily.ui.calendar.CalendarQueryDailyFragment"
+        android:label="fragment_calendar_query_daily"
+        tools:layout="@layout/fragment_calendar_query_daily" />
 </navigation>

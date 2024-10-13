@@ -18,15 +18,18 @@ data class DailyEntity(
     @PrimaryKey(autoGenerate = true)
     @Expose(deserialize = false, serialize = false) val id: Long? = null,
 
-    @ColumnInfo(defaultValue = "TITLE")
+    @ColumnInfo(name = "TITLE")
     @Expose(deserialize = true, serialize = true) val title: String?,
 
-    @ColumnInfo(defaultValue = "CONTENT")
+    @ColumnInfo(name = "CONTENT")
     @Expose(deserialize = true, serialize = true) val content: String?,
 
-    @ColumnInfo(defaultValue = "DATE_TIME")
+    @ColumnInfo(name = "DATE_TIME")
     @Expose(deserialize = true, serialize = true) val dateTime: Long?,
 
-    @ColumnInfo(defaultValue = "BACKGROUND_COLOR_INDEX")
-    @Expose(deserialize = true, serialize = true) val backgroundColorIndex: Int?
+    @ColumnInfo(name = "BACKGROUND_COLOR_INDEX")
+    @Expose(deserialize = true, serialize = true) val backgroundColorIndex: Int?,
+
+    @ColumnInfo(name = "SINGLE_PASSWORD")
+    @Expose(deserialize = true, serialize = true) val singlePassword: String? = ""
 )

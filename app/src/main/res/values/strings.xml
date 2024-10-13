@@ -42,4 +42,6 @@
     <string name="format_0">yyyy年MM月dd日 HH:mm:ss</string>
     <string name="format_1">yyyy-MM-dd HH:mm:ss</string>
     <string name="format_2">yyyy/MM/dd HH:mm:ss</string>
+    <string name="calendar">日历</string>
+    <string name="my_email">1926879119@qq.com</string>
 </resources>

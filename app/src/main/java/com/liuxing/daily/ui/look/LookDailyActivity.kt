@@ -1,9 +1,8 @@
 package com.liuxing.daily.ui.look
 
+import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +12,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.LookDailyPagerAdapter
 import com.liuxing.daily.databinding.ActivityLookDailyBinding
@@ -20,6 +21,7 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.ui.edit.EditDailyActivity
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.HashUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
@@ -31,6 +33,9 @@ class LookDailyActivity : AppCompatActivity() {
     private lateinit var dailyViewModel: DailyViewModel
     private lateinit var dailyEntity: DailyEntity
     private var currentIndex = 0
+/*    private var originalSignalPassword = ""
+    private lateinit var originalSignalPasswordMap: MutableMap<Long, String>*/
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,31 +83,41 @@ class LookDailyActivity : AppCompatActivity() {
             override fun onChanged(value: List<DailyEntity>) {
                 if (value.isNotEmpty()) {
                     val sortedByDescending = value.sortedByDescending {
-                        val dateString = DateUtil.getDateString(2, Date(it.dateTime!!))
-                        DateUtil.dateStringToDate(dateString.substring(0, 7), 3)
+                        DateUtil.getDateString(2, Date(it.dateTime!!))
                     }
-                    if (savedInstanceState != null) currentIndex =
-                        savedInstanceState.getInt(VIEW_PAGER_INDEX, -1)
-                    else {
-                        val position = intent.getIntExtra("POSITION", 0)
-                        val intentPosition = value[position]
-                        currentIndex =
-                            sortedByDescending.indexOfFirst { it.id == intentPosition.id }
-                    }
-                    dailyEntity = sortedByDescending[currentIndex]
-                    val lookDailyPagerAdapter =
-                        LookDailyPagerAdapter(this@LookDailyActivity, sortedByDescending)
-                    lookDailyBinding.viewPagerDaily.adapter = lookDailyPagerAdapter
-                    lookDailyBinding.viewPagerDaily.setCurrentItem(currentIndex, false)
-
-                    lookDailyBinding.viewPagerDaily.registerOnPageChangeCallback(object :
-                        ViewPager2.OnPageChangeCallback() {
-                        override fun onPageSelected(position: Int) {
-                            super.onPageSelected(position)
-                            currentIndex = position
-                            dailyEntity = sortedByDescending[currentIndex]
+                    if (currentIndex == 0) {
+                        if (savedInstanceState != null) currentIndex =
+                            savedInstanceState.getInt(VIEW_PAGER_INDEX, 0)
+                        else {
+                            val position = intent.getIntExtra("POSITION", 0)
+                            if (position >= 0 && position < value.size) {
+                                val intentPosition = value[position]
+                                currentIndex =
+                                    sortedByDescending.indexOfFirst { it.id == intentPosition.id }
+                            }
                         }
-                    })
+                    }
+                    if (currentIndex >= 0 && currentIndex < value.size) {
+                        dailyEntity = sortedByDescending[currentIndex]
+                        val lookDailyPagerAdapter =
+                            LookDailyPagerAdapter(this@LookDailyActivity, sortedByDescending)
+                        lookDailyBinding.viewPagerDaily.adapter = lookDailyPagerAdapter
+                        lookDailyBinding.viewPagerDaily.setCurrentItem(currentIndex, false)
+                       // originalSignalPassword = dailyEntity.singlePassword.toString()
+                        lookDailyBinding.viewPagerDaily.registerOnPageChangeCallback(object :
+                            ViewPager2.OnPageChangeCallback() {
+                            override fun onPageSelected(position: Int) {
+                                super.onPageSelected(position)
+                                currentIndex = position
+                                dailyEntity = sortedByDescending[currentIndex]
+                             //   originalSignalPassword = dailyEntity.singlePassword.toString()
+                            }
+                        })
+
+/*                        originalSignalPasswordMap = mutableMapOf(
+                            dailyEntity.id!! to originalSignalPassword
+                        )*/
+                    }
                 } else finish()
             }
         })
@@ -110,6 +125,13 @@ class LookDailyActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_look_daily, menu)
+/*        if (originalSignalPasswordMap[currentIndex.toLong()] == "") {
+            menu!!.findItem(R.id.item_unlock).setVisible(false)
+            invalidateOptionsMenu()
+        } else {
+            menu!!.findItem(R.id.item_unlock).setVisible(true)
+            invalidateOptionsMenu()
+        }*/
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -146,6 +168,39 @@ class LookDailyActivity : AppCompatActivity() {
                 SnackbarUtil.showSnackbarShort(lookDailyBinding.viewPagerDaily, "复制成功")
             }
 
+/*            R.id.item_unlock -> {
+                val inflate =
+                    layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
+                val inputPasswordLayout =
+                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
+                inputPasswordLayout.setHint("解锁")
+                var singlePassword: String? = ""
+                inputPassword.setText(singlePassword)
+                MaterialAlertDialogBuilder(this@LookDailyActivity).apply {
+                    setTitle("解锁")
+                    setView(inflate)
+                    setPositiveButton(
+                        getString(R.string.sure),
+                        object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                singlePassword = inputPassword.text.toString()
+                                val lookDailyPagerFragment =
+                                    supportFragmentManager.findFragmentByTag("f${currentIndex}") as LookDailyPagerFragment
+                                val hashSHA256 = HashUtil.hashSHA256(singlePassword.toString())
+                                if (hashSHA256 == dailyEntity.singlePassword) originalSignalPasswordMap[dailyEntity.id!!] =
+                                    ""
+                                lookDailyPagerFragment.updateSinglePassword(hashSHA256)
+                            }
+
+                        })
+                    setNeutralButton(getString(R.string.cancel), null)
+                        .setCancelable(false)
+                        .create()
+                    show()
+                }
+            }*/
+
             else -> finish()
         }
         return super.onOptionsItemSelected(item)
@@ -154,6 +209,11 @@ class LookDailyActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(VIEW_PAGER_INDEX, currentIndex)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        currentIndex = lookDailyBinding.viewPagerDaily.currentItem
     }
 }
 

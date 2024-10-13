@@ -23,7 +23,8 @@ class LookDailyPagerAdapter(
             dailyEntity.title,
             dailyEntity.dateTime,
             dailyEntity.content,
-            dailyEntity.backgroundColorIndex
+            dailyEntity.backgroundColorIndex,
+            dailyEntity.singlePassword
         )
     }
 }

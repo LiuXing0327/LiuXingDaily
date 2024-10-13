@@ -81,7 +81,7 @@ class AboutActivity : AppCompatActivity() {
     private fun aboutAuthor() {
         activityAboutBinding.tvName.text = "\n\n作者：流星"
         activityAboutBinding.tvVersionName.text = "当前版本：${VersionUtil.getVersionName(this)}"
-        val email = "1926879119@qq.com"
+        val email = getString(R.string.my_email)
         activityAboutBinding.tvEmail.text =
             Html.fromHtml("<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
         // 设置可点击

@@ -32,7 +32,9 @@ class SoftHideKeyBoardUtil(activity: Activity) {
 
     }
 
-    // 计算当前可用高度
+    /**
+     * 计算当前可用高度
+     */
     private fun resizeChildOfContent() {
         val usableHeightNow = computeUsableHeight()
         // 如果当前可用高度和原高度不同
