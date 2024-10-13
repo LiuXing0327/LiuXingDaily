@@ -1,16 +1,11 @@
 package com.liuxing.daily.ui.add
 
+import android.content.DialogInterface
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.MotionEvent
-import android.view.View
-import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -22,10 +17,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.HashUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -35,6 +33,7 @@ class AddDailyActivity : AppCompatActivity() {
     private lateinit var activityAddDailyBinding: ActivityAddDailyBinding
     private var backgroundColorIndex = 0
     private lateinit var dailyViewModel: DailyViewModel
+    private var singlePassword: String? = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -173,6 +172,31 @@ class AddDailyActivity : AppCompatActivity() {
                     }
 
                     R.id.item_save -> isDailyNull()
+
+                    R.id.item_on_lock -> {
+                        val inflate =
+                            layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
+                        val inputPasswordLayout = inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                        val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
+                        inputPasswordLayout.setHint("上锁")
+                        inputPassword.setText(singlePassword)
+                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                            setTitle("上锁")
+                            setView(inflate)
+                            setPositiveButton(
+                                getString(R.string.sure),
+                                object : DialogInterface.OnClickListener {
+                                    override fun onClick(dialog: DialogInterface?, which: Int) {
+                                        singlePassword = inputPassword.text.toString()
+                                    }
+
+                                })
+                            setNeutralButton(getString(R.string.cancel), null)
+                                .setCancelable(false)
+                                .create()
+                            show()
+                        }
+                    }
                 }
 
                 return true
@@ -217,7 +241,8 @@ class AddDailyActivity : AppCompatActivity() {
                     activityAddDailyBinding.tvDateTime.text.toString(),
                     2
                 ),
-                backgroundColorIndex = backgroundColorIndex
+                backgroundColorIndex = backgroundColorIndex,
+                singlePassword = HashUtil.hashSHA256(singlePassword.toString())
             )
         )
         finish()

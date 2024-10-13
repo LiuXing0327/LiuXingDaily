@@ -1,11 +1,11 @@
 package com.liuxing.daily.ui.look
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
 import com.liuxing.daily.util.DateUtil
@@ -17,6 +17,7 @@ private const val TITLE = "title"
 private const val DATE_TIME = "dateTime"
 private const val CONTENT = "context"
 private const val BACKGROUND_INDEX = "backgroundColorIndex"
+private const val SINGLE_PASSWORD = "singlePassword"
 
 /**
  * A simple [Fragment] subclass.
@@ -29,6 +30,7 @@ class LookDailyPagerFragment : Fragment() {
     private var dateTime: Long? = null
     private var content: String? = null
     private lateinit var binding: FragmentLookDailyPagerBinding
+    private var singlePassword: String? = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +38,7 @@ class LookDailyPagerFragment : Fragment() {
             title = it.getString(TITLE)
             dateTime = it.getLong(DATE_TIME)
             content = it.getString(CONTENT)
+            singlePassword = it.getString(SINGLE_PASSWORD)
         }
     }
 
@@ -63,7 +66,8 @@ class LookDailyPagerFragment : Fragment() {
             title: String?,
             dateTime: Long?,
             content: String?,
-            backgroundColorIndex: Int?
+            backgroundColorIndex: Int?,
+            singlePassword: String?
         ) =
             LookDailyPagerFragment().apply {
                 arguments = Bundle().apply {
@@ -71,9 +75,20 @@ class LookDailyPagerFragment : Fragment() {
                     dateTime?.let { putLong(DATE_TIME, it) }
                     content?.let { putString(CONTENT, it) }
                     backgroundColorIndex?.let { putInt(BACKGROUND_INDEX, it) }
-
+                    singlePassword?.let { putString(SINGLE_PASSWORD, it) }
                 }
             }
+    }
+
+    fun updateSinglePassword(singlePassword: String?) {
+        this.singlePassword = singlePassword
+        if (singlePassword != arguments?.getString(SINGLE_PASSWORD)) {
+            binding.tvTitle.text = "***"
+            binding.tvContent.text = "***"
+        } else {
+            arguments?.getString(TITLE).also { binding.tvTitle.text = it }
+            arguments?.getString(CONTENT).also { binding.tvContent.text = it }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -83,12 +98,9 @@ class LookDailyPagerFragment : Fragment() {
             View.VISIBLE
         }
         arguments?.getString(TITLE).also { binding.tvTitle.text = it }
-
+        arguments?.getString(CONTENT).also { binding.tvContent.text = it }
         DateUtil.getDateString(2, Date(arguments?.getLong(DATE_TIME, 0)!!))
             .also { binding.tvDateTime.text = it }
-
-        arguments?.getString(CONTENT).also { binding.tvContent.text = it }
-
         val cardBackgroundColor = when (arguments?.getInt(BACKGROUND_INDEX)) {
             1 -> ContextCompat.getColor(requireContext(), R.color.color_2)
             2 -> ContextCompat.getColor(requireContext(), R.color.color_3)

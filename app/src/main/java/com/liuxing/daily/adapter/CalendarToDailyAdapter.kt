@@ -19,18 +19,20 @@ import com.liuxing.daily.util.DateUtil
 import java.util.Date
 import java.util.Objects
 
-class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
     var headerYearMonth: Boolean = true
 
-    fun setDailyList(context: Context, dailyList: List<DailyEntity>, searchQuery: String) {
+    fun setDailyList(context: Context, dailyList: List<DailyEntity>, dateString: String) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val mapIndexed = dailyList.mapIndexed { index, dailyEntity -> Pair(dailyEntity, index) }.filter {
-                it.first.title!!.contains(searchQuery) || it.first.content!!.contains(searchQuery) }
-        val groupedMap = mapIndexed.groupBy {
-            DateUtil.getDateString(2, Date(it.first.dateTime!!)).substring(0, 7)
+        val filter = dailyList.mapIndexed { index, dailyEntity ->
+            Pair(dailyEntity, index)
+        }.filter {
+            DateUtil.getDateString(2, Date(it.first.dateTime!!)).substring(0, 10) == dateString
         }
+        val groupedMap =
+            filter.groupBy { DateUtil.getDateString(2, Date(it.first.dateTime!!)).substring(0, 7) }
         val toSortedMap = groupedMap.mapKeys { dailyEntity ->
             dailyEntity.key to DateUtil.getDateString(
                 2,
@@ -168,5 +170,4 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             )
         }
     }
-
 }

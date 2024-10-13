@@ -1,8 +1,6 @@
 package com.liuxing.daily.adapter
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Insets.add
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,8 +16,6 @@ import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
-import java.util.Calendar
-
 import java.util.Date
 import java.util.Objects
 
@@ -32,9 +28,12 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val groupedMap = dailyList.withIndex()
             .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
-        val toSortedMap = groupedMap.toSortedMap(compareByDescending { yearMonth ->
-            DateUtil.dateStringToDate(yearMonth, 3)
-        })
+        val toSortedMap = groupedMap.mapKeys { dailyEntity ->
+            dailyEntity.key to DateUtil.getDateString(
+                2,
+                Date(dailyEntity.value.first().value.dateTime!!)
+            )
+        }.mapKeys { it.key.first }
         val resultList = mutableListOf<Any>()
         toSortedMap.forEach { (yearMonth, list) ->
             val headerBoolean = sharedPreferences.getBoolean(
@@ -61,7 +60,8 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 }
             }
             // 添加当天的 DailyEntity 及其索引
-            resultList.addAll(list.map { Pair(it.value, it.index) })
+            resultList.addAll(list.sortedByDescending { it.value.dateTime }
+                .map { Pair(it.value, it.index) })
         }
         categorizedList = resultList
         notifyDataSetChanged()
@@ -104,7 +104,7 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             setBackgroundColor(dailyEntity, holder)
             // 将原始索引传递给点击事件处理
             holder.itemView.setOnClickListener {
-                onItemClickListener?.OnItemClick(originalIndex)
+                onItemClickListener?.onItemClick(originalIndex)
             }
             holder.itemView.setOnLongClickListener {
                 onItemLongClickListener?.onItemLongOnClick(originalIndex)
