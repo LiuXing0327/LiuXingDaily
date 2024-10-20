@@ -5,9 +5,9 @@
 
 ## Screenshot
 <div>
-<img src="screenshot/1.1/V1.1Screenshot_20241007_211704.png" width="40%"
- <img src="screenshot/1.1/V1.1Screenshot_20241007_211750.png" width="40%"
- <img src="screenshot/1.1/V1.1Screenshot_20241007_211835.png" width="40%"
+<img src="screenshot/1.1/V1.1Screenshot_20241007_211704.png" width="40%"/>
+ <img src="screenshot/1.1/V1.1Screenshot_20241007_211750.png" width="40%"/>
+ <img src="screenshot/1.1/V1.1Screenshot_20241007_211835.png" width="40%"/>
 </div>
 ![项目截图](screenshot/1.2/V1.2Screenshot_20241013_232043.png)
 ![项目截图](screenshot/1.2/V1.2Screenshot_20241013_232055.png)
