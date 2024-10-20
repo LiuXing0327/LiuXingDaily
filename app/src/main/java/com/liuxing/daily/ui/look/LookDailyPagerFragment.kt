@@ -97,8 +97,20 @@ class LookDailyPagerFragment : Fragment() {
         } else {
             View.VISIBLE
         }
-        arguments?.getString(TITLE).also { binding.tvTitle.text = it }
-        arguments?.getString(CONTENT).also { binding.tvContent.text = it }
+        /*        arguments?.getString(TITLE).also { binding.tvTitle.text = it }
+                arguments?.getString(CONTENT).also { binding.tvContent.text = it }*/
+
+        when {
+            arguments?.getString(SINGLE_PASSWORD) != "" -> {
+                binding.tvTitle.text = "***"
+                binding.tvContent.text = "***"
+            }
+            else -> {
+                arguments?.getString(TITLE).also { binding.tvTitle.text = it }
+                arguments?.getString(CONTENT).also { binding.tvContent.text = it }
+            }
+        }
+
         DateUtil.getDateString(2, Date(arguments?.getLong(DATE_TIME, 0)!!))
             .also { binding.tvDateTime.text = it }
         val cardBackgroundColor = when (arguments?.getInt(BACKGROUND_INDEX)) {

@@ -7,32 +7,36 @@ import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
-import com.liuxing.daily.util.LogUtil
 
 /**
  * Author：流星
  * DateTime：2024/10/7 上午11:31
- * Description：
+ * Description：自定义自动保存开关偏好
  */
-class CustomYearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
+class CustomAutoSaveDailySwitchPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {
 
     init {
-        layoutResource = R.layout.preference_year_month_switch
+        layoutResource = R.layout.preference_auto_save_switch
     }
 
+    /**
+     * 绑定视图
+     *
+     * @param holder 视图
+     */
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
-        val switchYearMonthDisplay =
-            holder.findViewById(R.id.switch_year_month_display) as MaterialSwitch
+        val switchAutoSaveDaily =
+            holder.findViewById(R.id.switch_auto_save_daily) as MaterialSwitch
 
-        switchYearMonthDisplay.isChecked = sharedPreferences.getBoolean("switch_preference_header_display", true)
-        switchYearMonthDisplay.setOnCheckedChangeListener { buttonView, isChecked ->
-            LogUtil.d("$isChecked")
+        switchAutoSaveDaily.isChecked =
+            sharedPreferences.getBoolean("switch_preference_auto_save", true)
+        switchAutoSaveDaily.setOnCheckedChangeListener { buttonView, isChecked ->
             sharedPreferences.edit()
-                .putBoolean("switch_preference_header_display", isChecked)
+                .putBoolean("switch_preference_auto_save", isChecked)
                 .apply()
         }
     }

@@ -1,7 +1,9 @@
 package com.liuxing.daily.ui.main
 
 import android.app.Activity
+import android.content.DialogInterface
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -16,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -24,6 +27,7 @@ import androidx.navigation.ui.NavigationUI
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -33,12 +37,14 @@ import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
+import com.liuxing.daily.ui.daily.DailyFragment
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.VersionUtil
+import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private var dailyList: List<DailyEntity> = ArrayList()
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var navController: NavController
+    private var sharedPreferences: SharedPreferences? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         searchViewShowingStatusBarColor(false)
         searchViewFocus()
         initViewModel()
+        initSharePreferences()
         initSearchRecyclerView()
         initSearchView()
         setSearchRecyclerViewData("")
@@ -143,6 +151,9 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
     }
 
+    /**
+     * 设置导航
+     */
     private fun setNavigation() {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration)
         NavigationUI.setupWithNavController(activityMainBinding.navigationView, navController)
@@ -168,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         theme.resolveAttribute(
             R.attr.searchViewShowingColor, typedValue, true
         )
-        FollowPatternSetColor(typedValue.data)
+        WindowUtil.FollowPatternSetColor(window, typedValue.data)
         when {
             showing -> {
                 window.statusBarColor = typedValue.data
@@ -189,18 +200,6 @@ class MainActivity : AppCompatActivity() {
     private fun isOpenSearchView(): Boolean {
         return activityMainBinding.searchView.isShowing
     }
-
-    /**
-     * 浅色模式：-1120012
-     * 深色墨色：-13685706
-     */
-    private fun FollowPatternSetColor(ColorValue: Int) = if (ColorValue == -1120012) {
-        window.getDecorView()
-            .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
-    } else {
-        window.getDecorView().setSystemUiVisibility(0)
-    }
-
 
     /**
      * 监听返回键
@@ -308,7 +307,29 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_search_bar, menu)
+        val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
+        when (currentSortIndex) {
+
+            1 -> menu?.findItem(R.id.item_old_to_new)?.isChecked = true
+
+            else -> menu?.findItem(R.id.item_new_to_old)?.isChecked = true
+        }
         return true
+    }
+
+    /**
+     * 排序
+     *
+     * @param sortByIndex 排序索引 0 -> 正 1 -> 倒
+     */
+    private fun sortBy(sortByIndex: Int) {
+        val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
+        if (currentSortIndex != sortByIndex) {
+            sharedPreferences?.edit {
+                putInt("daily_sort_by", sortByIndex).apply()
+                recreate()
+            }
+        }
     }
 
     /**
@@ -339,6 +360,26 @@ class MainActivity : AppCompatActivity() {
                         exportAllDailyLauncher.launch(intent)
                     }
                 }
+
+                R.id.item_clear -> {
+                    MaterialAlertDialogBuilder(this).apply {
+                        setMessage("确定永久删除所有日记吗？")
+                        setPositiveButton(getString(R.string.sure),
+                            object : DialogInterface.OnClickListener {
+                                override fun onClick(dialog: DialogInterface?, which: Int) {
+                                    dailyViewModel.clearDaily()
+                                }
+
+                            })
+                        setNegativeButton(getString(R.string.cancel), null)
+                        create()
+                        show()
+                    }
+                }
+
+                R.id.item_new_to_old -> sortBy(0)
+
+                R.id.item_old_to_new -> sortBy(1)
             }
             true
         }
@@ -438,6 +479,18 @@ class MainActivity : AppCompatActivity() {
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 dailyList = value
+
+                var dailyTextSize = 0
+                val headerView = activityMainBinding.navigationView.getHeaderView(0)
+                val tvDailyCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_count)
+                val tvDailyTextCount =
+                    headerView.findViewById<MaterialTextView>(R.id.tv_daily_text_count)
+                tvDailyCount.text = "${dailyList.size}篇"
+                val tempDailyList = dailyList
+                tempDailyList.forEach { dailyEntity: DailyEntity ->
+                    dailyTextSize += dailyEntity.title!!.length.plus(dailyEntity.content!!.length)
+                }
+                tvDailyTextCount.text = "${dailyTextSize}字"
             }
         })
     }
@@ -457,4 +510,10 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private var isDailyFragment: Boolean = true
     }
+
+    /**
+     * 初始化偏好
+     */
+    private fun initSharePreferences() =
+        PreferenceManager.getDefaultSharedPreferences(this).also { sharedPreferences = it }
 }

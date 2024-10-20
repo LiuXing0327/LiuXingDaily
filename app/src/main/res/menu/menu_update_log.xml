@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/item_sort"
+        android:title="排序方式-按日期" >
+        <menu >
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/item_new_to_old"
+                    android:title="从新到旧" />
+                <item
+                    android:id="@+id/item_old_to_new"
+                    android:title="从旧到新" />
+            </group>
+        </menu>
+    </item>
+</menu>

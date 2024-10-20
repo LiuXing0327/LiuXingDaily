@@ -11,4 +11,19 @@
     <item
         android:id="@+id/item_export_all_daily"
         android:title="导出全部" />
+    <item
+        android:id="@+id/item_clear"
+        android:title="清空" />
+    <item android:title="排序" >
+        <menu >
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/item_new_to_old"
+                    android:title="按时间(从新到旧)" />
+                <item
+                    android:id="@+id/item_old_to_new"
+                    android:title="按时间(从旧到新)" />
+            </group>
+        </menu>
+    </item>
 </menu>

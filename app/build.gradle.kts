@@ -13,8 +13,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2"
+        versionCode = 5
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -64,6 +64,6 @@ dependencies {
     // Gson
     implementation("com.google.code.gson:gson:2.11.0")
 
-    // okhttp
+    // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.4.1")
 }

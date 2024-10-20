@@ -12,5 +12,5 @@
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/item_on_lock"
-        android:title="上锁" />
+        android:title="@string/locked" />
 </menu>

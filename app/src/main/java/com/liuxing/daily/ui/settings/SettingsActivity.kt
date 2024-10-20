@@ -16,6 +16,7 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
 import com.liuxing.daily.ui.about.AboutActivity
+import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
@@ -57,6 +58,12 @@ class SettingsActivity : AppCompatActivity() {
             val aboutPreference = findPreference<Preference>("about_preference")
             aboutPreference?.setOnPreferenceClickListener {
                 IntentUtil.startActivity(requireContext(), AboutActivity::class.java)
+                true
+            }
+
+            val specialThanksPreference = findPreference<Preference>("special_thanks_preference")
+            specialThanksPreference?.setOnPreferenceClickListener {
+                IntentUtil.startActivity(requireContext(), SpecialThanksActivity::class.java)
                 true
             }
 

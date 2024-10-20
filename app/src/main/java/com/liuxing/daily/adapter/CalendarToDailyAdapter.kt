@@ -26,6 +26,7 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun setDailyList(context: Context, dailyList: List<DailyEntity>, dateString: String) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
         val filter = dailyList.mapIndexed { index, dailyEntity ->
             Pair(dailyEntity, index)
         }.filter {
@@ -65,8 +66,13 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 }
             }
             // 添加当天的 DailyEntity 及其索引
-            resultList.addAll(list.sortedByDescending { it.first.dateTime }
-                .map { Pair(it.first, it.second) })
+            when (currentSortIndex) {
+                1 -> resultList.addAll(list.sortedBy { it.first.dateTime }
+                    .map { Pair(it.first, it.second) })
+
+                else -> resultList.addAll(list.sortedByDescending { it.first.dateTime }
+                    .map { Pair(it.first, it.second) })
+            }
         }
         categorizedList = resultList
         notifyDataSetChanged()
@@ -103,8 +109,13 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             } else {
                 holder.tvContent.visibility = View.VISIBLE
             }
-            holder.tvTitle.text = dailyEntity.title
-            holder.tvContent.text = dailyEntity.content
+            if (dailyEntity.singlePassword == "" || dailyEntity.singlePassword == null) {
+                holder.tvTitle.text = dailyEntity.title
+                holder.tvContent.text = dailyEntity.content
+            } else {
+                holder.tvTitle.text = "***"
+                holder.tvContent.text = "***"
+            }
             holder.tvDateTime.text = DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
             setBackgroundColor(dailyEntity, holder)
             // 将原始索引传递给点击事件处理
