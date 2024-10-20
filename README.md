@@ -9,9 +9,12 @@
  <img src="screenshot/1.1/V1.1Screenshot_20241007_211750.png" width="30%"/>
  <img src="screenshot/1.1/V1.1Screenshot_20241007_211835.png" width="30%"/>
 </div>
-![项目截图](screenshot/1.2/V1.2Screenshot_20241013_232043.png)
-![项目截图](screenshot/1.2/V1.2Screenshot_20241013_232055.png)
-![项目截图](screenshot/1.3/V1.3Screenshot_20241020_140117.png)
+<div>
+<img src="screenshot/1.2/V1.2Screenshot_20241013_232043.png" width="30%"/>
+ <img src="screenshot/1.1/V1.2Screenshot_20241013_232055.png" width="30%"/>
+ <img src="screenshot/1.1/V1.3Screenshot_20241020_140117.png" width="30%"/>
+</div>
+
 ## License
 ```
  Copyright [2024] [LiuXing]
