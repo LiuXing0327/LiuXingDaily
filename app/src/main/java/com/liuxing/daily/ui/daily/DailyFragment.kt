@@ -15,7 +15,6 @@ import com.liuxing.daily.databinding.FragmentDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 
@@ -78,11 +77,6 @@ class DailyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initData()
-        // 添加返回键回调
-        /*        requireActivity().onBackPressedDispatcher.addCallback(
-                    requireActivity(),
-                    onBackPressedCallback
-                )*/
     }
 
     /**

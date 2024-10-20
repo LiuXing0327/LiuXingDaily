@@ -1,5 +1,6 @@
 package com.liuxing.daily.ui.edit
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,17 +12,22 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.MenuHost
+import androidx.core.content.edit
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.preference.PreferenceManager
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -33,6 +39,7 @@ class EditDailyActivity : AppCompatActivity() {
     private lateinit var activityEditDailyBinding: ActivityEditDailyBinding
     private var backgroundColorIndex: Int = 0
     private lateinit var dailyViewModel: DailyViewModel
+    private var singlePassword: String? = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +66,7 @@ class EditDailyActivity : AppCompatActivity() {
         setDailyContent()
         setDailyDateTime()
         setDailyCount()
+        setDailySinglePassword()
         updateDailyCount()
         initMenu()
         setDailyBackgroundColor(getDailyBackgroundColorIndex())
@@ -121,7 +129,6 @@ class EditDailyActivity : AppCompatActivity() {
         "${activityEditDailyBinding.inputTitle.text!!.length.plus(activityEditDailyBinding.inputContent.text!!.length)}字".also {
             activityEditDailyBinding.tvDailyCount.text = it
         }
-
     }
 
     /**
@@ -236,6 +243,18 @@ class EditDailyActivity : AppCompatActivity() {
     }
 
     /**
+     * 获取日记密码
+     */
+    private fun getDailySinglePassword(): String =
+        intent.getStringExtra("single_password").toString()
+
+    /**
+     * 设置日记密码
+     */
+    private fun setDailySinglePassword() =
+        getDailySinglePassword().also { this.singlePassword = it }
+
+    /**
      * 初始化菜单
      */
     private fun initMenu() {
@@ -243,15 +262,25 @@ class EditDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_edit_daily, menu)
-                if (activityEditDailyBinding.inputTitle.text!!.trim()
+                when {
+                    activityEditDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && activityEditDailyBinding.inputContent.text!!.trim()
-                        .isEmpty()
-                ) {
-                    menu.findItem(R.id.item_save).setVisible(false)
-                    invalidateOptionsMenu()
-                } else {
-                    menu.findItem(R.id.item_save).setVisible(true)
-                    invalidateOptionsMenu()
+                        .isEmpty() -> {
+                        menu.findItem(R.id.item_save).setVisible(false)
+                        invalidateOptionsMenu()
+                    }
+
+                    else -> {
+                        menu.findItem(R.id.item_save).setVisible(true)
+                        invalidateOptionsMenu()
+                    }
+                }
+                menu.findItem(R.id.item_lock_to_on_and_un_ed).title = when {
+                    singlePassword == "" -> {
+                        getString(R.string.locked)
+                    }
+
+                    else -> getString(R.string.unlocked)
                 }
             }
 
@@ -305,11 +334,119 @@ class EditDailyActivity : AppCompatActivity() {
                                         backgroundColorIndex = backgroundColorIndex
                                     )
                                 )
+                                isSystemExit = false
                                 finish()
                             }
                             .setNegativeButton("取消", null)
                             .create()
                             .show()
+                    }
+
+                    R.id.item_lock_to_on_and_un_ed -> {
+                        val sharedPreferences =
+                            PreferenceManager.getDefaultSharedPreferences(this@EditDailyActivity)
+                        sharedPreferences.getString("forget_password_key", "")
+                        when {
+                            sharedPreferences.getString("forget_password_key", "") == "" -> {
+                                val inflate =
+                                    layoutInflater.inflate(
+                                        R.layout.dialog_input_password_layout,
+                                        null
+                                    )
+                                val inputPasswordLayout =
+                                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                                val inputPassword =
+                                    inflate.findViewById<TextInputEditText>(R.id.input_password)
+                                inputPasswordLayout.hint = "密钥"
+                                MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
+                                    setTitle("密钥")
+                                    setView(inflate)
+                                    setPositiveButton(
+                                        getString(R.string.sure),
+                                        object : DialogInterface.OnClickListener {
+                                            override fun onClick(
+                                                dialog: DialogInterface?,
+                                                which: Int
+                                            ) {
+                                                when {
+                                                    inputPassword.text.toString() == "" -> {
+                                                        SnackbarUtil.showSnackbarShort(
+                                                            activityEditDailyBinding.inputContent.rootView,
+                                                            "请先输入忘记密码时，重置密码的密钥！"
+                                                        )
+                                                    }
+
+                                                    else -> {
+                                                        MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
+                                                            setMessage("密钥设置成功，请牢记！")
+                                                            setPositiveButton(
+                                                                getString(R.string.sure), null
+                                                            )
+                                                            create()
+                                                            show()
+                                                        }
+                                                        sharedPreferences.edit {
+                                                            putString(
+                                                                "forget_password_key",
+                                                                HashUtil.hashSHA256(inputPassword.text.toString())
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                        })
+                                    setNeutralButton(
+                                        getString(R.string.cancel)
+                                    ) { dialog, which ->
+                                        SnackbarUtil.showSnackbarShort(
+                                            activityEditDailyBinding.inputContent.rootView,
+                                            "请先输入忘记密码时，重置密码的密钥！"
+                                        )
+                                    }
+                                        .setCancelable(false)
+                                        .create()
+                                    show()
+                                }
+                            }
+
+                            else -> {
+                                val inflate =
+                                    layoutInflater.inflate(
+                                        R.layout.dialog_input_password_layout,
+                                        null
+                                    )
+                                val inputPasswordLayout =
+                                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                                val inputPassword =
+                                    inflate.findViewById<TextInputEditText>(R.id.input_password)
+                                if (singlePassword == "") inputPasswordLayout.hint =
+                                    getString(R.string.locked) else inputPasswordLayout.hint =
+                                    getString(R.string.unlocked)
+                                inputPassword.setText(singlePassword)
+                                MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
+                                    if (singlePassword == "") setTitle(getString(R.string.locked)) else setTitle(
+                                        getString(R.string.unlocked)
+                                    )
+                                    setView(inflate)
+                                    setPositiveButton(
+                                        getString(R.string.sure),
+                                        object : DialogInterface.OnClickListener {
+                                            override fun onClick(
+                                                dialog: DialogInterface?,
+                                                which: Int
+                                            ) {
+                                                singlePassword = inputPassword.text.toString()
+                                            }
+
+                                        })
+                                    setNeutralButton(getString(R.string.cancel), null)
+                                        .setCancelable(false)
+                                        .create()
+                                    show()
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -328,6 +465,7 @@ class EditDailyActivity : AppCompatActivity() {
                 .isEmpty() && activityEditDailyBinding.inputContent.text!!.trim()
                 .isEmpty()
         ) {
+            isSystemExit = false
             finish()
         } else {
             // 当前内容与原内容进行对比
@@ -338,13 +476,20 @@ class EditDailyActivity : AppCompatActivity() {
                     activityEditDailyBinding.inputContent.text.toString(),
                     getDailyContent()
                 ) && backgroundColorIndex == getDailyBackgroundColorIndex()
+                && Objects.equals(singlePassword, getDailySinglePassword())
             ) {
                 finish()
             } else {
                 MaterialAlertDialogBuilder(this@EditDailyActivity)
                     .setMessage("是否保存这篇日记？")
-                    .setPositiveButton("保存") { dialog, which -> saveDaily() }
-                    .setNegativeButton("取消") { dialog, which -> finish() }
+                    .setPositiveButton("保存") { dialog, which ->
+                        isSystemExit = false
+                        saveDaily()
+                    }
+                    .setNegativeButton("取消") { dialog, which ->
+                        isSystemExit = false
+                        finish()
+                    }
                     .create()
                     .show()
             }
@@ -356,16 +501,36 @@ class EditDailyActivity : AppCompatActivity() {
      * 保存日记
      */
     private fun saveDaily() {
-        dailyViewModel.updateDaily(
-            DailyEntity(
-                id = getDailyId(),
-                title = activityEditDailyBinding.inputTitle.text.toString(),
-                content = activityEditDailyBinding.inputContent.text.toString(),
-                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
-                backgroundColorIndex = backgroundColorIndex
-            )
-        )
-        finish()
+        when {
+            activityEditDailyBinding.inputTitle.text!!.trim()
+                .isNotEmpty() || activityEditDailyBinding.inputContent.text!!.trim()
+                .isNotEmpty() -> {
+                when {
+                    Objects.equals(
+                        activityEditDailyBinding.inputTitle.text.toString(),
+                        getDailyTitle()
+                    ) || Objects.equals(
+                        activityEditDailyBinding.inputContent.text.toString(),
+                        getDailyContent()
+                    ) || backgroundColorIndex == getDailyBackgroundColorIndex() || Objects.equals(
+                        singlePassword,
+                        getDailySinglePassword()
+                    ) -> {
+                        dailyViewModel.updateDaily(
+                            DailyEntity(
+                                id = getDailyId(),
+                                title = activityEditDailyBinding.inputTitle.text.toString(),
+                                content = activityEditDailyBinding.inputContent.text.toString(),
+                                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
+                                backgroundColorIndex = backgroundColorIndex,
+                                singlePassword = HashUtil.hashSHA256(singlePassword.toString())
+                            )
+                        )
+                        finish()
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -397,4 +562,24 @@ class EditDailyActivity : AppCompatActivity() {
                 activityEditDailyBinding.inputTitle
             )
         }
+
+    override fun onStart() {
+        super.onStart()
+        isSystemExit = true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val autoSave = sharedPreferences.getBoolean("switch_preference_auto_save", true)
+        if (isSystemExit) {
+            if (autoSave) {
+                saveDaily()
+            }
+        }
+    }
+
+    companion object {
+        var isSystemExit = false
+    }
 }

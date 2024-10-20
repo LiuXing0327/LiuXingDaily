@@ -10,11 +10,13 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.preference.PreferenceManager
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -24,6 +26,7 @@ import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -34,6 +37,7 @@ class AddDailyActivity : AppCompatActivity() {
     private var backgroundColorIndex = 0
     private lateinit var dailyViewModel: DailyViewModel
     private var singlePassword: String? = ""
+    private var unLockKey: String? = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -174,27 +178,105 @@ class AddDailyActivity : AppCompatActivity() {
                     R.id.item_save -> isDailyNull()
 
                     R.id.item_on_lock -> {
-                        val inflate =
-                            layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
-                        val inputPasswordLayout = inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
-                        val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
-                        inputPasswordLayout.setHint("上锁")
-                        inputPassword.setText(singlePassword)
-                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                            setTitle("上锁")
-                            setView(inflate)
-                            setPositiveButton(
-                                getString(R.string.sure),
-                                object : DialogInterface.OnClickListener {
-                                    override fun onClick(dialog: DialogInterface?, which: Int) {
-                                        singlePassword = inputPassword.text.toString()
-                                    }
+                        val sharedPreferences =
+                            PreferenceManager.getDefaultSharedPreferences(this@AddDailyActivity)
+                        sharedPreferences.getString("forget_password_key", "")
+                        when {
+                            sharedPreferences.getString("forget_password_key", "") == "" -> {
+                                val inflate =
+                                    layoutInflater.inflate(
+                                        R.layout.dialog_input_password_layout,
+                                        null
+                                    )
+                                val inputPasswordLayout =
+                                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                                val inputPassword =
+                                    inflate.findViewById<TextInputEditText>(R.id.input_password)
+                                inputPasswordLayout.hint = "密钥"
+                                MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                                    setTitle("密钥")
+                                    setView(inflate)
+                                    setPositiveButton(
+                                        getString(R.string.sure),
+                                        object : DialogInterface.OnClickListener {
+                                            override fun onClick(
+                                                dialog: DialogInterface?,
+                                                which: Int
+                                            ) {
+                                                when {
+                                                    inputPassword.text.toString() == "" -> {
+                                                        SnackbarUtil.showSnackbarShort(
+                                                            activityAddDailyBinding.inputContent.rootView,
+                                                            "请先输入忘记密码时，重置密码的密钥！"
+                                                        )
+                                                    }
 
-                                })
-                            setNeutralButton(getString(R.string.cancel), null)
-                                .setCancelable(false)
-                                .create()
-                            show()
+                                                    else -> {
+                                                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                                                            setMessage("密钥设置成功，请牢记！")
+                                                            setPositiveButton(
+                                                                getString(R.string.sure), null
+                                                            )
+                                                            create()
+                                                            show()
+                                                        }
+                                                        sharedPreferences.edit {
+                                                            putString(
+                                                                "forget_password_key",
+                                                                HashUtil.hashSHA256(inputPassword.text.toString())
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                        })
+                                    setNeutralButton(
+                                        getString(R.string.cancel)
+                                    ) { dialog, which ->
+                                        SnackbarUtil.showSnackbarShort(
+                                            activityAddDailyBinding.inputContent.rootView,
+                                            "请先输入忘记密码时，重置密码的密钥！"
+                                        )
+                                    }
+                                        .setCancelable(false)
+                                        .create()
+                                    show()
+                                }
+                            }
+
+                            else -> {
+                                val inflate =
+                                    layoutInflater.inflate(
+                                        R.layout.dialog_input_password_layout,
+                                        null
+                                    )
+                                val inputPasswordLayout =
+                                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                                val inputPassword =
+                                    inflate.findViewById<TextInputEditText>(R.id.input_password)
+                                inputPasswordLayout.hint = getString(R.string.locked)
+                                inputPassword.setText(singlePassword)
+                                MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                                    setTitle(getString(R.string.locked))
+                                    setView(inflate)
+                                    setPositiveButton(
+                                        getString(R.string.sure),
+                                        object : DialogInterface.OnClickListener {
+                                            override fun onClick(
+                                                dialog: DialogInterface?,
+                                                which: Int
+                                            ) {
+                                                singlePassword = inputPassword.text.toString()
+                                            }
+
+                                        })
+                                    setNeutralButton(getString(R.string.cancel), null)
+                                        .setCancelable(false)
+                                        .create()
+                                    show()
+                                }
+                            }
                         }
                     }
                 }
@@ -233,19 +315,24 @@ class AddDailyActivity : AppCompatActivity() {
      * 保存日记
      */
     private fun saveDaily() {
-        dailyViewModel.insertDaily(
-            DailyEntity(
-                title = activityAddDailyBinding.inputTitle.text.toString(),
-                content = activityAddDailyBinding.inputContent.text.toString(),
-                dateTime = DateUtil.dateStringToDate(
-                    activityAddDailyBinding.tvDateTime.text.toString(),
-                    2
-                ),
-                backgroundColorIndex = backgroundColorIndex,
-                singlePassword = HashUtil.hashSHA256(singlePassword.toString())
+        if (activityAddDailyBinding.inputTitle.text!!.trim()
+                .isNotEmpty() || activityAddDailyBinding.inputContent.text!!.trim()
+                .isNotEmpty()
+        ) {
+            dailyViewModel.insertDaily(
+                DailyEntity(
+                    title = activityAddDailyBinding.inputTitle.text.toString(),
+                    content = activityAddDailyBinding.inputContent.text.toString(),
+                    dateTime = DateUtil.dateStringToDate(
+                        activityAddDailyBinding.tvDateTime.text.toString(),
+                        2
+                    ),
+                    backgroundColorIndex = backgroundColorIndex,
+                    singlePassword = HashUtil.hashSHA256(singlePassword.toString())
+                )
             )
-        )
-        finish()
+            finish()
+        }
     }
 
     /**
@@ -275,13 +362,20 @@ class AddDailyActivity : AppCompatActivity() {
                 .isEmpty() && activityAddDailyBinding.inputContent.text!!.trim()
                 .isEmpty()
         ) {
+            isSystemExit = false
             finish()
         } else {
             // 如果不为空，就询问是否保存
             MaterialAlertDialogBuilder(this@AddDailyActivity)
                 .setMessage("是否保存这篇日记？")
-                .setPositiveButton("保存") { dialog, which -> saveDaily() }
-                .setNegativeButton("取消") { dialog, which -> finish() }
+                .setPositiveButton("保存") { dialog, which ->
+                    isSystemExit = false
+                    saveDaily()
+                }
+                .setNegativeButton("取消") { dialog, which ->
+                    isSystemExit = false
+                    finish()
+                }
                 .create()
                 .show()
         }
@@ -299,4 +393,24 @@ class AddDailyActivity : AppCompatActivity() {
                 activityAddDailyBinding.inputTitle
             )
         }
+
+    override fun onStart() {
+        super.onStart()
+        isSystemExit = true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val autoSave = sharedPreferences.getBoolean("switch_preference_auto_save", true)
+        if (isSystemExit) {
+            if (autoSave) {
+                saveDaily()
+            }
+        }
+    }
+
+    companion object {
+        var isSystemExit = false
+    }
 }

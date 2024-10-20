@@ -44,4 +44,9 @@
     <string name="format_2">yyyy/MM/dd HH:mm:ss</string>
     <string name="calendar">日历</string>
     <string name="my_email">1926879119@qq.com</string>
+    <string name="locked">上锁</string>
+    <string name="m_copy">复制</string>
+    <string name="unlocked">解锁</string>
+    <string name="copy_successful">复制成功。</string>
+    <string name="forgot_password">忘记密码</string>
 </resources>

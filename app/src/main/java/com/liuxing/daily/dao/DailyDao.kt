@@ -7,6 +7,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.liuxing.daily.entity.DailyEntity
+import java.time.YearMonth
 
 @Dao
 interface DailyDao {
@@ -25,4 +26,7 @@ interface DailyDao {
 
     @Query("SELECT * FROM DAILY_INFO WHERE title LIKE :searchQuery OR content LIKE :searchQuery ORDER BY ID DESC")
     fun queryDaily(searchQuery:String): LiveData<List<DailyEntity>>
+
+    @Query("DELETE FROM DAILY_INFO")
+    fun clearDaily()
 }

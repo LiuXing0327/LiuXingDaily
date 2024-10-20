@@ -25,4 +25,6 @@ class DailyViewModel(application: Application) {
 
     fun queryDaily(searchQuery: String): LiveData<List<DailyEntity>> =
         dailyRepository.queryDaily(searchQuery)
+
+    fun clearDaily() = dailyRepository.clearDaily()
 }

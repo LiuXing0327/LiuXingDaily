@@ -36,4 +36,8 @@ class DailyRepository(application: Application) {
 
     fun queryDaily(searchQuery: String): LiveData<List<DailyEntity>> =
         dailyDao.queryDaily(searchQuery)
+
+    fun clearDaily() = CoroutineScope(Dispatchers.IO).launch {
+        dailyDao.clearDaily()
+    }
 }

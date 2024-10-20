@@ -1,6 +1,9 @@
 package com.liuxing.daily
 
 import android.app.Application
+import android.content.Intent
+import android.widget.Toast
+import com.liuxing.daily.service.MyService
 
 /**
  * Author：流星
@@ -17,4 +20,9 @@ class MyApplication : Application() {
      *
      * 此致
      */
+
+    override fun onCreate() {
+        super.onCreate()
+        startService(Intent(this, MyService::class.java))
+    }
 }

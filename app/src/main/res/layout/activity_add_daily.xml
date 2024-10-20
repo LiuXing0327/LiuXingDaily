@@ -68,8 +68,9 @@
         android:layout_height="wrap_content" />
 
     <ScrollView
+        android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:fillViewport="true">
 
         <LinearLayout
@@ -78,6 +79,7 @@
             android:orientation="vertical">
 
             <com.google.android.material.textfield.TextInputLayout
+                android:layout_weight="1"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginTop="@dimen/dp_4">
@@ -93,10 +95,6 @@
 
 
             </com.google.android.material.textfield.TextInputLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/dp_10" />
 
         </LinearLayout>
 

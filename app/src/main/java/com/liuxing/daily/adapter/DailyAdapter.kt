@@ -26,14 +26,23 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun setDailyList(context: Context, dailyList: List<DailyEntity>) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val groupedMap = dailyList.withIndex()
-            .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
+        val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)!!
+        val sortedByDescending = dailyList.withIndex().sortedByDescending { it.value.dateTime }
+        val groupedMap = when (currentSortIndex) {
+            1 -> sortedByDescending.sortedBy { it.value.dateTime }
+                .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
+
+            else -> sortedByDescending.sortedByDescending { it.value.dateTime }
+                .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
+        }
+
         val toSortedMap = groupedMap.mapKeys { dailyEntity ->
             dailyEntity.key to DateUtil.getDateString(
                 2,
                 Date(dailyEntity.value.first().value.dateTime!!)
             )
         }.mapKeys { it.key.first }
+
         val resultList = mutableListOf<Any>()
         toSortedMap.forEach { (yearMonth, list) ->
             val headerBoolean = sharedPreferences.getBoolean(
@@ -60,8 +69,14 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 }
             }
             // 添加当天的 DailyEntity 及其索引
-            resultList.addAll(list.sortedByDescending { it.value.dateTime }
-                .map { Pair(it.value, it.index) })
+            when (currentSortIndex) {
+                1 -> resultList.addAll(list.sortedBy { it.value.dateTime }
+                    .map { Pair(it.value, it.index) })
+
+                else -> resultList.addAll(list.sortedByDescending { it.value.dateTime }
+                    .map { Pair(it.value, it.index) })
+            }
+
         }
         categorizedList = resultList
         notifyDataSetChanged()
@@ -98,8 +113,14 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             } else {
                 holder.tvContent.visibility = View.VISIBLE
             }
-            holder.tvTitle.text = dailyEntity.title
-            holder.tvContent.text = dailyEntity.content
+            if (dailyEntity.singlePassword == "" || dailyEntity.singlePassword == null) {
+                holder.tvTitle.text = dailyEntity.title
+                holder.tvContent.text = dailyEntity.content
+            } else {
+                holder.tvTitle.text = "***"
+                holder.tvContent.text = "***"
+            }
+
             holder.tvDateTime.text = DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
             setBackgroundColor(dailyEntity, holder)
             // 将原始索引传递给点击事件处理

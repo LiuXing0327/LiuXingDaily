@@ -12,9 +12,9 @@
 
     <item
         android:id="@+id/item_copy"
-        android:title="复制" />
+        android:title="@string/m_copy" />
 
-<!--    <item
+    <item
         android:id="@+id/item_unlock"
-        android:title="解锁" />-->
+        android:title="@string/unlocked" />
 </menu>

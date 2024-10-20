@@ -1,5 +1,7 @@
 package com.liuxing.daily.ui.about
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
@@ -11,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityAboutBinding
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
@@ -18,6 +21,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.VersionUtil
+
 
 class AboutActivity : AppCompatActivity() {
 
@@ -84,11 +88,30 @@ class AboutActivity : AppCompatActivity() {
         val email = getString(R.string.my_email)
         activityAboutBinding.tvEmail.text =
             Html.fromHtml("<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
+        activityAboutBinding.tvJoinGroup.text = "QQ群：920994447"
+        activityAboutBinding.tvJoinGroup.setOnClickListener {
+            MaterialAlertDialogBuilder(this).apply {
+                setTitle("注意事项")
+                setMessage("在加入交流群之前，请注意以下事项：\n1、请遵守群规，文明交流。\n2、不要分享个人隐私。\n3、若有疑问请联系群主或管理员。")
+                setPositiveButton(
+                    getString(R.string.sure)
+                ) { dialog, which -> joinQQGroup("5XhiuTnwUF3YfNpZauGW2ZItbLnuZ2Xs") }
+                setNegativeButton(getString(R.string.cancel), null)
+                create()
+                show()
+            }
+
+        }
+        activityAboutBinding.tvJoinGroup.setOnLongClickListener {
+            CopyUtil.copyTextToClipboard(this@AboutActivity, "920994447")
+            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvGithub, getString(R.string.copy_successful))
+            true
+        }
         // 设置可点击
         activityAboutBinding.tvEmail.movementMethod = LinkMovementMethod.getInstance()
         activityAboutBinding.tvEmail.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, email)
-            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvEmail, "复制成功")
+            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvEmail, getString(R.string.copy_successful))
             true
         }
         val sourceCodeUrl = "https://github.com/LiuXing0327/LiuXingDaily"
@@ -99,7 +122,7 @@ class AboutActivity : AppCompatActivity() {
             )
         activityAboutBinding.tvGithub.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, sourceCodeUrl)
-            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvGithub, "复制成功")
+            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvGithub, getString(R.string.copy_successful))
             true
         }
         // 设置可点击
@@ -127,5 +150,30 @@ class AboutActivity : AppCompatActivity() {
             }
 
         })
+    }
+
+    /****************
+     *
+     * 发起添加群流程。群号：醒悟官方交流群(920994447) 的 key 为： 5XhiuTnwUF3YfNpZauGW2ZItbLnuZ2Xs
+     * 调用 joinQQGroup(5XhiuTnwUF3YfNpZauGW2ZItbLnuZ2Xs) 即可发起手Q客户端申请加群 醒悟官方交流群(920994447)
+     *
+     * @param key 由官网生成的key
+     * @return 返回true表示呼起手Q成功，返回false表示呼起失败
+     */
+    private fun joinQQGroup(key: String): Boolean {
+        val intent = Intent()
+        intent.setData(Uri.parse("mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D$key"))
+        // 此Flag可根据具体产品需要自定义，如设置，则在加群界面按返回，返回手Q主界面，不设置，按返回会返回到呼起产品界面    //intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            startActivity(intent)
+            return true
+        } catch (e: Exception) {
+            // 未安装手Q或安装的版本不支持
+            SnackbarUtil.showSnackbarShort(
+                activityAboutBinding.tvJoinGroup,
+                "未安装手Q或安装的版本不支持"
+            )
+            return false
+        }
     }
 }
