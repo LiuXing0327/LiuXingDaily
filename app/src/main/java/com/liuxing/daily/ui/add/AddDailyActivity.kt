@@ -1,13 +1,21 @@
 package com.liuxing.daily.ui.add
 
+import android.app.Activity
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -17,19 +25,34 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
+import com.liuxing.daily.adapter.DailyImagePagerAdapter
+import com.liuxing.daily.adapter.MoodAdapter
+import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.image.LookDailyImageActivity
+import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 class AddDailyActivity : AppCompatActivity() {
 
@@ -37,7 +60,10 @@ class AddDailyActivity : AppCompatActivity() {
     private var backgroundColorIndex = 0
     private lateinit var dailyViewModel: DailyViewModel
     private var singlePassword: String? = ""
-    private var unLockKey: String? = ""
+    private var moodIndex = 0
+    private var weatherIndex = 0
+    private val dailyUuid = UUID.randomUUID().toString()
+    private val imageList = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +79,7 @@ class AddDailyActivity : AppCompatActivity() {
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
         SoftHideKeyBoardUtil(this)
+        activityAddDailyBinding.tvDailyCount.text = "0${getString(R.string.word)}"
     }
 
     /**
@@ -84,15 +111,18 @@ class AddDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_add_daily, menu)
-                if (activityAddDailyBinding.inputTitle.text!!.trim()
+                when {
+                    activityAddDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && activityAddDailyBinding.inputContent.text!!.trim()
-                        .isEmpty()
-                ) {
-                    menu.findItem(R.id.item_save).setVisible(false)
-                    invalidateOptionsMenu()
-                } else {
-                    menu.findItem(R.id.item_save).setVisible(true)
-                    invalidateOptionsMenu()
+                        .isEmpty() && imageList.isEmpty() -> {
+                        menu.findItem(R.id.item_save).setVisible(false)
+                        invalidateOptionsMenu()
+                    }
+
+                    else -> {
+                        menu.findItem(R.id.item_save).setVisible(true)
+                        invalidateOptionsMenu()
+                    }
                 }
             }
 
@@ -180,7 +210,6 @@ class AddDailyActivity : AppCompatActivity() {
                     R.id.item_on_lock -> {
                         val sharedPreferences =
                             PreferenceManager.getDefaultSharedPreferences(this@AddDailyActivity)
-                        sharedPreferences.getString("forget_password_key", "")
                         when {
                             sharedPreferences.getString("forget_password_key", "") == "" -> {
                                 val inflate =
@@ -192,9 +221,9 @@ class AddDailyActivity : AppCompatActivity() {
                                     inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
                                 val inputPassword =
                                     inflate.findViewById<TextInputEditText>(R.id.input_password)
-                                inputPasswordLayout.hint = "密钥"
+                                inputPasswordLayout.hint = getString(R.string.key)
                                 MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                                    setTitle("密钥")
+                                    setTitle(getString(R.string.key))
                                     setView(inflate)
                                     setPositiveButton(
                                         getString(R.string.sure),
@@ -207,13 +236,13 @@ class AddDailyActivity : AppCompatActivity() {
                                                     inputPassword.text.toString() == "" -> {
                                                         SnackbarUtil.showSnackbarShort(
                                                             activityAddDailyBinding.inputContent.rootView,
-                                                            "请先输入忘记密码时，重置密码的密钥！"
+                                                            getString(R.string.please_enter_the_key_to_reset_your_password_if_you_forget_it)
                                                         )
                                                     }
 
                                                     else -> {
                                                         MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                                                            setMessage("密钥设置成功，请牢记！")
+                                                            setMessage(getString(R.string.the_key_was_set_successfully_please_keep_it_in_mind))
                                                             setPositiveButton(
                                                                 getString(R.string.sure), null
                                                             )
@@ -236,7 +265,7 @@ class AddDailyActivity : AppCompatActivity() {
                                     ) { dialog, which ->
                                         SnackbarUtil.showSnackbarShort(
                                             activityAddDailyBinding.inputContent.rootView,
-                                            "请先输入忘记密码时，重置密码的密钥！"
+                                            getString(R.string.please_enter_the_key_to_reset_your_password_if_you_forget_it)
                                         )
                                     }
                                         .setCancelable(false)
@@ -279,6 +308,90 @@ class AddDailyActivity : AppCompatActivity() {
                             }
                         }
                     }
+
+                    R.id.item_mood -> {
+                        val inflate =
+                            LayoutInflater.from(this@AddDailyActivity)
+                                .inflate(R.layout.dialog_mood_layout, null)
+                        val recyclerView = inflate.findViewById<RecyclerView>(R.id.recycler_view)
+                        val gridLayoutManager = GridLayoutManager(this@AddDailyActivity, 3)
+                        recyclerView.layoutManager = gridLayoutManager
+                        val moodAdapter = MoodAdapter(this@AddDailyActivity)
+                        recyclerView.adapter = moodAdapter
+                        val dialog: AlertDialog?
+                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                            setTitle(
+                                getString(R.string.mood)
+                            )
+                            setView(inflate)
+                            setPositiveButton(getString(R.string.cancel), null)
+                            create()
+                            dialog = show()
+                        }
+                        moodAdapter.setOnItemClickListener(object : OnItemClickListener {
+                            override fun onItemClick(position: Int) {
+                                if (position == ConstUtil.moodList.size - 1) {
+                                    moodIndex = 0
+                                    activityAddDailyBinding.ivMood.visibility = View.GONE
+                                } else {
+                                    activityAddDailyBinding.ivMood.setImageDrawable(
+                                        ContextCompat.getDrawable(
+                                            this@AddDailyActivity,
+                                            ConstUtil.moodList[position]
+                                        )
+                                    )
+                                    moodIndex = position.plus(1)
+                                    activityAddDailyBinding.ivMood.visibility = View.VISIBLE
+                                }
+                                dialog?.dismiss()
+                            }
+
+                        })
+                    }
+
+                    R.id.item_weather -> {
+                        val inflate = LayoutInflater.from(this@AddDailyActivity)
+                            .inflate(R.layout.dialog_weather_layout, null)
+                        val recyclerView = inflate.findViewById<RecyclerView>(R.id.recycler_view)
+                        val gridLayoutManager = GridLayoutManager(this@AddDailyActivity, 3)
+                        recyclerView.layoutManager = gridLayoutManager
+                        val weatherAdapter = WeatherAdapter(this@AddDailyActivity)
+                        recyclerView.adapter = weatherAdapter
+                        val dialog: AlertDialog
+                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                            setTitle(getString(R.string.weather))
+                            setView(inflate)
+                            setPositiveButton(getString(R.string.cancel), null)
+                            create()
+                            dialog = show()
+                        }
+                        weatherAdapter.setOnItemClickListener(object : OnItemClickListener {
+                            override fun onItemClick(position: Int) {
+                                if (position == ConstUtil.weatherList.size - 1) {
+                                    activityAddDailyBinding.ivWeather.visibility = View.GONE
+                                } else {
+                                    activityAddDailyBinding.ivWeather.visibility = View.VISIBLE
+                                    activityAddDailyBinding.ivWeather.setImageDrawable(
+                                        ContextCompat.getDrawable(
+                                            this@AddDailyActivity,
+                                            ConstUtil.weatherList[position]
+                                        )
+                                    )
+                                    weatherIndex = position.plus(1)
+                                }
+                                dialog.dismiss()
+                            }
+
+                        })
+                    }
+
+                    R.id.item_add_image -> {
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                            setType("image/*")
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addImageLauncher.launch(intent)
+                    }
                 }
 
                 return true
@@ -291,10 +404,14 @@ class AddDailyActivity : AppCompatActivity() {
      */
     private fun setDailyCount() {
         activityAddDailyBinding.inputContent.addTextChangedListener {
-            "${getDailyCount()}字".also { activityAddDailyBinding.tvDailyCount.text = it }
+            "${getDailyCount()}${getString(R.string.word)}".also {
+                activityAddDailyBinding.tvDailyCount.text = it
+            }
         }
         activityAddDailyBinding.inputTitle.addTextChangedListener {
-            "${getDailyCount()}字".also { activityAddDailyBinding.tvDailyCount.text = it }
+            "${getDailyCount()}${getString(R.string.word)}".also {
+                activityAddDailyBinding.tvDailyCount.text = it
+            }
         }
     }
 
@@ -315,10 +432,6 @@ class AddDailyActivity : AppCompatActivity() {
      * 保存日记
      */
     private fun saveDaily() {
-        if (activityAddDailyBinding.inputTitle.text!!.trim()
-                .isNotEmpty() || activityAddDailyBinding.inputContent.text!!.trim()
-                .isNotEmpty()
-        ) {
             dailyViewModel.insertDaily(
                 DailyEntity(
                     title = activityAddDailyBinding.inputTitle.text.toString(),
@@ -328,11 +441,14 @@ class AddDailyActivity : AppCompatActivity() {
                         2
                     ),
                     backgroundColorIndex = backgroundColorIndex,
-                    singlePassword = HashUtil.hashSHA256(singlePassword.toString())
+                    singlePassword = HashUtil.hashSHA256(singlePassword.toString()),
+                    moodIndex = moodIndex,
+                    weatherIndex = weatherIndex,
+                    dailyUUID = dailyUuid
                 )
             )
+        dailyViewModel.insertDailyImagePath(dailyUuid, imageList.toList())
             finish()
-        }
     }
 
     /**
@@ -358,28 +474,46 @@ class AddDailyActivity : AppCompatActivity() {
      */
     private fun isDailyNull() {
         // 如果文本都为空，则直接退出
-        if (activityAddDailyBinding.inputTitle.text!!.trim()
-                .isEmpty() && activityAddDailyBinding.inputContent.text!!.trim()
-                .isEmpty()
-        ) {
-            isSystemExit = false
-            finish()
-        } else {
+        if (contentIsNotNull()) {
             // 如果不为空，就询问是否保存
             MaterialAlertDialogBuilder(this@AddDailyActivity)
-                .setMessage("是否保存这篇日记？")
-                .setPositiveButton("保存") { dialog, which ->
+                .setMessage(getString(R.string.do_you_save_this_diary))
+                .setPositiveButton(getString(R.string.sure)) { dialog, which ->
                     isSystemExit = false
                     saveDaily()
                 }
-                .setNegativeButton("取消") { dialog, which ->
+                .setNegativeButton(getString(R.string.cancel)) { dialog, which ->
                     isSystemExit = false
+                    notSaveToDeleteAppImage()
                     finish()
                 }
                 .create()
                 .show()
+        } else {
+            isSystemExit = false
+            finish()
         }
 
+    }
+
+    /**
+     * 不保存则删除应用私有目录下对应的图片
+     */
+    private fun notSaveToDeleteAppImage() {
+        CoroutineScope(Dispatchers.IO).launch {
+            imageList.forEach { path ->
+                FileUtil().deleteFile(path)
+            }
+        }
+    }
+
+    /**
+     * 判断主要内容是否不为空
+     */
+    private fun contentIsNotNull(): Boolean {
+        return activityAddDailyBinding.inputTitle.text!!.trim()
+            .isNotEmpty() || activityAddDailyBinding.inputContent.text!!.trim()
+            .isNotEmpty() || imageList.isNotEmpty()
     }
 
     /**
@@ -399,18 +533,62 @@ class AddDailyActivity : AppCompatActivity() {
         isSystemExit = true
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         val autoSave = sharedPreferences.getBoolean("switch_preference_auto_save", true)
-        if (isSystemExit) {
-            if (autoSave) {
-                saveDaily()
-            }
+        if (isSystemExit && autoSave && contentIsNotNull()) {
+            autoSaveDailySharedPreferences(
+                this, 0,
+                activityAddDailyBinding.inputTitle.text.toString(),
+                activityAddDailyBinding.inputContent.text.toString(),
+                DateUtil.dateStringToDate(
+                    activityAddDailyBinding.tvDateTime.text.toString(),
+                    2
+                ),
+                backgroundColorIndex,
+                singlePassword.toString(), moodIndex, weatherIndex, dailyUuid, imageList
+            )
         }
     }
 
     companion object {
         var isSystemExit = false
+    }
+
+    /**
+     * 添加图片启动器
+     */
+    private val addImageLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+        object : ActivityResultCallback<ActivityResult> {
+            override fun onActivityResult(result: ActivityResult) {
+                if (result.resultCode != Activity.RESULT_OK) return
+                val data = result.data ?: return
+                val uri = data.data ?: return
+                val copyImageToMyAppDir = CopyUtil.copyImageToMyAppDir(this@AddDailyActivity, uri)
+                imageList.add(copyImageToMyAppDir)
+            }
+        })
+
+    override fun onResume() {
+        super.onResume()
+        if (imageList.isNotEmpty()) {
+            val adapter =
+                DailyImagePagerAdapter(imageList.toList()) { position ->
+                    val intent = Intent(
+                        this,
+                        LookDailyImageActivity::class.java
+                    ).apply {
+                        putExtra("look_daily_image_position", position)
+                        putExtra("look_daily_image_uuid", dailyUuid)
+                    }
+                    startActivity(intent)
+                }
+            activityAddDailyBinding.viewPager.visibility = View.VISIBLE
+            activityAddDailyBinding.viewPager.adapter = adapter
+        } else {
+            activityAddDailyBinding.viewPager.visibility = View.GONE
+        }
     }
 }

@@ -29,7 +29,7 @@
         <com.google.android.material.search.SearchView
             android:id="@+id/search_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:fitsSystemWindows="true"
             android:hint="@string/app_name"
             app:layout_anchor="@id/search_bar">
@@ -37,7 +37,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/search_recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="wrap_content" />
 
         </com.google.android.material.search.SearchView>
 

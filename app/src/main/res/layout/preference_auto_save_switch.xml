@@ -12,7 +12,7 @@
         android:id="@+id/switch_auto_save_daily"
         android:foreground="?attr/selectableItemBackground"
         android:padding="@dimen/dp_16"
-        android:text="自动保存"
+        android:text="@string/auto_save"
         android:textSize="@dimen/sp_16" />
 
 </LinearLayout>

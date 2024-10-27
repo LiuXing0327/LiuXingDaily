@@ -13,8 +13,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3"
+        versionCode = 6
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -22,6 +22,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -66,4 +67,9 @@ dependencies {
 
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.4.1")
+
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 }

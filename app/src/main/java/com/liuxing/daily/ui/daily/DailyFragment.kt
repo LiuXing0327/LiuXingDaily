@@ -8,13 +8,18 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailyAdapter
 import com.liuxing.daily.databinding.FragmentDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 
@@ -102,12 +107,20 @@ class DailyFragment : Fragment() {
      * 设置列表数据
      */
     private fun setRecyclerViewData() {
+        loadDailyData()
+        setRecyclerViewItemOnClick()
+        setRecyclerViewItemOnLongClick()
+    }
+
+    /**
+     * 加载日记数据
+     */
+    private fun loadDailyData(){
         queryAllDaily = dailyViewModel.queryAllDaily()
         queryAllDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
-                dailyAdapter.setDailyList(requireContext(), value)
+                dailyAdapter.setDailyList(requireContext(), value,dailyViewModel,viewLifecycleOwner)
                 dailyList = value
-                setRecyclerViewItemOnClick()
             }
         })
     }
@@ -128,10 +141,35 @@ class DailyFragment : Fragment() {
     }
 
     /**
+     * 设置列表长按事件
+     */
+    private fun setRecyclerViewItemOnLongClick(){
+        dailyAdapter.setOnItemLongClickListener(object : OnItemLongClickListener{
+            override fun onItemLongOnClick(position: Int) {
+                val dailyEntity = dailyList[position]
+                MaterialAlertDialogBuilder(requireContext())
+                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        dailyEntity.dailyUUID?.let {
+                            dailyViewModel.deletePathImageByDailyUuid(
+                                it
+                            )
+                        }
+                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                        dailyViewModel.deleteDaily(dailyEntity)
+                    }
+                    .setNegativeButton(getString(R.string.cancel), null)
+                    .create()
+                    .show()
+            }
+        })
+    }
+
+    /**
      * 初始化视图模型
      */
     private fun initViewModel() {
-        dailyViewModel = DailyViewModel(requireActivity().application)
+        dailyViewModel = ViewModelProvider(this)[DailyViewModel::class.java]
     }
 
     override fun onResume() {
@@ -143,7 +181,7 @@ class DailyFragment : Fragment() {
                 true
             ) != dailyAdapter.headerYearMonth
         ) {
-            setRecyclerViewData()
+            loadDailyData()
         }
     }
 }

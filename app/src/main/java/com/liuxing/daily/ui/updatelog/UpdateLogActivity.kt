@@ -52,7 +52,7 @@ class UpdateLogActivity : AppCompatActivity() {
         setSupportActionBar(activityUpdateLogBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
         this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        "更新日志".also { activityUpdateLogBinding.toolbar.title = it }
+        getString(R.string.update_log).also { activityUpdateLogBinding.toolbar.title = it }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

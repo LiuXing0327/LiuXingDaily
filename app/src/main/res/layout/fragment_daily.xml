@@ -9,9 +9,9 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:layout_weight="1"
-        android:layout_marginBottom="@dimen/dp_20"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
             android:id="@+id/recycler_view"
+        android:layout_marginBottom="@dimen/dp_50"
             android:layout_width="match_parent"
             android:layout_height="0dp" />
 

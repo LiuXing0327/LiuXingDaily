@@ -83,12 +83,13 @@ class AboutActivity : AppCompatActivity() {
      * 关于作者
      */
     private fun aboutAuthor() {
-        activityAboutBinding.tvName.text = "\n\n作者：流星"
-        activityAboutBinding.tvVersionName.text = "当前版本：${VersionUtil.getVersionName(this)}"
+        activityAboutBinding.tvName.text = getString(R.string.author_name)
+        activityAboutBinding.tvVersionName.text =
+            getString(R.string.current_version, VersionUtil.getVersionName(this))
         val email = getString(R.string.my_email)
         activityAboutBinding.tvEmail.text =
             Html.fromHtml("<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
-        activityAboutBinding.tvJoinGroup.text = "QQ群：920994447"
+        activityAboutBinding.tvJoinGroup.text = getString(R.string.qq_920994447)
         activityAboutBinding.tvJoinGroup.setOnClickListener {
             MaterialAlertDialogBuilder(this).apply {
                 setTitle("注意事项")
@@ -117,7 +118,7 @@ class AboutActivity : AppCompatActivity() {
         val sourceCodeUrl = "https://github.com/LiuXing0327/LiuXingDaily"
         activityAboutBinding.tvGithub.text =
             Html.fromHtml(
-                "<a href='$sourceCodeUrl'>开源地址：$sourceCodeUrl</a>",
+                getString(R.string.a_href_a, sourceCodeUrl, sourceCodeUrl),
                 Html.FROM_HTML_MODE_COMPACT
             )
         activityAboutBinding.tvGithub.setOnLongClickListener {

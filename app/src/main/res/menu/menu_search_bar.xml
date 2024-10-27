@@ -7,22 +7,22 @@
         android:title="@string/settings" />
     <item
         android:id="@+id/item_import_daily"
-        android:title="导入" />
+        android:title="@string/import_s" />
     <item
         android:id="@+id/item_export_all_daily"
-        android:title="导出全部" />
+        android:title="@string/export_all" />
     <item
         android:id="@+id/item_clear"
-        android:title="清空" />
-    <item android:title="排序" >
+        android:title="@string/clear" />
+    <item android:title="@string/sort" >
         <menu >
             <group android:checkableBehavior="single">
                 <item
                     android:id="@+id/item_new_to_old"
-                    android:title="按时间(从新到旧)" />
+                    android:title="@string/by_time_newest_to_oldest" />
                 <item
                     android:id="@+id/item_old_to_new"
-                    android:title="按时间(从旧到新)" />
+                    android:title="@string/by_time_oldest_to_newest" />
             </group>
         </menu>
     </item>

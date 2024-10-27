@@ -55,7 +55,7 @@ class SpecialThanksActivity : AppCompatActivity() {
         setSupportActionBar(specialThanksBinding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        specialThanksBinding.toolbar.title = "特别鸣谢"
+        specialThanksBinding.toolbar.title = getString(R.string.special_thanks)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -80,7 +80,7 @@ class SpecialThanksActivity : AppCompatActivity() {
      */
     private fun setRecyclerData() {
         val specialThanksDataList = setOf(
-            SpecialThanksData("zoyongsheng", "对醒悟推广的支持与帮助", 0),
+            SpecialThanksData("zoyonsheng", "对醒悟推广的支持与帮助", 0),
             SpecialThanksData("XuRuo", "对醒悟推广的支持与帮助", 0),
             SpecialThanksData("南城双念", "对醒悟推广的支持与帮助", 0),
             SpecialThanksData(
@@ -112,7 +112,21 @@ class SpecialThanksActivity : AppCompatActivity() {
                         "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
                         "See the License for the specific language governing permissions and\n" +
                         "limitations under the License.", 1
-            )
+            ),
+            SpecialThanksData("Glide","\nBSD, part MIT and Apache 2.0. ",1),
+            SpecialThanksData("PhotoView","Copyright 2018 Chris Banes\n" +
+                    "\n" +
+                    "Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
+                    "you may not use this file except in compliance with the License.\n" +
+                    "You may obtain a copy of the License at\n" +
+                    "\n" +
+                    "   http://www.apache.org/licenses/LICENSE-2.0\n" +
+                    "\n" +
+                    "Unless required by applicable law or agreed to in writing, software\n" +
+                    "distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+                    "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+                    "See the License for the specific language governing permissions and\n" +
+                    "limitations under the License.",1)
         )
         specialThanksAdapter.setSpecialThanksList(specialThanksDataList.toList())
     }

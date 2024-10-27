@@ -12,16 +12,15 @@ object LogUtil {
     /**
      * 调试
      */
-    private const val LOG_D = "D"
-    fun d(message: String) {
-        Log.d(LOG_D, "logD: $message")
+    fun d(tag: String, message: String) {
+        Log.d(tag, "logD: $message")
     }
 
     /**
      * 错误
      */
-    private const val LOG_E = "E"
-    fun e(message: String) {
-        Log.e(LOG_E, "logG: $message")
+
+    fun e(tag: String, message: String) {
+        Log.e(tag, "logG: $message")
     }
 }

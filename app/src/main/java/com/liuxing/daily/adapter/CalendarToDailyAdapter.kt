@@ -1,21 +1,30 @@
 package com.liuxing.daily.adapter
 
 import android.content.Context
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 import java.util.Objects
 
@@ -23,10 +32,22 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
     var headerYearMonth: Boolean = true
+    private lateinit var dailyViewModel: DailyViewModel
+    private lateinit var viewLifecycleOwner: LifecycleOwner
+    private var onItemClickListener: OnItemClickListener? = null
+    private var onItemLongClickListener: OnItemLongClickListener? = null
 
-    fun setDailyList(context: Context, dailyList: List<DailyEntity>, dateString: String) {
+    fun setDailyList(
+        context: Context,
+        dailyList: List<DailyEntity>,
+        dateString: String,
+        dailyViewModel: DailyViewModel,
+        viewLifecycleOwner: LifecycleOwner
+    ) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
+        this.dailyViewModel = dailyViewModel
+        this.viewLifecycleOwner = viewLifecycleOwner
         val filter = dailyList.mapIndexed { index, dailyEntity ->
             Pair(dailyEntity, index)
         }.filter {
@@ -118,6 +139,59 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             }
             holder.tvDateTime.text = DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
             setBackgroundColor(dailyEntity, holder)
+            holder.ivMood.visibility =
+                if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {
+                    View.GONE
+                } else {
+                    holder.ivMood.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            holder.ivMood.context,
+                            ConstUtil.moodList[dailyEntity.moodIndex.minus(1)] // 将索引减1，得到原始索引
+                        )
+                    )
+                    View.VISIBLE
+                }
+            holder.ivWeather.visibility =
+                if (dailyEntity.weatherIndex == 0 || dailyEntity.weatherIndex == null) {
+                    View.GONE
+                } else {
+                    holder.ivWeather.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            holder.ivWeather.context,
+                            ConstUtil.weatherList[dailyEntity.weatherIndex.minus(1)] // 将索引减1，得到原始索引
+                        )
+                    )
+                    View.VISIBLE
+                }
+            if (dailyEntity.dailyUUID != null) {
+                dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
+                    .observe(viewLifecycleOwner, object : Observer<List<DailyImageEntity>> {
+                        override fun onChanged(value: List<DailyImageEntity>) {
+                            when {
+                                value.isNotEmpty() -> {
+                                    when {
+                                        FileUtil().checkFileExists(value.first().imagePath!!) -> {
+                                            Glide.with(holder.imageView.context)
+                                                .load(value.first().imagePath)
+                                                .into(holder.imageView)
+                                            holder.imageView.visibility = View.VISIBLE
+                                        }
+                                        else -> {
+                                            dailyViewModel.deleteSelectPathImage(value.first().imagePath!!)
+                                            holder.imageView.visibility = View.GONE
+                                        }
+                                    }
+                                }
+                                else -> {
+                                    holder.imageView.visibility = View.GONE
+                                }
+                            }
+                        }
+
+                    })
+            } else {
+                holder.imageView.visibility = View.GONE
+            }
             // 将原始索引传递给点击事件处理
             holder.itemView.setOnClickListener {
                 onItemClickListener?.onItemClick(originalIndex)
@@ -140,11 +214,9 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val tvContent: MaterialTextView = itemView.findViewById(R.id.tv_content)
         val tvDateTime: MaterialTextView = itemView.findViewById(R.id.tv_date_time)
         val cardView: MaterialCardView = itemView.findViewById(R.id.main_layout)
-    }
-
-    companion object {
-        private var onItemClickListener: OnItemClickListener? = null
-        private var onItemLongClickListener: OnItemLongClickListener? = null
+        val ivMood: ImageView = itemView.findViewById(R.id.iv_mood)
+        val ivWeather: ImageView = itemView.findViewById(R.id.iv_weather)
+        val imageView: ImageView = itemView.findViewById(R.id.image_view)
     }
 
     fun setOnItemClickListener(listener: OnItemClickListener) {
