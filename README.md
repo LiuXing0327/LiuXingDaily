@@ -16,6 +16,10 @@
  <img src="screenshot/1.3/V1.3Screenshot_20241020_140117.png" width="30%"/>
 </div>
 
+<div>
+<img src="screenshot/2.0/V2.0Screenshot_20241027_222727.png" width="30%"/>
+</div>
+
 ## License
 ```
  Copyright [2024] [LiuXing]
