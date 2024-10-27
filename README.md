@@ -1,12 +1,21 @@
 # LiuXingDaily
+写日记
+
 作为一个开源项目，如果它对你有所帮助可以给 star 支持。你的支持对我非常重要！
 
 ## Screenshot
-![项目截图](screenshot/1.1/V1.1Screenshot_20241007_211704.png)
-![项目截图](screenshot/1.1/V1.1Screenshot_20241007_211750.png)
-![项目截图](screenshot/1.1/V1.1Screenshot_20241007_211835.png)
-![项目截图](screenshot/1.2/V1.2Screenshot_20241013_232043.png)
-![项目截图](screenshot/1.2/V1.2Screenshot_20241013_232055.png)
+<div>
+<img src="screenshot/1.1/V1.1Screenshot_20241007_211704.png" width="30%"/>
+ <img src="screenshot/1.1/V1.1Screenshot_20241007_211750.png" width="30%"/>
+ <img src="screenshot/1.1/V1.1Screenshot_20241007_211835.png" width="30%"/>
+</div>
+
+<div>
+<img src="screenshot/1.3/V1.3Screenshot_20241020_140714.png" width="30%"/>
+ <img src="screenshot/1.2/V1.2Screenshot_20241013_232055.png" width="30%"/>
+ <img src="screenshot/1.3/V1.3Screenshot_20241020_140117.png" width="30%"/>
+</div>
+
 ## License
 ```
  Copyright [2024] [LiuXing]
