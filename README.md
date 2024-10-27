@@ -17,7 +17,7 @@
 </div>
 
 <div>
-<img src="screenshot/2.0/V2.0Screenshot_20241027_222727.png" width="30%"/>
+<img src="screenshot/2.0/V2.0Screenshot_20241027_222727.png" width="100%"/>
 </div>
 
 ## License
