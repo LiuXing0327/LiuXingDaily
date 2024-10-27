@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -25,11 +26,9 @@ import com.liuxing.daily.ui.edit.EditDailyActivity
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.HashUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
-import kotlin.math.log
 
 
 class LookDailyActivity : AppCompatActivity() {
@@ -79,7 +78,7 @@ class LookDailyActivity : AppCompatActivity() {
      * 初始化视图模型
      */
     private fun initViewModel() {
-        dailyViewModel = DailyViewModel(this.application)
+        dailyViewModel = ViewModelProvider(this)[DailyViewModel::class.java]
     }
 
     /**
@@ -92,17 +91,14 @@ class LookDailyActivity : AppCompatActivity() {
                     val sharedPreferences =
                         PreferenceManager.getDefaultSharedPreferences(this@LookDailyActivity)
                     val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
-                    val sortedByDescending = when (currentSortIndex) {
-                        1 -> {
-                            value.sortedBy {
-                                DateUtil.getDateString(2, Date(it.dateTime!!))
-                            }
+                    val sortedByDescending = if (currentSortIndex == 1) {
+                        value.sortedBy {
+                            DateUtil.getDateString(2, Date(it.dateTime!!))
                         }
-
-                        else -> {
-                            value.sortedByDescending {
-                                DateUtil.getDateString(2, Date(it.dateTime!!))
-                            }
+                    }
+                    else {
+                        value.sortedByDescending {
+                            DateUtil.getDateString(2, Date(it.dateTime!!))
                         }
                     }
 
@@ -118,7 +114,7 @@ class LookDailyActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    if (currentIndex >= 0 && currentIndex < value.size) {
+                    if (currentIndex >= 0 && currentIndex < sortedByDescending.size) {
                         dailyEntity = sortedByDescending[currentIndex]
                         val lookDailyPagerAdapter =
                             LookDailyPagerAdapter(this@LookDailyActivity, sortedByDescending)
@@ -153,16 +149,7 @@ class LookDailyActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_look_daily, menu)
         if (::originalSignalPasswordMap.isInitialized) {
-            menu?.findItem(R.id.item_unlock)?.isVisible =
-                when {
-                    originalSignalPasswordMap[dailyEntity.id] == "" -> {
-                        false
-                    }
-
-                    else -> {
-                        true
-                    }
-                }
+            menu?.findItem(R.id.item_unlock)?.isVisible = originalSignalPasswordMap[dailyEntity.id]?.isEmpty() == false
         }
         return super.onCreateOptionsMenu(menu)
     }
@@ -178,8 +165,14 @@ class LookDailyActivity : AppCompatActivity() {
                 when {
                     originalSignalPasswordMap[dailyEntity.id] == "" -> {
                         MaterialAlertDialogBuilder(this@LookDailyActivity)
-                            .setMessage("确定永久删除这篇日记吗？")
+                            .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                             .setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                                dailyEntity.dailyUUID?.let {
+                                    dailyViewModel.deletePathImageByDailyUuid(
+                                        it
+                                    )
+                                }
+                                dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
                                 dailyViewModel.deleteDaily(dailyEntity)
                                 finish()
                             }
@@ -191,7 +184,7 @@ class LookDailyActivity : AppCompatActivity() {
                     else -> {
                         SnackbarUtil.showSnackbarShort(
                             lookDailyBinding.viewPagerDaily.rootView,
-                            "请先解锁以验证您的身份。"
+                            getString(R.string.please_unlock_it_first_to_verify_your_identity)
                         )
                     }
                 }
@@ -213,6 +206,9 @@ class LookDailyActivity : AppCompatActivity() {
                             "single_password",
                             tempSignalPasswordMap[dailyEntity.id!!]
                         )
+                        intent.putExtra("mood_index", dailyEntity.moodIndex)
+                        intent.putExtra("weather_index", dailyEntity.weatherIndex)
+                        intent.putExtra("daily_uuid", dailyEntity.dailyUUID)
                         intent.setClass(this@LookDailyActivity, EditDailyActivity::class.java)
                         startActivity(intent)
                     }
@@ -220,7 +216,7 @@ class LookDailyActivity : AppCompatActivity() {
                     else -> {
                         SnackbarUtil.showSnackbarShort(
                             lookDailyBinding.viewPagerDaily.rootView,
-                            "请先解锁以验证您的身份。"
+                            getString(R.string.please_unlock_it_first_to_verify_your_identity)
                         )
                     }
                 }
@@ -239,7 +235,7 @@ class LookDailyActivity : AppCompatActivity() {
                     else -> {
                         SnackbarUtil.showSnackbarShort(
                             lookDailyBinding.viewPagerDaily.rootView,
-                            "请先解锁以验证您的身份。"
+                            getString(R.string.please_unlock_it_first_to_verify_your_identity)
                         )
                     }
                 }
@@ -278,7 +274,7 @@ class LookDailyActivity : AppCompatActivity() {
                                     else -> {
                                         SnackbarUtil.showSnackbarShort(
                                             lookDailyBinding.viewPagerDaily.rootView,
-                                            "密码错误。"
+                                            getString(R.string.wrong_password)
                                         )
                                     }
                                 }
@@ -317,23 +313,26 @@ class LookDailyActivity : AppCompatActivity() {
                                                                     dailyEntity.content,
                                                                     dailyEntity.dateTime,
                                                                     dailyEntity.backgroundColorIndex,
-                                                                    ""
+                                                                    "",
+                                                                    dailyEntity.moodIndex,
+                                                                    dailyEntity.weatherIndex,
+                                                                    dailyEntity.dailyUUID
                                                                 )
                                                             )
                                                             SnackbarUtil.showSnackbarShort(
                                                                 lookDailyBinding.viewPagerDaily.rootView,
-                                                                "密码已清除。"
+                                                                getString(R.string.the_password_has_been_cleared)
                                                             )
                                                         }
 
                                                         else -> SnackbarUtil.showSnackbarShort(
                                                             lookDailyBinding.viewPagerDaily.rootView,
-                                                            "密钥错误。"
+                                                            getString(R.string.the_key_is_incorrect)
                                                         )
                                                     }
                                                 } else SnackbarUtil.showSnackbarShort(
                                                     lookDailyBinding.viewPagerDaily.rootView,
-                                                    "请先设置密钥。"
+                                                    getString(R.string.please_set_key)
                                                 )
                                             }
 

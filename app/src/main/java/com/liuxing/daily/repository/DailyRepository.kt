@@ -2,42 +2,44 @@ package com.liuxing.daily.repository
 
 import android.app.Application
 import androidx.lifecycle.LiveData
-import com.liuxing.daily.dao.DailyDao
 import com.liuxing.daily.database.DailyDatabase
 import com.liuxing.daily.entity.DailyEntity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.liuxing.daily.entity.DailyImageEntity
 
 class DailyRepository(application: Application) {
-    private val dailyDao: DailyDao
 
-    init {
-        val database = DailyDatabase.getDatabase(application)
-        dailyDao = database.getDailyDao()
-    }
+    private val dailyDao = DailyDatabase.getDatabase(application).getDailyDao()
 
-    fun insertDaily(dailyEntity: DailyEntity) =
-        CoroutineScope(Dispatchers.IO).launch {
-            dailyDao.insertDaily(dailyEntity)
-        }
+    suspend fun insertDaily(dailyEntity: DailyEntity) =
+        dailyDao.insertDaily(dailyEntity)
 
-    fun deleteDaily(dailyEntity: DailyEntity) =
-        CoroutineScope(Dispatchers.IO).launch {
-            dailyDao.deleteDaily(dailyEntity)
-        }
+    suspend fun deleteDaily(dailyEntity: DailyEntity) =
+        dailyDao.deleteDaily(dailyEntity)
 
-    fun updateDaily(dailyEntity: DailyEntity) =
-        CoroutineScope(Dispatchers.IO).launch {
-            dailyDao.updateDaily(dailyEntity)
-        }
+    suspend fun updateDaily(dailyEntity: DailyEntity) =
+        dailyDao.updateDaily(dailyEntity)
 
     fun queryAllDaily(): LiveData<List<DailyEntity>> = dailyDao.queryAllDaily()
 
-    fun queryDaily(searchQuery: String): LiveData<List<DailyEntity>> =
-        dailyDao.queryDaily(searchQuery)
+    suspend fun clearDaily() = dailyDao.clearDaily()
 
-    fun clearDaily() = CoroutineScope(Dispatchers.IO).launch {
-        dailyDao.clearDaily()
-    }
+    suspend fun insertDailyImagePath(dailyUUID: String, imagePathList: List<String>) =
+        imagePathList.forEach { path ->
+            val dailyImageEntity =
+                DailyImageEntity(dailyUuid = dailyUUID, imagePath = path)
+            dailyDao.insertDailyImagePath(dailyImageEntity)
+        }
+
+    fun queryDailyImageByUuid(dailyUuid: String): LiveData<List<DailyImageEntity>> =
+        dailyDao.queryDailyImageByUuid(dailyUuid)
+
+    suspend fun queryDailyImageByUuidToList(dailyUuid: String): List<DailyImageEntity> =
+        dailyDao.queryDailyImageByUuidToList(dailyUuid)
+
+    suspend fun deleteSelectPathImage(imagePath: String) = dailyDao.deleteSelectPathImage(imagePath)
+
+    suspend fun deletePathImageByDailyUuid(dailyUuid: String) =
+        dailyDao.deletePathImageByDailyUuid(dailyUuid)
+
+    suspend fun clearImagePath() = dailyDao.clearDailyImage()
 }

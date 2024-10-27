@@ -1,4 +1,5 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:iconSpaceReserved="false"
@@ -12,7 +13,7 @@
         <Preference
             app:iconSpaceReserved="false"
             app:key="special_thanks_preference"
-            app:title="特别鸣谢" />
+            app:title="@string/special_thanks" />
 
     </PreferenceCategory>
 
@@ -28,7 +29,7 @@
         <Preference
             app:iconSpaceReserved="false"
             app:key="update_log_preference"
-            app:title="更新日志" />
+            app:title="@string/update_log" />
 
     </PreferenceCategory>
 
@@ -36,18 +37,30 @@
         app:iconSpaceReserved="false"
         app:title="@string/daily">
 
-        <!--        <ListPreference
-                    android:defaultValue="@string/format_0"
-                    android:entries="@array/date_time_entries"
-                    android:entryValues="@array/date_time_values"
-                    android:key="date_time_preference"
-                    app:summary="@string/format_0"
-                    android:title="日期时间格式"
-                    app:iconSpaceReserved="false" />-->
+<!--        <ListPreference
+            android:entryValues="@array/date_time_values"
+            android:key="date_time_preference"
+            android:title="日期时间格式"
+            app:defaultValue="@string/format_0"
+            app:entries="@array/date_time_entries"
+            app:iconSpaceReserved="false"
+            app:summary="@string/format_0" />-->
 
         <com.liuxing.daily.view.CustomYearMonthSwitchPreference />
 
         <com.liuxing.daily.view.CustomAutoSaveDailySwitchPreference />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/ui">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="theme_mode_preference"
+            app:summary="跟随系统"
+            app:title="@string/theme_mode" />
 
     </PreferenceCategory>
 

@@ -12,7 +12,7 @@
         android:id="@+id/switch_year_month_display"
         android:foreground="?attr/selectableItemBackground"
         android:padding="@dimen/dp_16"
-        android:text="分类按年月显示"
+        android:text="@string/classifications_are_displayed_by_year_month"
         android:textSize="@dimen/sp_16" />
 
 </LinearLayout>

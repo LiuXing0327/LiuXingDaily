@@ -15,4 +15,13 @@
     <item
         android:id="@+id/item_lock_to_on_and_un_ed"
         android:title="@string/locked" />
+    <item
+        android:id="@+id/item_mood"
+        android:title="@string/mood" />
+    <item
+        android:id="@+id/item_weather"
+        android:title="@string/weather" />
+    <item
+        android:id="@+id/item_add_image"
+        android:title="@string/add_image" />
 </menu>

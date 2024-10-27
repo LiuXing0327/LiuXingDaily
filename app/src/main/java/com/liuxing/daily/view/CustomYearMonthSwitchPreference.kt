@@ -30,7 +30,6 @@ class CustomYearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
 
         switchYearMonthDisplay.isChecked = sharedPreferences.getBoolean("switch_preference_header_display", true)
         switchYearMonthDisplay.setOnCheckedChangeListener { buttonView, isChecked ->
-            LogUtil.d("$isChecked")
             sharedPreferences.edit()
                 .putBoolean("switch_preference_header_display", isChecked)
                 .apply()

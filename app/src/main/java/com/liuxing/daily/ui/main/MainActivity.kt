@@ -27,6 +27,7 @@ import androidx.navigation.ui.NavigationUI
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -35,14 +36,16 @@ import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailySearchAdapter
 import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.entity.DailyWithImage
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
-import com.liuxing.daily.ui.daily.DailyFragment
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.VersionUtil
 import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -111,9 +114,94 @@ class MainActivity : AppCompatActivity() {
             this,
             onBackPressedCallback
         )
+        insertAutoDaily()
         initData()
     }
 
+    /**
+     * 插入自动保存的日记
+     */
+    private fun insertAutoDaily() {
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val autoSave = sharedPreferences.getBoolean("switch_preference_auto_save", true)
+        if (autoSave) {
+            val autoSaveId = sharedPreferences.getLong("switch_preference_auto_save_id", 0)
+            val autoSaveTitle = sharedPreferences.getString("switch_preference_auto_save_title", "")
+            val autoSaveContent =
+                sharedPreferences.getString("switch_preference_auto_save_content", "")
+            val autoSaveImagePathList = sharedPreferences.getStringSet(
+                "switch_preference_auto_save_image_path_list",
+                setOf()
+            )
+            if (autoSaveTitle!!.isNotEmpty() || autoSaveContent!!.isNotEmpty() || autoSaveImagePathList!!.isNotEmpty()) {
+                val insertUpdate =
+                    sharedPreferences.getInt("switch_preference_auto_save_is_insert_or_update", 0)
+                val autoSaveDateTime =
+                    sharedPreferences.getLong("switch_preference_auto_save_date_time", 0)
+                val autoSaveBackgroundColorIndex =
+                    sharedPreferences.getInt(
+                        "switch_preference_auto_save_background_color_index",
+                        0
+                    )
+                val autoSaveSinglePassword =
+                    sharedPreferences.getString("switch_preference_auto_save_single_password", "")
+                val autoSaveMoodIndex =
+                    sharedPreferences.getInt("switch_preference_auto_save_mood_index", 0)
+                val autoSaveWeatherIndex =
+                    sharedPreferences.getInt("switch_preference_auto_save_weather_index", 0)
+                val autoSaveDailyUuid =
+                    sharedPreferences.getString("switch_preference_auto_save_daily_uuid", "")
+                initViewModel()
+                when (insertUpdate) {
+                    1 -> dailyViewModel.updateDaily(
+                        DailyEntity(
+                            id = autoSaveId,
+                            title = autoSaveTitle,
+                            content = autoSaveContent,
+                            dateTime = autoSaveDateTime,
+                            backgroundColorIndex = autoSaveBackgroundColorIndex,
+                            singlePassword = autoSaveSinglePassword,
+                            moodIndex = autoSaveMoodIndex,
+                            weatherIndex = autoSaveWeatherIndex,
+                            dailyUUID = autoSaveDailyUuid
+                        )
+                    )
+
+
+                    else -> {
+                        dailyViewModel.insertDaily(
+                            DailyEntity(
+                                title = autoSaveTitle,
+                                content = autoSaveContent,
+                                dateTime = autoSaveDateTime,
+                                backgroundColorIndex = autoSaveBackgroundColorIndex,
+                                singlePassword = autoSaveSinglePassword,
+                                moodIndex = autoSaveMoodIndex,
+                                weatherIndex = autoSaveWeatherIndex,
+                                dailyUUID = autoSaveDailyUuid
+                            )
+                        )
+
+                        if (autoSaveDailyUuid != null && autoSaveImagePathList!!.isNotEmpty()) {
+                            dailyViewModel.insertDailyImagePath(
+                                dailyUUID = autoSaveDailyUuid,
+                                imagePathList = autoSaveImagePathList.toList()
+                            )
+                        }
+                    }
+                }
+
+                // 将自动保存的数据清空
+                SharedPreferencesUtil.autoSaveDailySharedPreferences(
+                    this, 1, "", "", 0, 0, "", 0, 0, "", mutableSetOf(),
+                )
+            }
+        }
+    }
+
+    /**
+     * 初始化数据
+     */
     private fun initData() {
         setActionBar()
         initNavController()
@@ -124,7 +212,7 @@ class MainActivity : AppCompatActivity() {
         initSharePreferences()
         initSearchRecyclerView()
         initSearchView()
-        setSearchRecyclerViewData("")
+        setSearchRecyclerViewData()
         initSearchBar()
         floatingOnClick()
         onDestinationChanged()
@@ -244,9 +332,23 @@ class MainActivity : AppCompatActivity() {
     /**
      * 设置搜索列表数据
      */
-    private fun setSearchRecyclerViewData(searchQuery: String) {
-        dailySearchAdapter.setDailyList(this@MainActivity, dailyList, searchQuery)
+    private fun setSearchRecyclerViewData() {
+        loadSearchDailyData("")
         setSearchRecyclerViewItemOnClick()
+        setSearchRecyclerViewItemOnLongClick()
+    }
+
+    /**
+     * 加载搜索日记的数据
+     */
+    private fun loadSearchDailyData(searchQuery: String) {
+        dailySearchAdapter.setDailyList(
+            this@MainActivity,
+            dailyList,
+            searchQuery,
+            dailyViewModel,
+            this
+        )
     }
 
     /**
@@ -278,14 +380,14 @@ class MainActivity : AppCompatActivity() {
     private fun searchDaily() {
         // 点击键盘搜索事件
         activityMainBinding.searchView.editText.setOnEditorActionListener { v, actionId, event ->
-            setSearchRecyclerViewData(v.text.toString())
+            loadSearchDailyData(v.text.toString())
             true
         }
 
         // 点击搜索视图菜单搜索事件
         activityMainBinding.searchView.setOnMenuItemClickListener { item ->
             when (item!!.itemId) {
-                R.id.item_search -> setSearchRecyclerViewData(activityMainBinding.searchView.text.toString())
+                R.id.item_search -> loadSearchDailyData(activityMainBinding.searchView.text.toString())
             }
             true
         }
@@ -363,10 +465,14 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.item_clear -> {
                     MaterialAlertDialogBuilder(this).apply {
-                        setMessage("确定永久删除所有日记吗？")
+                        setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                         setPositiveButton(getString(R.string.sure),
                             object : DialogInterface.OnClickListener {
                                 override fun onClick(dialog: DialogInterface?, which: Int) {
+                                    dailyList.forEach { dailyEntity ->
+                                        dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
+                                    }
+                                    dailyViewModel.clearClearImagePath()
                                     dailyViewModel.clearDaily()
                                 }
 
@@ -399,23 +505,33 @@ class MainActivity : AppCompatActivity() {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             val inputStream = contentResolver.openInputStream(uri)
-                            val bufferedReader = BufferedReader(
-                                InputStreamReader(inputStream)
-                            )
-                            val type = object : TypeToken<List<DailyEntity>>() {}.type
+                            val bufferedReader = BufferedReader(InputStreamReader(inputStream))
+                            val type = object : TypeToken<List<DailyWithImage>>() {}.type
                             val gson = Gson()
-                            val dailyList: List<DailyEntity> = gson.fromJson(bufferedReader, type)
-                            dailyList.forEach { dailyEntity ->
-                                dailyViewModel.insertDaily(dailyEntity)
+                            val dailyWithImageList: List<DailyWithImage> =
+                                gson.fromJson(bufferedReader, type)
+                            dailyWithImageList.forEach { dailyWithImage ->
+                                val daily = dailyWithImage.dailyEntity
+                                if (daily != null) {
+                                    dailyViewModel.insertDaily(daily)
+                                    dailyWithImage.imageList?.forEach { dailyImageEntity ->
+                                        if (dailyImageEntity?.imagePath != null) {
+                                            dailyImageEntity.dailyUuid = daily.dailyUUID
+                                            val imagePaths =
+                                                mutableSetOf(dailyImageEntity.imagePath)
+                                            dailyViewModel.insertDailyImagePath(
+                                                dailyImageEntity.dailyUuid.toString(),
+                                                imagePaths.toList()
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
                                 MaterialAlertDialogBuilder(this@MainActivity).apply {
-                                    setMessage("导入失败")
-                                    setPositiveButton(
-                                        getString(R.string.sure),
-                                        null
-                                    )
+                                    setMessage(getString(R.string.import_failed))
+                                    setPositiveButton(getString(R.string.sure), null)
                                     create()
                                     show()
                                 }
@@ -423,9 +539,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-            }
-        )
-
+            })
     /**
      * 导出所有日记启动器
      */
@@ -436,16 +550,28 @@ class MainActivity : AppCompatActivity() {
                 if (result.resultCode != Activity.RESULT_OK) return
                 val data = result.data ?: return
                 val url = data.data!!
-
-                val outputStream: OutputStream =
-                    contentResolver.openOutputStream(url)!!
-                val bufferedWriter =
-                    BufferedWriter(OutputStreamWriter(outputStream))
-                val gson = GsonBuilder()
-                    .excludeFieldsWithoutExposeAnnotation()
-                    .create()
-                bufferedWriter.write(gson.toJson(dailyList))
-                bufferedWriter.close()
+                CoroutineScope(Dispatchers.IO).launch {
+                    val dailyWithImageList = mutableListOf<DailyWithImage>()
+                    dailyList.forEach { dailyEntity ->
+                        val queryDailyImageByUuidToList =
+                            dailyViewModel.queryDailyImageByUuidToList(dailyEntity.dailyUUID.toString())
+                        dailyWithImageList.add(
+                            DailyWithImage(
+                                dailyEntity,
+                                queryDailyImageByUuidToList
+                            )
+                        )
+                    }
+                    val outputStream: OutputStream =
+                        contentResolver.openOutputStream(url)!!
+                    val bufferedWriter =
+                        BufferedWriter(OutputStreamWriter(outputStream))
+                    val gson = GsonBuilder()
+                        .excludeFieldsWithoutExposeAnnotation()
+                        .create()
+                    bufferedWriter.write(gson.toJson(dailyWithImageList))
+                    bufferedWriter.close()
+                }
             }
         })
 
@@ -479,18 +605,17 @@ class MainActivity : AppCompatActivity() {
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 dailyList = value
-
                 var dailyTextSize = 0
                 val headerView = activityMainBinding.navigationView.getHeaderView(0)
                 val tvDailyCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_count)
                 val tvDailyTextCount =
                     headerView.findViewById<MaterialTextView>(R.id.tv_daily_text_count)
-                tvDailyCount.text = "${dailyList.size}篇"
                 val tempDailyList = dailyList
                 tempDailyList.forEach { dailyEntity: DailyEntity ->
                     dailyTextSize += dailyEntity.title!!.length.plus(dailyEntity.content!!.length)
                 }
-                tvDailyTextCount.text = "${dailyTextSize}字"
+                tvDailyCount.text = "${dailyList.size}${getString(R.string.entries)}"
+                tvDailyTextCount.text = "${dailyTextSize}${getString(R.string.word)}"
             }
         })
     }
@@ -503,7 +628,7 @@ class MainActivity : AppCompatActivity() {
                 true
             )
         ) {
-            setSearchRecyclerViewData("")
+            loadSearchDailyData("")
         }
     }
 
@@ -516,4 +641,46 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initSharePreferences() =
         PreferenceManager.getDefaultSharedPreferences(this).also { sharedPreferences = it }
+
+    /**
+     * 添加图片启动器
+     */
+    private val addImageLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+        object : ActivityResultCallback<ActivityResult> {
+            override fun onActivityResult(result: ActivityResult) {
+                if (result.resultCode != Activity.RESULT_OK) return
+                val data = result.data ?: return
+                val uri = data.data
+                val headerView = activityMainBinding.navigationView.getHeaderView(0)
+                val ivIcon = headerView.findViewById<ShapeableImageView>(R.id.iv_icon)
+                ivIcon.setImageURI(uri)
+            }
+
+        })
+
+    /**
+     * 设置列表长按事件
+     */
+    private fun setSearchRecyclerViewItemOnLongClick(){
+        dailySearchAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
+            override fun onItemLongOnClick(position: Int) {
+                val dailyEntity = dailyList[position]
+                MaterialAlertDialogBuilder(this@MainActivity)
+                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        dailyEntity.dailyUUID?.let {
+                            dailyViewModel.deletePathImageByDailyUuid(
+                                it
+                            )
+                        }
+                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                        dailyViewModel.deleteDaily(dailyEntity)
+                    }
+                    .setNegativeButton(getString(R.string.cancel), null)
+                    .create()
+                    .show()
+            }
+        })
+    }
 }

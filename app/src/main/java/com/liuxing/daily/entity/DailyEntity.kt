@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.Expose
+import java.util.UUID
 
 @Entity(tableName = "DAILY_INFO")
 data class DailyEntity(
@@ -31,5 +32,14 @@ data class DailyEntity(
     @Expose(deserialize = true, serialize = true) val backgroundColorIndex: Int?,
 
     @ColumnInfo(name = "SINGLE_PASSWORD")
-    @Expose(deserialize = true, serialize = true) val singlePassword: String? = ""
+    @Expose(deserialize = true, serialize = true) val singlePassword: String? = "",
+
+    @ColumnInfo(name = "MOOD")
+    @Expose(deserialize = true, serialize = true) val moodIndex: Int? = 0,
+
+    @ColumnInfo(name = "WEATHER")
+    @Expose(deserialize = true, serialize = true) val weatherIndex: Int? = 0,
+
+    @ColumnInfo(name = "DAILY_UUID")
+    @Expose(deserialize = true, serialize = true) val dailyUUID: String? = null
 )

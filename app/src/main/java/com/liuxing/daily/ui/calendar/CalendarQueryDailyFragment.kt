@@ -7,12 +7,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.liuxing.daily.R
 import com.liuxing.daily.adapter.CalendarToDailyAdapter
 import com.liuxing.daily.databinding.FragmentCalendarQueryDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.LogUtil
@@ -93,7 +97,7 @@ class CalendarQueryDailyFragment : Fragment() {
      * 初始化视图模型
      */
     private fun initViewModel() {
-        dailyViewModel = DailyViewModel(requireActivity().application)
+        dailyViewModel = ViewModelProvider(this)[DailyViewModel::class.java]
     }
 
     /**
@@ -112,6 +116,15 @@ class CalendarQueryDailyFragment : Fragment() {
      * 设置列表的数据
      */
     private fun setRecyclerViewData() {
+        loadDailyData()
+        setRecyclerViewItemOnClick()
+        setRecyclerViewItemOnLongClick()
+    }
+
+    /**
+     * 加载日记数据
+     */
+    private fun loadDailyData() {
         dailyViewModel.queryAllDaily()
             .observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
                 override fun onChanged(value: List<DailyEntity>) {
@@ -123,9 +136,9 @@ class CalendarQueryDailyFragment : Fragment() {
                         DateUtil.getDateString(
                             2,
                             Date(fragmentCalendarQueryDailyBinding.calendarView.date)
-                        ).substring(0, 10)
+                        ).substring(0, 10), dailyViewModel, viewLifecycleOwner
                     )
-                    setRecyclerViewItemOnClick()
+
                 }
             })
     }
@@ -136,7 +149,13 @@ class CalendarQueryDailyFragment : Fragment() {
     private fun followCalendarChangeDaily() {
         fragmentCalendarQueryDailyBinding.calendarView.setOnDateChangeListener { view, year, month, dayOfMonth ->
             val yearMonthDay = String.format("%04d/%02d/%02d", year, month + 1, dayOfMonth)
-            calendarToDailyAdapter.setDailyList(requireContext(), dailyList, yearMonthDay)
+            calendarToDailyAdapter.setDailyList(
+                requireContext(),
+                dailyList,
+                yearMonthDay,
+                dailyViewModel,
+                viewLifecycleOwner
+            )
         }
     }
 
@@ -149,8 +168,13 @@ class CalendarQueryDailyFragment : Fragment() {
                 true
             )
         ) {
-            setRecyclerViewData()
+            loadDailyData()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        dailyViewModel.queryAllDaily().removeObservers(viewLifecycleOwner)
     }
 
     /**
@@ -162,10 +186,34 @@ class CalendarQueryDailyFragment : Fragment() {
                 val intent = Intent()
                 intent.setClass(requireContext(), LookDailyActivity::class.java)
                 intent.putExtra("POSITION", position)
-                LogUtil.d("$position")
                 startActivity(intent)
             }
 
+        })
+    }
+
+    /**
+     * 设置列表长按事件
+     */
+    private fun setRecyclerViewItemOnLongClick(){
+        calendarToDailyAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
+            override fun onItemLongOnClick(position: Int) {
+                val dailyEntity = dailyList[position]
+                MaterialAlertDialogBuilder(requireContext())
+                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        dailyEntity.dailyUUID?.let {
+                            dailyViewModel.deletePathImageByDailyUuid(
+                                it
+                            )
+                        }
+                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                        dailyViewModel.deleteDaily(dailyEntity)
+                    }
+                    .setNegativeButton(getString(R.string.cancel), null)
+                    .create()
+                    .show()
+            }
         })
     }
 }

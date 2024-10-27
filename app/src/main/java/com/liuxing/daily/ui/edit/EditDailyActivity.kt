@@ -1,6 +1,8 @@
 package com.liuxing.daily.ui.edit
 
+import android.app.Activity
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,8 +10,14 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -18,19 +26,34 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
+import com.liuxing.daily.adapter.DailyImagePagerAdapter
+import com.liuxing.daily.adapter.MoodAdapter
+import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.image.LookDailyImageActivity
+import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.LogUtil
+import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.Objects
 
@@ -40,6 +63,12 @@ class EditDailyActivity : AppCompatActivity() {
     private var backgroundColorIndex: Int = 0
     private lateinit var dailyViewModel: DailyViewModel
     private var singlePassword: String? = ""
+    private var moodIndex: Int = 0
+    private var weatherIndex: Int = 0
+    private var dailyUuid: String = ""
+    private val imageList = mutableSetOf<String>()
+    private var tempImageListIndex: Int = 0
+    private val tempImageList = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,16 +91,20 @@ class EditDailyActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
+        initViewModel()
         setDailyTitle()
         setDailyContent()
         setDailyDateTime()
         setDailyCount()
         setDailySinglePassword()
+        setDailyMoodIndex()
+        setDailyWeatherIndex()
+        setDailyUuid()
+        getDailyImage()
         updateDailyCount()
         initMenu()
         setDailyBackgroundColor(getDailyBackgroundColorIndex())
         setDailyBackgroundColorIndex()
-        initViewModel()
         checkedTitleLength()
     }
 
@@ -255,6 +288,80 @@ class EditDailyActivity : AppCompatActivity() {
         getDailySinglePassword().also { this.singlePassword = it }
 
     /**
+     * 获取日记心情
+     */
+    private fun getDailyMoodIndex() = intent.getIntExtra("mood_index", 0)
+
+    /**
+     * 设置日记心情
+     */
+    private fun setDailyMoodIndex() {
+        getDailyMoodIndex().let {
+            if (it == 0) activityEditDailyBinding.ivMood.visibility =
+                View.GONE else {
+                activityEditDailyBinding.ivMood.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        this,
+                        ConstUtil.moodList[getDailyMoodIndex().minus(1)]
+                    )
+                )
+                activityEditDailyBinding.ivMood.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    /**
+     * 获取日记心情
+     */
+    private fun getDailyWeatherIndex() = intent.getIntExtra("weather_index", 0)
+
+    /**
+     * 设置日记心情
+     */
+    private fun setDailyWeatherIndex() {
+        getDailyWeatherIndex().let {
+            if (it == 0) activityEditDailyBinding.ivWeather.visibility = View.GONE else {
+                activityEditDailyBinding.ivWeather.visibility = View.VISIBLE
+                activityEditDailyBinding.ivWeather.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        this,
+                        ConstUtil.weatherList[getDailyWeatherIndex().minus(1)]
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * 获取日记Uuid
+     */
+    private fun getDailyUuid() = intent.getStringExtra("daily_uuid")
+
+    /**
+     * 设置日记Uuid
+     */
+    private fun setDailyUuid() = getDailyUuid()?.let { dailyUuid = it }
+
+    /**
+     * 获取日记图片路径
+     */
+    private fun getDailyImage() {
+        dailyViewModel.queryDailyImageByUuid(getDailyUuid().toString()).observe(
+            this
+        ) { dailyImageList ->
+            dailyImageList.forEach { dailyImageEntity ->
+                if (FileUtil().checkFileExists(dailyImageEntity.imagePath.toString())) {
+                    if (tempImageListIndex == 0) {
+                        tempImageList.add(dailyImageEntity.imagePath.toString())
+                    }
+                    imageList.add(dailyImageEntity.imagePath.toString())
+                }
+                displayImage()
+            }
+        }
+    }
+
+    /**
      * 初始化菜单
      */
     private fun initMenu() {
@@ -323,21 +430,23 @@ class EditDailyActivity : AppCompatActivity() {
 
                     R.id.item_delete -> {
                         MaterialAlertDialogBuilder(this@EditDailyActivity)
-                            .setMessage("确定永久删除这篇日记吗？")
+                            .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                             .setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                                dailyViewModel.deletePathImageByDailyUuid(dailyUuid)
                                 dailyViewModel.deleteDaily(
                                     DailyEntity(
                                         id = getDailyId(),
                                         title = activityEditDailyBinding.inputTitle.text.toString(),
                                         content = activityEditDailyBinding.inputContent.text.toString(),
                                         dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
-                                        backgroundColorIndex = backgroundColorIndex
+                                        backgroundColorIndex = backgroundColorIndex,
+                                        dailyUUID = dailyUuid
                                     )
                                 )
                                 isSystemExit = false
                                 finish()
                             }
-                            .setNegativeButton("取消", null)
+                            .setNegativeButton(getString(R.string.cancel), null)
                             .create()
                             .show()
                     }
@@ -345,7 +454,6 @@ class EditDailyActivity : AppCompatActivity() {
                     R.id.item_lock_to_on_and_un_ed -> {
                         val sharedPreferences =
                             PreferenceManager.getDefaultSharedPreferences(this@EditDailyActivity)
-                        sharedPreferences.getString("forget_password_key", "")
                         when {
                             sharedPreferences.getString("forget_password_key", "") == "" -> {
                                 val inflate =
@@ -357,9 +465,9 @@ class EditDailyActivity : AppCompatActivity() {
                                     inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
                                 val inputPassword =
                                     inflate.findViewById<TextInputEditText>(R.id.input_password)
-                                inputPasswordLayout.hint = "密钥"
+                                inputPasswordLayout.hint = getString(R.string.key)
                                 MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
-                                    setTitle("密钥")
+                                    setTitle(getString(R.string.key))
                                     setView(inflate)
                                     setPositiveButton(
                                         getString(R.string.sure),
@@ -372,13 +480,13 @@ class EditDailyActivity : AppCompatActivity() {
                                                     inputPassword.text.toString() == "" -> {
                                                         SnackbarUtil.showSnackbarShort(
                                                             activityEditDailyBinding.inputContent.rootView,
-                                                            "请先输入忘记密码时，重置密码的密钥！"
+                                                            getString(R.string.please_enter_the_key_to_reset_your_password_if_you_forget_it)
                                                         )
                                                     }
 
                                                     else -> {
                                                         MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
-                                                            setMessage("密钥设置成功，请牢记！")
+                                                            setMessage(getString(R.string.the_key_was_set_successfully_please_keep_it_in_mind))
                                                             setPositiveButton(
                                                                 getString(R.string.sure), null
                                                             )
@@ -401,7 +509,7 @@ class EditDailyActivity : AppCompatActivity() {
                                     ) { dialog, which ->
                                         SnackbarUtil.showSnackbarShort(
                                             activityEditDailyBinding.inputContent.rootView,
-                                            "请先输入忘记密码时，重置密码的密钥！"
+                                            getString(R.string.please_enter_the_key_to_reset_your_password_if_you_forget_it)
                                         )
                                     }
                                         .setCancelable(false)
@@ -448,6 +556,90 @@ class EditDailyActivity : AppCompatActivity() {
                             }
                         }
                     }
+
+                    R.id.item_mood -> {
+                        val inflate =
+                            LayoutInflater.from(this@EditDailyActivity)
+                                .inflate(R.layout.dialog_mood_layout, null)
+                        val recyclerView = inflate.findViewById<RecyclerView>(R.id.recycler_view)
+                        val gridLayoutManager = GridLayoutManager(this@EditDailyActivity, 3)
+                        recyclerView.layoutManager = gridLayoutManager
+                        val moodAdapter = MoodAdapter(this@EditDailyActivity)
+                        recyclerView.adapter = moodAdapter
+                        val dialog: AlertDialog?
+                        MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
+                            setTitle(
+                                getString(R.string.mood)
+                            )
+                            setView(inflate)
+                            setPositiveButton(getString(R.string.cancel), null)
+                            create()
+                            dialog = show()
+                        }
+                        moodAdapter.setOnItemClickListener(object : OnItemClickListener {
+                            override fun onItemClick(position: Int) {
+                                if (position == ConstUtil.moodList.size - 1) {
+                                    moodIndex = 0
+                                    activityEditDailyBinding.ivMood.visibility = View.GONE
+                                } else {
+                                    activityEditDailyBinding.ivMood.setImageDrawable(
+                                        ContextCompat.getDrawable(
+                                            this@EditDailyActivity,
+                                            ConstUtil.moodList[position]
+                                        )
+                                    )
+                                    moodIndex = position + 1
+                                    activityEditDailyBinding.ivMood.visibility = View.VISIBLE
+                                }
+                                dialog?.dismiss()
+                            }
+
+                        })
+                    }
+
+                    R.id.item_weather -> {
+                        val inflate = LayoutInflater.from(this@EditDailyActivity)
+                            .inflate(R.layout.dialog_weather_layout, null)
+                        val recyclerView = inflate.findViewById<RecyclerView>(R.id.recycler_view)
+                        val gridLayoutManager = GridLayoutManager(this@EditDailyActivity, 3)
+                        recyclerView.layoutManager = gridLayoutManager
+                        val weatherAdapter = WeatherAdapter(this@EditDailyActivity)
+                        recyclerView.adapter = weatherAdapter
+                        val dialog: AlertDialog
+                        MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
+                            setTitle(getString(R.string.weather))
+                            setView(inflate)
+                            setPositiveButton(getString(R.string.cancel), null)
+                            create()
+                            dialog = show()
+                        }
+                        weatherAdapter.setOnItemClickListener(object : OnItemClickListener {
+                            override fun onItemClick(position: Int) {
+                                if (position == ConstUtil.weatherList.size - 1) {
+                                    activityEditDailyBinding.ivWeather.visibility = View.GONE
+                                } else {
+                                    activityEditDailyBinding.ivWeather.visibility = View.VISIBLE
+                                    activityEditDailyBinding.ivWeather.setImageDrawable(
+                                        ContextCompat.getDrawable(
+                                            this@EditDailyActivity,
+                                            ConstUtil.weatherList[position]
+                                        )
+                                    )
+                                    weatherIndex = position.plus(1)
+                                }
+                                dialog.dismiss()
+                            }
+
+                        })
+                    }
+
+                    R.id.item_add_image -> {
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                            setType("image/*")
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addImageLauncher.launch(intent)
+                    }
                 }
 
                 return true
@@ -457,80 +649,143 @@ class EditDailyActivity : AppCompatActivity() {
     }
 
     /**
+     * 添加图片启动器
+     */
+    private val addImageLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+        object : ActivityResultCallback<ActivityResult> {
+            override fun onActivityResult(result: ActivityResult) {
+                if (result.resultCode != Activity.RESULT_OK) return
+                val data = result.data ?: return
+                val uri = data.data ?: return
+                val copyImageToMyAppDir = CopyUtil.copyImageToMyAppDir(this@EditDailyActivity, uri)
+                imageList.add(copyImageToMyAppDir)
+            }
+        })
+
+    /**
      * 判断日记是否为空
      */
     private fun isDailyNullOrEquals() {
         // 如果文本都为空，则直接退出
-        if (activityEditDailyBinding.inputTitle.text!!.trim()
-                .isEmpty() && activityEditDailyBinding.inputContent.text!!.trim()
-                .isEmpty()
-        ) {
+        if (contentIsNull()) {
             isSystemExit = false
+            LogUtil.d("", "inputTitle")
             finish()
         } else {
-            // 当前内容与原内容进行对比
-            if (Objects.equals(
-                    activityEditDailyBinding.inputTitle.text.toString(),
-                    getDailyTitle()
-                ) && Objects.equals(
-                    activityEditDailyBinding.inputContent.text.toString(),
-                    getDailyContent()
-                ) && backgroundColorIndex == getDailyBackgroundColorIndex()
-                && Objects.equals(singlePassword, getDailySinglePassword())
-            ) {
+            if (originalAllContentEqualsCurrentContent()) {
+                LogUtil.d("", "weatherIndex")
                 finish()
             } else {
                 MaterialAlertDialogBuilder(this@EditDailyActivity)
-                    .setMessage("是否保存这篇日记？")
-                    .setPositiveButton("保存") { dialog, which ->
+                    .setMessage(getString(R.string.do_you_save_this_diary))
+                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
                         isSystemExit = false
                         saveDaily()
                     }
-                    .setNegativeButton("取消") { dialog, which ->
+                    .setNegativeButton(getString(R.string.cancel)) { dialog, which ->
                         isSystemExit = false
+                        notSaveToDeleteAppImage()
                         finish()
                     }
                     .create()
                     .show()
+
             }
         }
 
     }
 
     /**
+     * 判断原始图片集合是否与当前图片集合相同
+     *
+     * @return 判断结果
+     */
+    private fun originalImageEqualsCurrentImage(): Boolean {
+        if (imageList.size != tempImageList.size) return false
+        imageList.toList().forEachIndexed { index, item ->
+            if (item != tempImageList.toList()[index]) return false
+        }
+        return true
+    }
+
+    /**
      * 保存日记
      */
     private fun saveDaily() {
-        when {
-            activityEditDailyBinding.inputTitle.text!!.trim()
-                .isNotEmpty() || activityEditDailyBinding.inputContent.text!!.trim()
-                .isNotEmpty() -> {
-                when {
-                    Objects.equals(
-                        activityEditDailyBinding.inputTitle.text.toString(),
-                        getDailyTitle()
-                    ) || Objects.equals(
-                        activityEditDailyBinding.inputContent.text.toString(),
-                        getDailyContent()
-                    ) || backgroundColorIndex == getDailyBackgroundColorIndex() || Objects.equals(
-                        singlePassword,
-                        getDailySinglePassword()
-                    ) -> {
-                        dailyViewModel.updateDaily(
-                            DailyEntity(
-                                id = getDailyId(),
-                                title = activityEditDailyBinding.inputTitle.text.toString(),
-                                content = activityEditDailyBinding.inputContent.text.toString(),
-                                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
-                                backgroundColorIndex = backgroundColorIndex,
-                                singlePassword = HashUtil.hashSHA256(singlePassword.toString())
-                            )
-                        )
-                        finish()
-                    }
-                }
+        dailyViewModel.updateDaily(
+            DailyEntity(
+                id = getDailyId(),
+                title = activityEditDailyBinding.inputTitle.text.toString(),
+                content = activityEditDailyBinding.inputContent.text.toString(),
+                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
+                backgroundColorIndex = backgroundColorIndex,
+                singlePassword = HashUtil.hashSHA256(singlePassword.toString()),
+                moodIndex = moodIndex,
+                weatherIndex = weatherIndex,
+                dailyUUID = dailyUuid
+            )
+        )
+        if (findMissingElements().isNotEmpty()) {
+            findMissingElements().forEach {
+                dailyViewModel.deleteSelectPathImage(it)
             }
         }
+
+        dailyViewModel.queryDailyImageByUuid(dailyUuid).observe(this) { dailyImageList ->
+            val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
+            val imagesToInsert = imageList.filter { it !in existingImagePaths }
+            if (imagesToInsert.isNotEmpty()) {
+                dailyViewModel.insertDailyImagePath(dailyUuid, imagesToInsert)
+            }
+        }
+        dailyViewModel.queryDailyImageByUuid(dailyUuid).removeObservers(this)
+        finish()
+    }
+
+    /**
+     * 查询当前图片集合中与原始图片集合的不同元素
+     */
+    private fun findMissingElements(): Set<String> {
+        return tempImageList.toSet().subtract(imageList.toSet())
+    }
+
+    /**
+     * 不保存则删除应用私有目录下对应的图片
+     */
+    private fun notSaveToDeleteAppImage() {
+        val notSaveImage = imageList.filterNot { it in tempImageList }
+        notSaveImage.forEach { notList ->
+            CoroutineScope(Dispatchers.IO).launch {
+                FileUtil().deleteFile(notList)
+            }
+        }
+    }
+
+
+    /**
+     * 判断主要内容是否为空
+     */
+    private fun contentIsNull(): Boolean {
+        return activityEditDailyBinding.inputTitle.text!!.trim()
+            .isEmpty() && activityEditDailyBinding.inputContent.text!!.trim()
+            .isEmpty() && imageList.isEmpty()
+    }
+
+    /**
+     * 判断所有原始与当前所有内容相同
+     */
+    private fun originalAllContentEqualsCurrentContent(): Boolean {
+        return Objects.equals(
+            activityEditDailyBinding.inputTitle.text.toString(),
+            getDailyTitle()
+        ) && Objects.equals(
+            activityEditDailyBinding.inputContent.text.toString(),
+            getDailyContent()
+        ) && backgroundColorIndex == getDailyBackgroundColorIndex() && Objects.equals(
+            singlePassword,
+            getDailySinglePassword()
+        ) && moodIndex == getDailyMoodIndex() && weatherIndex == getDailyWeatherIndex() && originalImageEqualsCurrentImage()
     }
 
     /**
@@ -568,18 +823,57 @@ class EditDailyActivity : AppCompatActivity() {
         isSystemExit = true
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         val autoSave = sharedPreferences.getBoolean("switch_preference_auto_save", true)
-        if (isSystemExit) {
-            if (autoSave) {
-                saveDaily()
+        if (isSystemExit && autoSave && !contentIsNull() && !originalAllContentEqualsCurrentContent()) {
+            sharedPreferences.edit {
+                putLong("switch_preference_auto_save_id", getDailyId())
             }
+            autoSaveDailySharedPreferences(
+                this, 1,
+                activityEditDailyBinding.inputTitle.text.toString(),
+                activityEditDailyBinding.inputContent.text.toString(),
+                DateUtil.dateStringToDate(
+                    activityEditDailyBinding.tvDateTime.text.toString(),
+                    2
+                ),
+                backgroundColorIndex,
+                singlePassword.toString(), moodIndex, weatherIndex, dailyUuid, imageList
+            )
         }
     }
 
     companion object {
         var isSystemExit = false
+    }
+
+    /**
+     * 显示图片
+     */
+    private fun displayImage() {
+        if (imageList.isNotEmpty()) {
+            val adapter =
+                DailyImagePagerAdapter(imageList.toList()) { position ->
+                    val intent = Intent(
+                        this,
+                        LookDailyImageActivity::class.java
+                    ).apply {
+                        putExtra("look_daily_image_position", position)
+                        putExtra("look_daily_image_uuid", dailyUuid)
+                    }
+                    startActivity(intent)
+                }
+            activityEditDailyBinding.viewPager.adapter = adapter
+            activityEditDailyBinding.viewPager.visibility = View.VISIBLE
+        } else {
+            activityEditDailyBinding.viewPager.visibility = View.GONE
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        displayImage()
     }
 }

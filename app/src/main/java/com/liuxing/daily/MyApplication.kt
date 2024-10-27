@@ -1,9 +1,12 @@
 package com.liuxing.daily
 
 import android.app.Application
-import android.content.Intent
-import android.widget.Toast
-import com.liuxing.daily.service.MyService
+import android.content.SharedPreferences
+import android.os.Environment
+import android.util.Log
+import androidx.preference.PreferenceManager
+import com.liuxing.daily.util.ThemeModeUtil
+import java.io.File
 
 /**
  * Author：流星
@@ -21,8 +24,18 @@ class MyApplication : Application() {
      * 此致
      */
 
+    private var sharedPreferences: SharedPreferences? = null
+
     override fun onCreate() {
         super.onCreate()
-        startService(Intent(this, MyService::class.java))
+        initSharePreferences()
+        ThemeModeUtil.setThemeMode(sharedPreferences!!.getInt("theme_mode_preference", 0))
+        this.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     }
+
+    /**
+     * 初始化偏好
+     */
+    private fun initSharePreferences() =
+        PreferenceManager.getDefaultSharedPreferences(this).also { sharedPreferences = it }
 }

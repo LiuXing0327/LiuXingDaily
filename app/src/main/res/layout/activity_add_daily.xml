@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
@@ -19,6 +18,12 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -32,7 +37,6 @@
             android:background="@android:color/transparent"
             android:hint="@string/title"
             android:textSize="@dimen/sp_34" />
-
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -61,6 +65,23 @@
             android:text="0字"
             android:textSize="@dimen/sp_14" />
 
+        <ImageView
+            android:id="@+id/iv_mood"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="@dimen/dp_8"
+            android:src="@drawable/ic_happy"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/iv_weather"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/dp_8"
+            android:src="@drawable/baseline_wb_sunny_24"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <com.google.android.material.divider.MaterialDivider
@@ -81,7 +102,7 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_weight="1"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="0dp"
                 android:layout_marginTop="@dimen/dp_4">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -92,7 +113,6 @@
                     android:gravity="start"
                     android:hint="@string/content"
                     android:textSize="@dimen/sp_18" />
-
 
             </com.google.android.material.textfield.TextInputLayout>
 

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">醒悟</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title">Title</string>
+    <string name="daily">Diary</string>
+    <string name="change_color">Change Color</string>
+    <string name="sure">Confirm</string>
+    <string name="search">Search</string>
+    <string name="content">Content</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="about">About</string>
+    <string name="checking_for_new_version">Checking for new version</string>
+    <string name="new_version">New Version</string>
+    <string name="it_is_the_latest_version">It is the latest version</string>
+    <string name="cancel">Cancel</string>
+    <string name="failed_to_check_for_updates">Failed to check for updates</string>
+    <string name="add">Add</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="settings">Preference</string>
+    <string name="update">Update</string>
+    <string name="check_update">Check for Updates</string>
+    <string name="edit">Edit</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Signature</string>
+    <string name="reply_title">Default Reply Action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync Email Periodically</string>
+    <string name="attachment_title">Download Incoming Attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails</string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+
+    <string name="format_0">yyyy年MM月dd日 HH:mm:ss</string>
+    <string name="format_1">yyyy-MM-dd HH:mm:ss</string>
+    <string name="format_2">yyyy/MM/dd HH:mm:ss</string>
+    <string name="calendar">Calendar</string>
+    <string name="my_email">1926879119@qq.com</string>
+    <string name="locked">Locked</string>
+    <string name="m_copy">Copy</string>
+    <string name="unlocked">Unlocked</string>
+    <string name="copy_successful">Copy successful.</string>
+    <string name="forgot_password">Forgot Password</string>
+    <string name="mood">Mood</string>
+    <string name="happy">Happy</string>
+    <string name="not_happy">Not Happy</string>
+    <string name="quiet">Calm</string>
+    <string name="not_add">Do Not Add</string>
+    <string name="angry">Angry</string>
+    <string name="tired">Tired</string>
+    <string name="weather">Weather</string>
+    <string name="sunny">Sunny</string>
+    <string name="add_image">Add Image</string>
+    <string name="author_name">Author: 流星</string>
+    <string name="current_version">Current version: %1$s</string>
+    <string name="qq_920994447">QQ Group: 920994447</string>
+    <string name="a_href_a"><![CDATA[<a href=\'%1$s\'>Source Code：%2$s</a>]]></string>
+    <string name="special_thanks">Special Thanks</string>
+    <string name="do_you_save_this_diary">Do you want to save this diary?</string>
+    <string name="word">Words</string>
+    <string name="entries">Entries</string>
+    <string name="key">Key</string>
+    <string name="please_enter_the_key_to_reset_your_password_if_you_forget_it">Please enter the key to reset your password if you forget it!</string>
+    <string name="the_key_was_set_successfully_please_keep_it_in_mind">Key set successfully, please remember it!</string>
+    <string name="are_you_sure_you_want_to_delete_this_journal_permanently">Are you sure you want to delete this journal permanently?</string>
+    <string name="please_unlock_it_first_to_verify_your_identity">Please unlock it first to verify your identity.</string>
+    <string name="wrong_password">Incorrect password.</string>
+    <string name="the_password_has_been_cleared">The password has been cleared.</string>
+    <string name="the_key_is_incorrect">Incorrect key.</string>
+    <string name="please_set_key">Please set the key first.</string>
+    <string name="import_failed">Import Failed</string>
+    <string name="update_log">Update Log</string>
+    <string name="import_s">Import</string>
+    <string name="export_all">Export All</string>
+    <string name="clear">Clear All</string>
+    <string name="sort">Sort</string>
+    <string name="by_time_newest_to_oldest">By Time (Newest to Oldest)</string>
+    <string name="by_time_oldest_to_newest">By Time (Oldest to Newest)</string>
+    <string name="auto_save">Auto-Save</string>
+    <string name="classifications_are_displayed_by_year_month">Classifications displayed by year and month</string>
+    <string name="ui">Interface</string>
+    <string name="theme_mode">Theme Mode</string>
+    <string name="follow_the_system">Follow System</string>
+    <string name="light_mode">Light Mode</string>
+    <string name="night_node">Dark Mode</string>
+    <string name="Sort_by_by_date">Sort By Date</string>
+    <string name="from_new_to_old">From New to Old</string>
+    <string name="from_old_to_new">From Old to New</string>
+    <string name="language">Language</string>
+    <string name="sad">Sad</string>
+    <string name="agitated">Agitated</string>
+    <string name="overcast">Overcast</string>
+    <string name="cloudy">Cloudy</string>
+    <string name="snow_day">Snow day</string>
+    <string name="thunderstorm">Thunderstorm</string>
+    <string name="rain_day">Rain day</string>
+    <string name="gale">Gale</string>
+    <string name="haze">Haze</string>
+</resources>

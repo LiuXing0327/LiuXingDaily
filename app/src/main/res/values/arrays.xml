@@ -11,4 +11,16 @@
         <item>@string/format_1</item>
         <item>@string/format_2</item>
     </string-array>
+
+    <string-array name="theme_mode_entries">
+        <item>@string/follow_the_system</item>
+        <item>@string/light_mode</item>
+        <item>@string/night_node</item>
+    </string-array>
+
+    <string-array name="language_entries">
+        <item>@string/follow_the_system</item>
+        <item>@string/chinese_simplified</item>
+        <item>@string/english</item>
+    </string-array>
 </resources>
