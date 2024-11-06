@@ -1,7 +1,6 @@
 package com.liuxing.daily.ui.main
 
 import android.app.Activity
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
@@ -46,6 +45,7 @@ import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
+import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.VersionUtil
 import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -65,6 +65,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.io.OutputStreamWriter
+import java.util.UUID
 
 
 class MainActivity : AppCompatActivity() {
@@ -76,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var navController: NavController
     private var sharedPreferences: SharedPreferences? = null
+    private var isUpdating = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,11 +131,11 @@ class MainActivity : AppCompatActivity() {
             val autoSaveTitle = sharedPreferences.getString("switch_preference_auto_save_title", "")
             val autoSaveContent =
                 sharedPreferences.getString("switch_preference_auto_save_content", "")
-            val autoSaveImagePathList = sharedPreferences.getStringSet(
-                "switch_preference_auto_save_image_path_list",
-                setOf()
+            val autoSaveImageIsNotNull = sharedPreferences.getBoolean(
+                "switch_preference_auto_save_image_list_not_null",
+                false
             )
-            if (autoSaveTitle!!.isNotEmpty() || autoSaveContent!!.isNotEmpty() || autoSaveImagePathList!!.isNotEmpty()) {
+            if (autoSaveTitle!!.isNotEmpty() || autoSaveContent!!.isNotEmpty() || autoSaveImageIsNotNull) {
                 val insertUpdate =
                     sharedPreferences.getInt("switch_preference_auto_save_is_insert_or_update", 0)
                 val autoSaveDateTime =
@@ -181,19 +183,12 @@ class MainActivity : AppCompatActivity() {
                                 dailyUUID = autoSaveDailyUuid
                             )
                         )
-
-                        if (autoSaveDailyUuid != null && autoSaveImagePathList!!.isNotEmpty()) {
-                            dailyViewModel.insertDailyImagePath(
-                                dailyUUID = autoSaveDailyUuid,
-                                imagePathList = autoSaveImagePathList.toList()
-                            )
-                        }
                     }
                 }
 
                 // 将自动保存的数据清空
                 SharedPreferencesUtil.autoSaveDailySharedPreferences(
-                    this, 1, "", "", 0, 0, "", 0, 0, "", mutableSetOf(),
+                    this, 1, "", "", 0, 0, "", 0, 0, "", false,
                 )
             }
         }
@@ -226,7 +221,11 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(activityMainBinding.searchBar)
         activityMainBinding.searchView.setupWithSearchBar(activityMainBinding.searchBar)
         appBarConfiguration =
-            AppBarConfiguration.Builder(R.id.dailyFragment, R.id.calendarQueryDailyFragment)
+            AppBarConfiguration.Builder(
+                R.id.dailyFragment,
+                R.id.calendarQueryDailyFragment,
+                R.id.recyclerBinFragment
+            )
                 .setOpenableLayout(activityMainBinding.main).build()
     }
 
@@ -464,22 +463,70 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.item_clear -> {
-                    MaterialAlertDialogBuilder(this).apply {
-                        setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                        setPositiveButton(getString(R.string.sure),
-                            object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, which: Int) {
-                                    dailyList.forEach { dailyEntity ->
-                                        dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
-                                    }
-                                    dailyViewModel.clearClearImagePath()
-                                    dailyViewModel.clearDaily()
+                    val moveInRecyclerBin =
+                        sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
+                    if (moveInRecyclerBin) {
+                        MaterialAlertDialogBuilder(this).apply {
+                            setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
+                            setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                                dailyList.forEach { dailyEntity ->
+                                    dailyViewModel.updateDaily(
+                                        DailyEntity(
+                                            dailyEntity.id,
+                                            dailyEntity.title,
+                                            dailyEntity.content,
+                                            dailyEntity.dateTime,
+                                            dailyEntity.backgroundColorIndex,
+                                            dailyEntity.singlePassword,
+                                            dailyEntity.moodIndex,
+                                            dailyEntity.weatherIndex,
+                                            dailyEntity.dailyUUID,
+                                            true
+                                        )
+                                    )
                                 }
+                            }
+                                .setNegativeButton(getString(R.string.cancel), null)
+                                .create()
+                                .show()
+                        }
 
-                            })
-                        setNegativeButton(getString(R.string.cancel), null)
-                        create()
-                        show()
+                    } else {
+                        MaterialAlertDialogBuilder(this).apply {
+                            setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                            setPositiveButton(getString(R.string.delete)) { _, _ ->
+                                dailyList.forEach { dailyEntity ->
+                                    dailyEntity.dailyUUID?.let {
+                                        dailyViewModel.deletePathImageByDailyUuid(
+                                            it
+                                        )
+                                    }
+                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                                    dailyViewModel.deleteDaily(dailyEntity)
+                                }
+                            }
+                            setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
+                                dailyList.forEach { dailyEntity ->
+                                    dailyViewModel.updateDaily(
+                                        DailyEntity(
+                                            dailyEntity.id,
+                                            dailyEntity.title,
+                                            dailyEntity.content,
+                                            dailyEntity.dateTime,
+                                            dailyEntity.backgroundColorIndex,
+                                            dailyEntity.singlePassword,
+                                            dailyEntity.moodIndex,
+                                            dailyEntity.weatherIndex,
+                                            dailyEntity.dailyUUID,
+                                            true
+                                        )
+                                    )
+                                }
+                            }
+                            setNeutralButton(getString(R.string.cancel), null)
+                            create()
+                            show()
+                        }
                     }
                 }
 
@@ -602,17 +649,41 @@ class MainActivity : AppCompatActivity() {
      * 设置日记数据
      */
     private fun setDailyData() {
+        val headerView = activityMainBinding.navigationView.getHeaderView(0)
+        val tvDailyCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_count)
+        val tvDailyTextCount =
+            headerView.findViewById<MaterialTextView>(R.id.tv_daily_text_count)
+        val tvDailyImageCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_image_count)
+        dailyViewModel.queryImageCount().observe(this) {
+            tvDailyImageCount.text = "${it}张"
+        }
+
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 dailyList = value
                 var dailyTextSize = 0
-                val headerView = activityMainBinding.navigationView.getHeaderView(0)
-                val tvDailyCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_count)
-                val tvDailyTextCount =
-                    headerView.findViewById<MaterialTextView>(R.id.tv_daily_text_count)
+                if (isUpdating) return
                 val tempDailyList = dailyList
-                tempDailyList.forEach { dailyEntity: DailyEntity ->
-                    dailyTextSize += dailyEntity.title!!.length.plus(dailyEntity.content!!.length)
+                tempDailyList.forEach { dailyEntity ->
+                    dailyTextSize += TextUtil.getWordCount(dailyEntity.title!!.plus(dailyEntity.content!!))
+                    // 如果dailyUUID是空的
+                    if (dailyEntity.dailyUUID.isNullOrEmpty()) {
+                        isUpdating = true // 开始更新
+                        val updatedEntity = DailyEntity(
+                            dailyEntity.id,
+                            dailyEntity.title,
+                            dailyEntity.content,
+                            dailyEntity.dateTime,
+                            dailyEntity.backgroundColorIndex,
+                            dailyEntity.singlePassword,
+                            dailyEntity.moodIndex,
+                            dailyEntity.weatherIndex,
+                            UUID.randomUUID().toString(),
+                            false
+                        )
+                        dailyViewModel.updateDaily(updatedEntity)
+                        isUpdating = false // 更新完成
+                    }
                 }
                 tvDailyCount.text = "${dailyList.size}${getString(R.string.entries)}"
                 tvDailyTextCount.text = "${dailyTextSize}${getString(R.string.word)}"
@@ -665,21 +736,43 @@ class MainActivity : AppCompatActivity() {
     private fun setSearchRecyclerViewItemOnLongClick(){
         dailySearchAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
             override fun onItemLongOnClick(position: Int) {
+                val moveInRecyclerBin =
+                    sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
                 val dailyEntity = dailyList[position]
-                MaterialAlertDialogBuilder(this@MainActivity)
-                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                        dailyEntity.dailyUUID?.let {
-                            dailyViewModel.deletePathImageByDailyUuid(
-                                it
+                MaterialAlertDialogBuilder(this@MainActivity).apply {
+                    if (moveInRecyclerBin) setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin)) else setMessage(
+                        getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently)
+                    )
+                    setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        if (moveInRecyclerBin) {
+                            dailyViewModel.updateDaily(
+                                DailyEntity(
+                                    dailyEntity.id,
+                                    dailyEntity.title,
+                                    dailyEntity.content,
+                                    dailyEntity.dateTime,
+                                    dailyEntity.backgroundColorIndex,
+                                    dailyEntity.singlePassword,
+                                    dailyEntity.moodIndex,
+                                    dailyEntity.weatherIndex,
+                                    dailyEntity.dailyUUID,
+                                    true
+                                )
                             )
+                        } else {
+                            dailyEntity.dailyUUID?.let {
+                                dailyViewModel.deletePathImageByDailyUuid(
+                                    it
+                                )
+                            }
+                            dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                            dailyViewModel.deleteDaily(dailyEntity)
                         }
-                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                        dailyViewModel.deleteDaily(dailyEntity)
                     }
-                    .setNegativeButton(getString(R.string.cancel), null)
-                    .create()
-                    .show()
+                    setNegativeButton(getString(R.string.cancel), null)
+                    create()
+                    show()
+                }
             }
         })
     }

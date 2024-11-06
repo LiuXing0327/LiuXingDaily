@@ -1,7 +1,9 @@
 package com.liuxing.daily.ui.daily
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,7 +21,6 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
-import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 
@@ -43,6 +44,7 @@ class DailyFragment : Fragment() {
     private lateinit var queryAllDaily: LiveData<List<DailyEntity>>
     private lateinit var dailyAdapter: DailyAdapter
     private var dailyList: List<DailyEntity> = ArrayList()
+    private var sharedPreferences: SharedPreferences? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +91,7 @@ class DailyFragment : Fragment() {
      */
     private fun initData() {
         initViewModel()
+        initSharePreferences()
         initRecyclerView()
     }
 
@@ -146,21 +149,71 @@ class DailyFragment : Fragment() {
     private fun setRecyclerViewItemOnLongClick(){
         dailyAdapter.setOnItemLongClickListener(object : OnItemLongClickListener{
             override fun onItemLongOnClick(position: Int) {
-                val dailyEntity = dailyList[position]
-                MaterialAlertDialogBuilder(requireContext())
-                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                        dailyEntity.dailyUUID?.let {
-                            dailyViewModel.deletePathImageByDailyUuid(
-                                it
+                val moveInRecyclerBin =
+                    sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
+                val dailyEntity = dailyList.filter { !it.isDeleted }[position]
+                Log.d("TAG", "onItemLongOnClick: ${dailyEntity.id}\n${dailyEntity.content}")
+                if (moveInRecyclerBin) {
+                    MaterialAlertDialogBuilder(requireContext()).apply {
+                        setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
+                        setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                            dailyViewModel.updateDaily(
+                                DailyEntity(
+                                    dailyEntity.id,
+                                    dailyEntity.title,
+                                    dailyEntity.content,
+                                    dailyEntity.dateTime,
+                                    dailyEntity.backgroundColorIndex,
+                                    dailyEntity.singlePassword,
+                                    dailyEntity.moodIndex,
+                                    dailyEntity.weatherIndex,
+                                    dailyEntity.dailyUUID,
+                                    true
+                                )
                             )
                         }
-                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                        dailyViewModel.deleteDaily(dailyEntity)
+                            .setNegativeButton(getString(R.string.cancel), null)
+                            .create()
+                            .show()
                     }
-                    .setNegativeButton(getString(R.string.cancel), null)
-                    .create()
-                    .show()
+
+                } else {
+                    MaterialAlertDialogBuilder(requireContext()).apply {
+                        setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                        setPositiveButton(getString(R.string.delete)) { _, _ ->
+                            dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
+                                .observe(viewLifecycleOwner) { dailyImageList ->
+                                    val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
+                                    if (existingImagePaths.isNotEmpty()) {
+                                        val list = existingImagePaths.toList()
+                                        list.forEach {
+                                            dailyViewModel.deleteSelectPathImage(it!!)
+                                        }
+                                    }
+                                    dailyViewModel.deleteDaily(dailyEntity)
+                                }
+                        }
+                        setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
+                            dailyViewModel.updateDaily(
+                                DailyEntity(
+                                    dailyEntity.id,
+                                    dailyEntity.title,
+                                    dailyEntity.content,
+                                    dailyEntity.dateTime,
+                                    dailyEntity.backgroundColorIndex,
+                                    dailyEntity.singlePassword,
+                                    dailyEntity.moodIndex,
+                                    dailyEntity.weatherIndex,
+                                    dailyEntity.dailyUUID,
+                                    true
+                                )
+                            )
+                        }
+                        setNeutralButton(getString(R.string.cancel), null)
+                        create()
+                        show()
+                    }
+                }
             }
         })
     }
@@ -170,6 +223,13 @@ class DailyFragment : Fragment() {
      */
     private fun initViewModel() {
         dailyViewModel = ViewModelProvider(this)[DailyViewModel::class.java]
+    }
+
+    /**
+     * 初始化偏好
+     */
+    private fun initSharePreferences() {
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
     }
 
     override fun onResume() {

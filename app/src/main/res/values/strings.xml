@@ -71,6 +71,7 @@
     <string name="please_enter_the_key_to_reset_your_password_if_you_forget_it">请先输入忘记密码时，重置密码的密钥！</string>
     <string name="the_key_was_set_successfully_please_keep_it_in_mind">密钥设置成功，请牢记！</string>
     <string name="are_you_sure_you_want_to_delete_this_journal_permanently">确定永久删除这篇日记吗？</string>
+    <string name="are_you_sure_this_journal_is_moving_to_the_recycle_bin">确定这篇日记移入回收站吗？</string>
     <string name="please_unlock_it_first_to_verify_your_identity">请先解锁以验证您的身份。</string>
     <string name="wrong_password">密码错误。</string>
     <string name="the_password_has_been_cleared">密码已清除。</string>
@@ -106,4 +107,8 @@
     <string name="rain_day">雨天</string>
     <string name="gale">大风</string>
     <string name="haze">雾霾</string>
+    <string name="recycler_bin">回收站</string>
+    <string name="add_failed">添加失败</string>
+    <string name="restore">还原</string>
+    <string name="do_you_want_to_delete_or_restore_the_daily">你想要删除还是还原这篇日记？</string>
 </resources>

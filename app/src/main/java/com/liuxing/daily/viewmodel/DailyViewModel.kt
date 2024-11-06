@@ -64,4 +64,5 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun queryDailyImageByUuidToList(dailyUuid: String): List<DailyImageEntity> =
         dailyRepository.queryDailyImageByUuidToList(dailyUuid)
 
+    fun queryImageCount(): LiveData<Int> = dailyRepository.queryImageCount()
 }

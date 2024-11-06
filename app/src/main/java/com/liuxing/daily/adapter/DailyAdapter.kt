@@ -1,14 +1,12 @@
 package com.liuxing.daily.adapter
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -16,7 +14,6 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
-import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.util.ConstUtil
@@ -24,9 +21,9 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
-import java.util.Objects
 
 class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -44,14 +41,18 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         viewLifecycleOwner: LifecycleOwner
     ) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)!!
+        val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
+
         this.dailyViewModel = dailyViewModel
         this.viewLifecycleOwner = viewLifecycleOwner
-        val sortedByDescending = dailyList.withIndex().sortedByDescending { it.value.dateTime }
+
+        // 过滤被回收的数据
+        val filteredList = dailyList.filter { !it.isDeleted }
+        val sortedByDescending = filteredList.withIndex().sortedByDescending { it.value.dateTime }
+
         val groupedMap = when (currentSortIndex) {
             1 -> sortedByDescending.sortedBy { it.value.dateTime }
                 .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
-
             else -> sortedByDescending.sortedByDescending { it.value.dateTime }
                 .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
         }
@@ -65,39 +66,25 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         val resultList = mutableListOf<Any>()
         toSortedMap.forEach { (yearMonth, list) ->
-            val headerBoolean = sharedPreferences.getBoolean(
-                "switch_preference_header_display",
-                true
-            )
-            headerYearMonth = headerBoolean
+            val headerBoolean =
+                sharedPreferences.getBoolean("switch_preference_header_display", true)
             // 判断设置开关添加 -> 年月 ?: 月
-            when {
-                headerBoolean -> {
-                    resultList.add(yearMonth)
-                }
-
-                else -> {
-                    when {
-                        Objects.equals(yearMonth.substring(5, 6), "0") -> {
-                            resultList.add(yearMonth.substring(6, 7))
-                        }
-
-                        else -> {
-                            resultList.add(yearMonth.substring(5, 7))
-                        }
-                    }
-                }
+            if (headerBoolean) {
+                resultList.add(yearMonth)
+            } else {
+                val month = yearMonth.substring(5, 7).toInt()
+                resultList.add(month.toString())
             }
-            // 添加当天的 DailyEntity 及其索引
+
+            // 根据排序方式添加 DailyEntity 及其索引
             when (currentSortIndex) {
                 1 -> resultList.addAll(list.sortedBy { it.value.dateTime }
                     .map { Pair(it.value, it.index) })
-
                 else -> resultList.addAll(list.sortedByDescending { it.value.dateTime }
                     .map { Pair(it.value, it.index) })
             }
-
         }
+
         categorizedList = resultList
         notifyDataSetChanged()
     }
@@ -123,26 +110,23 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             holder.tvDateHeader.text = categorizedList[position] as String
         } else if (holder is DailyViewHolder) {
             val (dailyEntity, originalIndex) = categorizedList[position] as Pair<DailyEntity, Int>
-            if (dailyEntity.title.equals("")) {
-                holder.tvTitle.visibility = View.GONE
+            holder.tvTitle.visibility = if (dailyEntity.title.equals("")) {
+                View.GONE
             } else {
-                holder.tvTitle.visibility = View.VISIBLE
+                View.VISIBLE
             }
-            if (dailyEntity.content.equals("")) {
-                holder.tvContent.visibility = View.GONE
+            holder.tvContent.visibility = if (dailyEntity.content.equals("")) {
+                View.GONE
             } else {
-                holder.tvContent.visibility = View.VISIBLE
+                View.VISIBLE
             }
             if (dailyEntity.singlePassword == "" || dailyEntity.singlePassword == null) {
                 holder.tvTitle.text = dailyEntity.title
-                holder.tvContent.text = dailyEntity.content
+                holder.tvContent.text = TextUtil.replaceImageTag(dailyEntity.content!!)
             } else {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"
             }
-
-            /*            holder.tvDateTime.text =
-                            DateUtil.getDateString(2, Date(dailyEntity.dateTime!!)).substring(2, 10)*/
             holder.tvDateTime.text =
                 DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
             setBackgroundColor(dailyEntity, holder)
@@ -177,7 +161,6 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     viewLifecycleOwner
                 ) { value ->
                     if (value.isNotEmpty() && FileUtil().checkFileExists(value.first().imagePath!!)) {
-                        Glide.with(holder.imageView.context).clear(holder.imageView)
                         Glide.with(holder.imageView.context)
                             .load(value.first().imagePath)
                             .into(holder.imageView)
@@ -237,22 +220,11 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
      */
     private fun setBackgroundColor(dailyEntity: DailyEntity, holder: DailyViewHolder) {
         val backgroundColorIndex = dailyEntity.backgroundColorIndex
-        when (backgroundColorIndex) {
-            1 -> holder.cardView.setCardBackgroundColor(
-                ContextCompat.getColor(holder.cardView.context, R.color.color_2)
+        holder.cardView.setCardBackgroundColor(
+            ContextCompat.getColor(
+                holder.cardView.context,
+                ConstUtil.backgroundColorList[backgroundColorIndex!!]
             )
-
-            2 -> holder.cardView.setCardBackgroundColor(
-                ContextCompat.getColor(holder.cardView.context, R.color.color_3)
-            )
-
-            3 -> holder.cardView.setCardBackgroundColor(
-                ContextCompat.getColor(holder.cardView.context, R.color.color_4)
-            )
-
-            else -> holder.cardView.setCardBackgroundColor(
-                ContextCompat.getColor(holder.cardView.context, android.R.color.transparent)
-            )
-        }
+        )
     }
 }

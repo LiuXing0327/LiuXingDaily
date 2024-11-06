@@ -42,4 +42,6 @@ class DailyRepository(application: Application) {
         dailyDao.deletePathImageByDailyUuid(dailyUuid)
 
     suspend fun clearImagePath() = dailyDao.clearDailyImage()
+
+    fun queryImageCount(): LiveData<Int> = dailyDao.queryImageCount()
 }

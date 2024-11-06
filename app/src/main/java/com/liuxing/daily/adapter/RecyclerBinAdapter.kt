@@ -23,10 +23,12 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
+import java.util.Objects
 
-class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
     var headerYearMonth: Boolean = true
@@ -38,7 +40,6 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     fun setDailyList(
         context: Context,
         dailyList: List<DailyEntity>,
-        searchQuery: String,
         dailyViewModel: DailyViewModel,
         viewLifecycleOwner: LifecycleOwner
     ) {
@@ -49,25 +50,14 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         this.viewLifecycleOwner = viewLifecycleOwner
 
         // 过滤被回收的数据
-        val filteredList = dailyList.filter { !it.isDeleted }
+        val filteredList = dailyList.filter { it.isDeleted }
         val sortedByDescending = filteredList.withIndex().sortedByDescending { it.value.dateTime }
 
-        val mapIndexed = when (currentSortIndex) {
-            1 -> sortedByDescending.filter {
-                it.value.title!!.contains(searchQuery) || it.value.content!!.contains(
-                    searchQuery
-                )
-            }.sortedBy { it.value.dateTime }
-
-            else -> sortedByDescending.filter {
-                it.value.title!!.contains(searchQuery) || it.value.content!!.contains(
-                    searchQuery
-                )
-            }.sortedByDescending { it.value.dateTime }
-        }
-
-        val groupedMap = mapIndexed.groupBy {
-            DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7)
+        val groupedMap = when (currentSortIndex) {
+            1 -> sortedByDescending.sortedBy { it.value.dateTime }
+                .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
+            else -> sortedByDescending.sortedByDescending { it.value.dateTime }
+                .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
         }
 
         val toSortedMap = groupedMap.mapKeys { dailyEntity ->
@@ -79,9 +69,7 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         val resultList = mutableListOf<Any>()
         toSortedMap.forEach { (yearMonth, list) ->
-            val headerBoolean =
-                sharedPreferences.getBoolean("switch_preference_header_display", true)
-
+            val headerBoolean = sharedPreferences.getBoolean("switch_preference_header_display", true)
             // 判断设置开关添加 -> 年月 ?: 月
             if (headerBoolean) {
                 resultList.add(yearMonth)
@@ -94,7 +82,6 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             when (currentSortIndex) {
                 1 -> resultList.addAll(list.sortedBy { it.value.dateTime }
                     .map { Pair(it.value, it.index) })
-
                 else -> resultList.addAll(list.sortedByDescending { it.value.dateTime }
                     .map { Pair(it.value, it.index) })
             }
@@ -135,14 +122,15 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             } else {
                 View.VISIBLE
             }
-            if (dailyEntity.singlePassword.isNullOrEmpty()) {
+            if (dailyEntity.singlePassword == "" || dailyEntity.singlePassword == null) {
                 holder.tvTitle.text = dailyEntity.title
-                holder.tvContent.text = dailyEntity.content
+                holder.tvContent.text = TextUtil.replaceImageTag(dailyEntity.content!!)
             } else {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"
             }
             holder.tvDateTime.text = DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
+            setBackgroundColor(dailyEntity, holder)
             holder.ivMood.visibility =
                 if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {
                     View.GONE
@@ -167,13 +155,9 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     )
                     View.VISIBLE
                 }
-            setBackgroundColor(dailyEntity, holder)
-            if(dailyEntity.dailyUUID != null){
-                val queryDailyImageByUuid =
-                    dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
-                queryDailyImageByUuid.observe(
-                    viewLifecycleOwner,
-                    object : Observer<List<DailyImageEntity>> {
+            if (dailyEntity.dailyUUID != null) {
+                dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
+                    .observe(viewLifecycleOwner, object : Observer<List<DailyImageEntity>> {
                         override fun onChanged(value: List<DailyImageEntity>) {
                             when {
                                 value.isNotEmpty() -> {
@@ -184,12 +168,14 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                                                 .into(holder.imageView)
                                             holder.imageView.visibility = View.VISIBLE
                                         }
+
                                         else -> {
                                             dailyViewModel.deleteSelectPathImage(value.first().imagePath!!)
                                             holder.imageView.visibility = View.GONE
                                         }
                                     }
                                 }
+
                                 else -> {
                                     holder.imageView.visibility = View.GONE
                                 }
@@ -197,7 +183,7 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                         }
 
                     })
-            }else{
+            } else {
                 holder.imageView.visibility = View.GONE
             }
             // 将原始索引传递给点击事件处理
@@ -250,5 +236,4 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             )
         )
     }
-
 }

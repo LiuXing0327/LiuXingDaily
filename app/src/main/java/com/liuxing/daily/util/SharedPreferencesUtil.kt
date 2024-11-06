@@ -24,7 +24,7 @@ object SharedPreferencesUtil {
      * @param moodIndex 心情索引
      * @param weatherIndex 天气索引
      * @param dailyUuid 日记识别码
-     * @param imageList 图片集合
+     * @param imageListNotNull 图片集合不为空
      */
     fun autoSaveDailySharedPreferences(
         context: Context,
@@ -37,7 +37,7 @@ object SharedPreferencesUtil {
         moodIndex: Int,
         weatherIndex: Int,
         dailyUuid: String,
-        imageList: MutableSet<String>
+        imageListNotNull: Boolean
     ) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         sharedPreferences.edit {
@@ -65,9 +65,9 @@ object SharedPreferencesUtil {
             putInt("switch_preference_auto_save_mood_index", moodIndex)
             putInt("switch_preference_auto_save_weather_index", weatherIndex)
             putString("switch_preference_auto_save_daily_uuid", dailyUuid)
-            putStringSet(
-                "switch_preference_auto_save_image_path_list",
-                imageList.toSet()
+            putBoolean(
+                "switch_preference_auto_save_image_list_not_null",
+                imageListNotNull
             )
             apply()
         }
