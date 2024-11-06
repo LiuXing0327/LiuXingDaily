@@ -41,4 +41,12 @@ object ConstUtil {
             R.drawable.ic_haze,
             R.drawable.baseline_daily_mw_not_add_24
         )
+
+    // 日记背景颜色
+    val backgroundColorList = listOf(
+        android.R.color.transparent,
+        R.color.color_2,
+        R.color.color_3,
+        R.color.color_4
+    )
 }

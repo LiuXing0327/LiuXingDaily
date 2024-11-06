@@ -18,5 +18,14 @@
         android:id="@+id/calendarQueryDailyFragment"
         android:name="com.liuxing.daily.ui.calendar.CalendarQueryDailyFragment"
         android:label="fragment_calendar_query_daily"
-        tools:layout="@layout/fragment_calendar_query_daily" />
+        tools:layout="@layout/fragment_calendar_query_daily" >
+        <action
+            android:id="@+id/action_calendarQueryDailyFragment_to_recyclerBinFragment"
+            app:destination="@id/recyclerBinFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/recyclerBinFragment"
+        android:name="com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment"
+        android:label="fragment_recycler_bin"
+        tools:layout="@layout/fragment_recycler_bin" />
 </navigation>

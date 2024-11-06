@@ -1,27 +1,25 @@
 package com.liuxing.daily.ui.look
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import com.liuxing.daily.R
-import com.liuxing.daily.adapter.DailyImagePagerAdapter
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
-import com.liuxing.daily.entity.DailyImageEntity
-import com.liuxing.daily.ui.image.LookDailyImageActivity
+import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.TextUtil
+import com.liuxing.daily.view.DailyTextView
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+private const val ID = "ID"
 private const val TITLE = "title"
 private const val DATE_TIME = "dateTime"
 private const val CONTENT = "context"
@@ -38,26 +36,32 @@ private const val DAILY_UUID = "dailyUUID"
  */
 class LookDailyPagerFragment : Fragment() {
     // TODO: Rename and change types of parameters
+    private var id: Long? = null
     private var title: String? = null
     private var dateTime: Long? = null
     private var content: String? = null
     private lateinit var binding: FragmentLookDailyPagerBinding
+    private var backgroundColorIndex: Int? = 0
     private var singlePassword: String? = ""
     private var moodIndex: Int? = 0
     private var weatherIndex: Int? = 0
-    private var dailyUuid: Int? = 0
+    private var dailyUuid: String? = ""
     private lateinit var dailyViewModel: DailyViewModel
+    private lateinit var dailyTextView: DailyTextView
+    private var mutableListOf: MutableSet<String> = mutableSetOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
+            id = it.getLong(ID)
             title = it.getString(TITLE)
             dateTime = it.getLong(DATE_TIME)
             content = it.getString(CONTENT)
+            backgroundColorIndex = it.getInt(BACKGROUND_INDEX)
             singlePassword = it.getString(SINGLE_PASSWORD)
             moodIndex = it.getInt(MOOD_INDEX)
             weatherIndex = it.getInt(WEATHER_INDEX)
-            dailyUuid = it.getInt(DAILY_UUID)
+            dailyUuid = it.getString(DAILY_UUID)
         }
     }
 
@@ -82,6 +86,7 @@ class LookDailyPagerFragment : Fragment() {
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(
+            id: Long?,
             title: String?,
             dateTime: Long?,
             content: String?,
@@ -93,6 +98,7 @@ class LookDailyPagerFragment : Fragment() {
         ) =
             LookDailyPagerFragment().apply {
                 arguments = Bundle().apply {
+                    id?.let { putLong(ID, it) }
                     title?.let { putString(TITLE, it) }
                     dateTime?.let { putLong(DATE_TIME, it) }
                     content?.let { putString(CONTENT, it) }
@@ -105,9 +111,12 @@ class LookDailyPagerFragment : Fragment() {
             }
     }
 
+    /**
+     * 更新密码
+     */
     fun updateSinglePassword(singlePassword: String?) {
         this.singlePassword = singlePassword
-        if (singlePassword != arguments?.getString(SINGLE_PASSWORD)) {
+        if (singlePassword != this.singlePassword) {
             binding.tvTitle.text = "***"
             binding.tvContent.text = "***"
         } else {
@@ -117,24 +126,24 @@ class LookDailyPagerFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        binding.tvTitle.visibility = if (arguments?.getString(TITLE)!!.isEmpty()) {
+        dailyTextView = view.findViewById(R.id.tv_content)
+        binding.tvTitle.visibility = if (title!!.isEmpty()) {
             View.GONE
         } else {
             View.VISIBLE
         }
 
         when {
-            arguments?.getString(SINGLE_PASSWORD) != "" -> {
+            !singlePassword.isNullOrEmpty() -> {
                 binding.tvTitle.text = "***"
-                binding.tvContent.text = "***"
+                dailyTextView.text = "***"
                 binding.ivMood.visibility = View.GONE
                 binding.ivWeather.visibility = View.GONE
-                binding.nestedScrollableHost.visibility = View.GONE
             }
             else -> {
-                arguments?.getString(TITLE).also { binding.tvTitle.text = it }
-                arguments?.getString(CONTENT).also { binding.tvContent.text = it }
-                binding.ivMood.visibility = arguments?.getInt(MOOD_INDEX).let {
+                binding.tvTitle.text = title
+                dailyTextView.text = content
+                binding.ivMood.visibility = moodIndex.let {
                     if (it == 0 || it == null) View.GONE else {
                         binding.ivMood.setImageDrawable(
                             ContextCompat.getDrawable(
@@ -145,7 +154,7 @@ class LookDailyPagerFragment : Fragment() {
                         View.VISIBLE
                     }
                 }
-                binding.ivWeather.visibility = arguments?.getInt(WEATHER_INDEX).let {
+                binding.ivWeather.visibility = weatherIndex.let {
                     if (it == 0 || it == null) View.GONE else {
                         binding.ivWeather.setImageDrawable(
                             ContextCompat.getDrawable(
@@ -157,48 +166,70 @@ class LookDailyPagerFragment : Fragment() {
                     }
                 }
                 dailyViewModel = DailyViewModel(requireActivity().application)
-                arguments?.getString(DAILY_UUID).let {uuid ->
-                    if (uuid == "" || uuid == null) binding.nestedScrollableHost.visibility =
-                        View.GONE else {
-                        dailyViewModel.queryDailyImageByUuid(uuid)
-                            .observe(viewLifecycleOwner, object : Observer<List<DailyImageEntity>> {
-                                override fun onChanged(value: List<DailyImageEntity>) {
-                                    if (value.isNotEmpty()) {
-                                        val mutableListOf = mutableSetOf<String>()
-                                        value.forEach { dailyImageEntity ->
-                                            if (FileUtil().checkFileExists(dailyImageEntity.imagePath.toString())) {
-                                                dailyImageEntity.imagePath?.let { it1 ->
-                                                    mutableListOf.add(
-                                                        it1
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        val adapter =
-                                            DailyImagePagerAdapter(mutableListOf.toList()) { position ->
-                                                val intent = Intent(
-                                                    requireContext(),
-                                                    LookDailyImageActivity::class.java
-                                                ).apply {
-                                                    putExtra("look_daily_image_uuid",uuid)
-                                                    putExtra("look_daily_image_position", position)
-                                                }
-                                                requireContext().startActivity(intent)
-                                            }
-                                        binding.imagePager.adapter = adapter
-                                    } else {
-                                        binding.nestedScrollableHost.visibility = View.GONE
+                dailyViewModel.queryDailyImageByUuid(dailyUuid!!)
+                    .observe(
+                        viewLifecycleOwner
+                    ) { imageList ->
+                        if (imageList.isNotEmpty()) {
+                            mutableListOf = mutableSetOf()
+                            imageList.forEach { dailyImageEntity ->
+                                if (FileUtil().checkFileExists(dailyImageEntity.imagePath.toString())) {
+                                    dailyImageEntity.imagePath?.let { imagePath ->
+                                        mutableListOf.add(
+                                            imagePath
+                                        )
                                     }
                                 }
-                            })
+                            }
+
+                            dailyTextView.setImagePathList(
+                                content!!,
+                                mutableListOf.toList()
+                            )
+
+                            val currentContent = content ?: ""
+                            val updatedContent = StringBuilder(currentContent)
+                            val existingImagePaths = mutableListOf<String>()
+                            imageList.forEach { dailyImageEntity ->
+                                val imagePath = dailyImageEntity.imagePath.toString()
+                                val imgTag = "<img src=\"$imagePath\"/>"
+                                if (FileUtil().checkFileExists(imagePath)) {
+                                    existingImagePaths.add(imagePath)
+                                    if (!currentContent.contains(imgTag)) {
+                                        if (updatedContent.isNotEmpty()) {
+                                            updatedContent.append("\n")
+                                        }
+                                        updatedContent.append(imgTag)
+                                    }
+                                } else {
+                                    dailyViewModel.deleteSelectPathImage(imagePath)
+                                }
+                            }
+                            if (updatedContent.toString() != currentContent) {
+                                dailyTextView.text = updatedContent.toString()
+                                dailyViewModel.updateDaily(
+                                    DailyEntity(
+                                        id,
+                                        title,
+                                        updatedContent.toString(),
+                                        dateTime,
+                                        backgroundColorIndex,
+                                        singlePassword,
+                                        moodIndex,
+                                        weatherIndex,
+                                        dailyUuid,
+                                        false
+                                    )
+                                )
+                            }
+                        }
                     }
-                }
+
             }
         }
-
-        DateUtil.getDateString(2, Date(arguments?.getLong(DATE_TIME, 0)!!))
-            .also { binding.tvDateTime.text = it }
-        val cardBackgroundColor = when (arguments?.getInt(BACKGROUND_INDEX)) {
+        dailyTextView.setDailyUuid(dailyUuid!!)
+        binding.tvDateTime.text = DateUtil.getDateString(2, Date(dateTime!!))
+        val cardBackgroundColor = when (backgroundColorIndex) {
             1 -> ContextCompat.getColor(requireContext(), R.color.color_2)
             2 -> ContextCompat.getColor(requireContext(), R.color.color_3)
             3 -> ContextCompat.getColor(requireContext(), R.color.color_4)
@@ -206,7 +237,7 @@ class LookDailyPagerFragment : Fragment() {
         }
         binding.cardView.setCardBackgroundColor(cardBackgroundColor)
 
-        "${arguments?.getString(TITLE)!!.length.plus(arguments?.getString(CONTENT)!!.length)}${
+        "${title!!.length.plus(TextUtil.getWordCount(content!!))}${
             getString(
                 R.string.word
             )
@@ -215,9 +246,24 @@ class LookDailyPagerFragment : Fragment() {
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        arguments?.getString(DAILY_UUID)
-            ?.let { dailyViewModel.queryDailyImageByUuid(it).removeObservers(this) }
+    override fun onResume() {
+        super.onResume()
+        val updatedContent = dailyTextView.checkImage(content.toString(), mutableListOf.toList())
+        if (updatedContent != content) {
+            dailyViewModel.updateDaily(
+                DailyEntity(
+                    id,
+                    title,
+                    updatedContent,
+                    dateTime,
+                    backgroundColorIndex,
+                    singlePassword,
+                    moodIndex,
+                    weatherIndex,
+                    dailyUuid,
+                    false
+                )
+            )
+        }
     }
 }

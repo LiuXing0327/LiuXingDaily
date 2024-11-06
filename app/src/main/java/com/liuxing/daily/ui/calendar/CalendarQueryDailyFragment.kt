@@ -19,7 +19,6 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.util.DateUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 
@@ -199,20 +198,71 @@ class CalendarQueryDailyFragment : Fragment() {
         calendarToDailyAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
             override fun onItemLongOnClick(position: Int) {
                 val dailyEntity = dailyList[position]
-                MaterialAlertDialogBuilder(requireContext())
-                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                        dailyEntity.dailyUUID?.let {
-                            dailyViewModel.deletePathImageByDailyUuid(
-                                it
+                val sharedPreferences =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext())
+                val moveInRecyclerBin =
+                    sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
+                if (moveInRecyclerBin) {
+                    MaterialAlertDialogBuilder(requireContext()).apply {
+                        setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
+                        setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                            dailyViewModel.updateDaily(
+                                DailyEntity(
+                                    dailyEntity.id,
+                                    dailyEntity.title,
+                                    dailyEntity.content,
+                                    dailyEntity.dateTime,
+                                    dailyEntity.backgroundColorIndex,
+                                    dailyEntity.singlePassword,
+                                    dailyEntity.moodIndex,
+                                    dailyEntity.weatherIndex,
+                                    dailyEntity.dailyUUID,
+                                    true
+                                )
                             )
                         }
-                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                        dailyViewModel.deleteDaily(dailyEntity)
+                            .setNegativeButton(getString(R.string.cancel), null)
+                            .create()
+                            .show()
                     }
-                    .setNegativeButton(getString(R.string.cancel), null)
-                    .create()
-                    .show()
+
+                } else {
+                    MaterialAlertDialogBuilder(requireContext()).apply {
+                        setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                        setPositiveButton(getString(R.string.delete)) { _, _ ->
+                            dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
+                                .observe(viewLifecycleOwner) { dailyImageList ->
+                                    val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
+                                    if (existingImagePaths.isNotEmpty()) {
+                                        val list = existingImagePaths.toList()
+                                        list.forEach {
+                                            dailyViewModel.deleteSelectPathImage(it!!)
+                                        }
+                                    }
+                                    dailyViewModel.deleteDaily(dailyEntity)
+                                }
+                        }
+                        setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
+                            dailyViewModel.updateDaily(
+                                DailyEntity(
+                                    dailyEntity.id,
+                                    dailyEntity.title,
+                                    dailyEntity.content,
+                                    dailyEntity.dateTime,
+                                    dailyEntity.backgroundColorIndex,
+                                    dailyEntity.singlePassword,
+                                    dailyEntity.moodIndex,
+                                    dailyEntity.weatherIndex,
+                                    dailyEntity.dailyUUID,
+                                    true
+                                )
+                            )
+                        }
+                        setNeutralButton(getString(R.string.cancel), null)
+                        create()
+                        show()
+                    }
+                }
             }
         })
     }

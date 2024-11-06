@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="@null"
+    android:orientation="vertical">
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:id="@+id/switch_delete_to_recycler_bin_daily"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="@dimen/dp_16"
+        android:text="删除日记时移入回收站"
+        android:textSize="@dimen/sp_16" />
+
+</LinearLayout>

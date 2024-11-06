@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -87,17 +88,17 @@ class LookDailyActivity : AppCompatActivity() {
     private fun loadDailyToViewPager(savedInstanceState: Bundle?) {
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
-                if (value.isNotEmpty()) {
+                val filter = value.filter { !it.isDeleted }
+                if (filter.isNotEmpty()) {
                     val sharedPreferences =
                         PreferenceManager.getDefaultSharedPreferences(this@LookDailyActivity)
                     val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
                     val sortedByDescending = if (currentSortIndex == 1) {
-                        value.sortedBy {
+                        filter.sortedBy {
                             DateUtil.getDateString(2, Date(it.dateTime!!))
                         }
-                    }
-                    else {
-                        value.sortedByDescending {
+                    } else {
+                        filter.sortedByDescending {
                             DateUtil.getDateString(2, Date(it.dateTime!!))
                         }
                     }
@@ -107,8 +108,8 @@ class LookDailyActivity : AppCompatActivity() {
                             savedInstanceState.getInt(VIEW_PAGER_INDEX, 0)
                         else {
                             val position = intent.getIntExtra("POSITION", 0)
-                            if (position >= 0 && position < value.size) {
-                                val intentPosition = value[position]
+                            if (position >= 0 && position < filter.size) {
+                                val intentPosition = filter[position]
                                 currentIndex =
                                     sortedByDescending.indexOfFirst { it.id == intentPosition.id }
                             }
@@ -120,14 +121,14 @@ class LookDailyActivity : AppCompatActivity() {
                             LookDailyPagerAdapter(this@LookDailyActivity, sortedByDescending)
                         lookDailyBinding.viewPagerDaily.adapter = lookDailyPagerAdapter
                         lookDailyBinding.viewPagerDaily.setCurrentItem(currentIndex, false)
-                        originalSignalPassword = dailyEntity.singlePassword.toString()
+                        originalSignalPassword = dailyEntity.singlePassword ?: ""
                         lookDailyBinding.viewPagerDaily.registerOnPageChangeCallback(object :
                             ViewPager2.OnPageChangeCallback() {
                             override fun onPageSelected(position: Int) {
                                 super.onPageSelected(position)
                                 currentIndex = position
                                 dailyEntity = sortedByDescending[currentIndex]
-                                originalSignalPassword = dailyEntity.singlePassword.toString()
+                                originalSignalPassword = dailyEntity.singlePassword ?: ""
                                 originalSignalPasswordMap[dailyEntity.id!!] = originalSignalPassword
                                 tempSignalPasswordMap[dailyEntity.id!!] = originalSignalPassword
                                 invalidateOptionsMenu()
@@ -149,7 +150,8 @@ class LookDailyActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_look_daily, menu)
         if (::originalSignalPasswordMap.isInitialized) {
-            menu?.findItem(R.id.item_unlock)?.isVisible = originalSignalPasswordMap[dailyEntity.id]?.isEmpty() == false
+            menu?.findItem(R.id.item_unlock)?.isVisible =
+                originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() == false
         }
         return super.onCreateOptionsMenu(menu)
     }
@@ -163,22 +165,69 @@ class LookDailyActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.item_delete -> {
                 when {
-                    originalSignalPasswordMap[dailyEntity.id] == "" -> {
-                        MaterialAlertDialogBuilder(this@LookDailyActivity)
-                            .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                            .setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                                dailyEntity.dailyUUID?.let {
-                                    dailyViewModel.deletePathImageByDailyUuid(
-                                        it
+                    originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
+                        val moveInRecyclerBin =
+                            sharedPreferences!!.getBoolean(
+                                "switch_delete_to_recycler_bin_daily",
+                                true
+                            )
+                        if (moveInRecyclerBin) {
+                            MaterialAlertDialogBuilder(this).apply {
+                                setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
+                                setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                                    dailyViewModel.updateDaily(
+                                        DailyEntity(
+                                            dailyEntity.id,
+                                            dailyEntity.title,
+                                            dailyEntity.content,
+                                            dailyEntity.dateTime,
+                                            dailyEntity.backgroundColorIndex,
+                                            dailyEntity.singlePassword,
+                                            dailyEntity.moodIndex,
+                                            dailyEntity.weatherIndex,
+                                            dailyEntity.dailyUUID,
+                                            true
+                                        )
                                     )
                                 }
-                                dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                                dailyViewModel.deleteDaily(dailyEntity)
-                                finish()
+                                    .setNegativeButton(getString(R.string.cancel), null)
+                                    .create()
+                                    .show()
                             }
-                            .setNegativeButton(getString(R.string.cancel), null)
-                            .create()
-                            .show()
+
+                        } else {
+                            MaterialAlertDialogBuilder(this).apply {
+                                setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                                setPositiveButton(getString(R.string.delete)) { _, _ ->
+                                    dailyEntity.dailyUUID?.let {
+                                        dailyViewModel.deletePathImageByDailyUuid(
+                                            it
+                                        )
+                                    }
+                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                                    dailyViewModel.deleteDaily(dailyEntity)
+                                }
+                                setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
+                                    dailyViewModel.updateDaily(
+                                        DailyEntity(
+                                            dailyEntity.id,
+                                            dailyEntity.title,
+                                            dailyEntity.content,
+                                            dailyEntity.dateTime,
+                                            dailyEntity.backgroundColorIndex,
+                                            dailyEntity.singlePassword,
+                                            dailyEntity.moodIndex,
+                                            dailyEntity.weatherIndex,
+                                            dailyEntity.dailyUUID,
+                                            true
+                                        )
+                                    )
+                                }
+                                setNeutralButton(getString(R.string.cancel), null)
+                                create()
+                                show()
+                            }
+                        }
                     }
 
                     else -> {
@@ -192,7 +241,7 @@ class LookDailyActivity : AppCompatActivity() {
 
             R.id.item_edit -> {
                 when {
-                    originalSignalPasswordMap[dailyEntity.id] == "" -> {
+                    originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
                         val intent = Intent()
                         intent.putExtra("daily_id", dailyEntity.id)
                         intent.putExtra("daily_title", dailyEntity.title)
@@ -224,7 +273,7 @@ class LookDailyActivity : AppCompatActivity() {
 
             R.id.item_copy -> {
                 when {
-                    originalSignalPasswordMap[dailyEntity.id] == "" -> {
+                    originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
                         dailyEntity.content?.let { CopyUtil.copyTextToClipboard(this, it) }
                         SnackbarUtil.showSnackbarShort(
                             lookDailyBinding.viewPagerDaily,

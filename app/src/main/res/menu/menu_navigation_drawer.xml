@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
 
-    <group android:checkableBehavior="single">
-
+    <group
+        android:id="@+id/g_daily"
+        android:checkableBehavior="single">
         <item
             android:id="@+id/dailyFragment"
             android:icon="@drawable/baseline_notes_24"
@@ -11,7 +15,14 @@
             android:id="@+id/calendarQueryDailyFragment"
             android:icon="@drawable/baseline_calendar_month_24"
             android:title="@string/calendar" />
+    </group>
 
+    <group android:id="@+id/g_recycler"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/recyclerBinFragment"
+            android:icon="@drawable/baseline_delete_24"
+            android:title="@string/recycler_bin" />
     </group>
 
 </menu>

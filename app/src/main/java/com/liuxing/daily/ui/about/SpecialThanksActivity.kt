@@ -114,7 +114,7 @@ class SpecialThanksActivity : AppCompatActivity() {
                         "limitations under the License.", 1
             ),
             SpecialThanksData("Glide","\nBSD, part MIT and Apache 2.0. ",1),
-            SpecialThanksData("PhotoView","Copyright 2018 Chris Banes\n" +
+            SpecialThanksData("PhotoView","\nCopyright 2018 Chris Banes\n" +
                     "\n" +
                     "Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
                     "you may not use this file except in compliance with the License.\n" +

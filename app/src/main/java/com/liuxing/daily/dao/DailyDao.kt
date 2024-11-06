@@ -24,9 +24,6 @@ interface DailyDao {
     @Query("SELECT * FROM DAILY_INFO ORDER BY ID DESC")
     fun queryAllDaily(): LiveData<List<DailyEntity>>
 
-    @Query("SELECT * FROM DAILY_INFO ORDER BY ID DESC")
-    suspend fun queryAllDailyToList(): List<DailyEntity>
-
     @Query("DELETE FROM DAILY_INFO")
     suspend fun clearDaily()
 
@@ -47,4 +44,7 @@ interface DailyDao {
 
     @Query("DELETE FROM DAILY_IMAGE")
     suspend fun clearDailyImage()
+
+    @Query("SELECT COUNT(*) FROM DAILY_IMAGE")
+    fun queryImageCount(): LiveData<Int>
 }

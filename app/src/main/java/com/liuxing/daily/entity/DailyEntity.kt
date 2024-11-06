@@ -4,7 +4,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.Expose
-import java.util.UUID
 
 @Entity(tableName = "DAILY_INFO")
 data class DailyEntity(
@@ -41,5 +40,8 @@ data class DailyEntity(
     @Expose(deserialize = true, serialize = true) val weatherIndex: Int? = 0,
 
     @ColumnInfo(name = "DAILY_UUID")
-    @Expose(deserialize = true, serialize = true) val dailyUUID: String? = null
+    @Expose(deserialize = true, serialize = true) val dailyUUID: String? = null,
+
+    @ColumnInfo(name = "IS_DELETED")
+    @Expose(deserialize = true, serialize = true) val isDeleted: Boolean = false
 )

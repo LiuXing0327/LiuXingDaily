@@ -20,6 +20,7 @@ class LookDailyPagerAdapter(
     override fun createFragment(position: Int): Fragment {
         val dailyEntity = dailyList[position]
         return LookDailyPagerFragment.newInstance(
+            dailyEntity.id,
             dailyEntity.title,
             dailyEntity.dateTime,
             dailyEntity.content,

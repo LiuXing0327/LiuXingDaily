@@ -52,6 +52,17 @@
             android:textAppearance="?attr/textAppearanceTitleSmall"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tv_daily_image_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="24dp"
+            android:text="0张"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
     </LinearLayout>
 
 </LinearLayout>

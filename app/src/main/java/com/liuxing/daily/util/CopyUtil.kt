@@ -3,8 +3,11 @@ package com.liuxing.daily.util
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
+import android.provider.MediaStore
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -31,16 +34,37 @@ object CopyUtil {
      * @param imageUri 图片路径
      * @return 返回图片路径
      */
+/*
     fun copyImageToMyAppDir(context: Context, imageUri: Uri): String {
         val externalFilesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         if (externalFilesDir != null) {
             val copyImageName = UUID.randomUUID().toString() + ".jpg"
             val file = File(externalFilesDir, copyImageName)
+            MediaStore.Images.Media.getBitmap(context.contentResolver,imageUri)
             context.contentResolver.openInputStream(imageUri).use { inputStream ->
                 FileOutputStream(file).use { outputStream ->
                     inputStream?.copyTo(outputStream)
                 }
             }
+            return file.absolutePath
+        }
+        return ""
+    }
+*/
+
+    fun copyImageToMyAppDir(context: Context, imageUri: Uri): String {
+        val externalFilesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        if (externalFilesDir != null) {
+            val copyImageName = UUID.randomUUID().toString() + ".jpg"
+            val file = File(externalFilesDir, copyImageName)
+            val inputStream = context.contentResolver.openInputStream(imageUri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            }
+            inputStream?.close()
+
             return file.absolutePath
         }
         return ""
