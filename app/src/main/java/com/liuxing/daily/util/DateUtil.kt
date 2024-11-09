@@ -7,7 +7,7 @@ import java.util.Locale
 object DateUtil {
 
     private val dateFormat =
-        arrayOf("yyyy年MM月dd日 HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss","yyyy/MM")
+        arrayOf("yyyy/MM/dd HH:mm")
 
     // 获取当前日期
     fun getCurrentDate(): Date = Date()
@@ -17,7 +17,7 @@ object DateUtil {
         SimpleDateFormat(pattern, aDefault)
 
     // 日期格式
-    fun dateFormat(index: Int): SimpleDateFormat {
+    private fun dateFormat(index: Int): SimpleDateFormat {
         return getSimpleDateFormat(dateFormat[index], Locale.getDefault())
     }
 

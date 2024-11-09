@@ -37,7 +37,6 @@
     <string name="attachment_title">Download Incoming Attachments</string>
     <string name="attachment_summary_on">Automatically download attachments for incoming emails</string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
-
     <string name="format_0">yyyy年MM月dd日 HH:mm:ss</string>
     <string name="format_1">yyyy-MM-dd HH:mm:ss</string>
     <string name="format_2">yyyy/MM/dd HH:mm:ss</string>
@@ -66,6 +65,7 @@
     <string name="do_you_save_this_diary">Do you want to save this diary?</string>
     <string name="word">Words</string>
     <string name="entries">Entries</string>
+    <string name="sheet">Sheets</string>
     <string name="key">Key</string>
     <string name="please_enter_the_key_to_reset_your_password_if_you_forget_it">Please enter the key to reset your password if you forget it!</string>
     <string name="the_key_was_set_successfully_please_keep_it_in_mind">Key set successfully, please remember it!</string>
@@ -108,4 +108,5 @@
     <string name="add_failed">Add Failed</string>
     <string name="restore">Restore</string>
     <string name="do_you_want_to_delete_or_restore_the_daily">Do you want to delete or restore the daily?</string>
+    <string name="gallery">Gallery</string>
 </resources>

@@ -19,6 +19,7 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 
@@ -133,7 +134,7 @@ class CalendarQueryDailyFragment : Fragment() {
                         requireContext(),
                         dailyList,
                         DateUtil.getDateString(
-                            2,
+                            0,
                             Date(fragmentCalendarQueryDailyBinding.calendarView.date)
                         ).substring(0, 10), dailyViewModel, viewLifecycleOwner
                     )
@@ -162,10 +163,11 @@ class CalendarQueryDailyFragment : Fragment() {
         super.onResume()
         val sharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (calendarToDailyAdapter.headerYearMonth != sharedPreferences.getBoolean(
-                "switch_preference_header_display",
-                true
-            )
+        val headerYearMonth = sharedPreferences.getBoolean(
+            "switch_preference_header_display",
+            true
+        )
+        if (calendarToDailyAdapter.headerYearMonth != headerYearMonth
         ) {
             loadDailyData()
         }
@@ -230,15 +232,19 @@ class CalendarQueryDailyFragment : Fragment() {
                     MaterialAlertDialogBuilder(requireContext()).apply {
                         setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                         setPositiveButton(getString(R.string.delete)) { _, _ ->
+                            val fileUtil = FileUtil()
                             dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
                                 .observe(viewLifecycleOwner) { dailyImageList ->
                                     val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
                                     if (existingImagePaths.isNotEmpty()) {
                                         val list = existingImagePaths.toList()
                                         list.forEach {
-                                            dailyViewModel.deleteSelectPathImage(it!!)
+                                            if (fileUtil.checkFileExists(it!!)) fileUtil.deleteFile(
+                                                it
+                                            )
                                         }
                                     }
+                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
                                     dailyViewModel.deleteDaily(dailyEntity)
                                 }
                         }

@@ -6,31 +6,9 @@
     android:padding="@dimen/dp_16"
     android:layout_height="match_parent">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/color_1"
-        app:cardBackgroundColor="@android:color/transparent"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/color_recycler"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_50"/>
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_marginTop="@dimen/dp_8"
-        android:id="@+id/color_2"
-        app:cardBackgroundColor="@color/color_2"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_50"/>
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_marginTop="@dimen/dp_8"
-        android:id="@+id/color_3"
-        app:cardBackgroundColor="@color/color_3"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_50"/>
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_marginTop="@dimen/dp_8"
-        android:id="@+id/color_4"
-        app:cardBackgroundColor="@color/color_4"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_50"/>
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

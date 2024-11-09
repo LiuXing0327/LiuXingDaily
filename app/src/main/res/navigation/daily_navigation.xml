@@ -27,5 +27,14 @@
         android:id="@+id/recyclerBinFragment"
         android:name="com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment"
         android:label="fragment_recycler_bin"
-        tools:layout="@layout/fragment_recycler_bin" />
+        tools:layout="@layout/fragment_recycler_bin">
+        <action
+            android:id="@+id/action_recyclerBinFragment_to_galleryFragment"
+            app:destination="@id/galleryFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/galleryFragment"
+        android:name="com.liuxing.daily.ui.gallery.GalleryFragment"
+        android:label="fragment_gallery"
+        tools:layout="@layout/fragment_gallery" />
 </navigation>

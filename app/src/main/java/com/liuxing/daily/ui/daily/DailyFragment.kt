@@ -3,7 +3,6 @@ package com.liuxing.daily.ui.daily
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +20,7 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 
@@ -152,7 +152,6 @@ class DailyFragment : Fragment() {
                 val moveInRecyclerBin =
                     sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
                 val dailyEntity = dailyList.filter { !it.isDeleted }[position]
-                Log.d("TAG", "onItemLongOnClick: ${dailyEntity.id}\n${dailyEntity.content}")
                 if (moveInRecyclerBin) {
                     MaterialAlertDialogBuilder(requireContext()).apply {
                         setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
@@ -181,15 +180,19 @@ class DailyFragment : Fragment() {
                     MaterialAlertDialogBuilder(requireContext()).apply {
                         setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                         setPositiveButton(getString(R.string.delete)) { _, _ ->
+                            val fileUtil = FileUtil()
                             dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
                                 .observe(viewLifecycleOwner) { dailyImageList ->
                                     val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
                                     if (existingImagePaths.isNotEmpty()) {
                                         val list = existingImagePaths.toList()
                                         list.forEach {
-                                            dailyViewModel.deleteSelectPathImage(it!!)
+                                            if (fileUtil.checkFileExists(it!!)) {
+                                                fileUtil.deleteFile(it)
+                                            }
                                         }
                                     }
+                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
                                     dailyViewModel.deleteDaily(dailyEntity)
                                 }
                         }
@@ -236,10 +239,11 @@ class DailyFragment : Fragment() {
         super.onResume()
         val sharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (sharedPreferences.getBoolean(
-                "switch_preference_header_display",
-                true
-            ) != dailyAdapter.headerYearMonth
+        val headerYearMonth = sharedPreferences.getBoolean(
+            "switch_preference_header_display",
+            true
+        )
+        if (headerYearMonth != dailyAdapter.headerYearMonth
         ) {
             loadDailyData()
         }

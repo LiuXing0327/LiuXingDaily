@@ -67,12 +67,12 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
 
         val groupedMap = mapIndexed.groupBy {
-            DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7)
+            DateUtil.getDateString(0, Date(it.value.dateTime!!)).substring(0, 7)
         }
 
         val toSortedMap = groupedMap.mapKeys { dailyEntity ->
             dailyEntity.key to DateUtil.getDateString(
-                2,
+                0,
                 Date(dailyEntity.value.first().value.dateTime!!)
             )
         }.mapKeys { it.key.first }
@@ -84,8 +84,10 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             // 判断设置开关添加 -> 年月 ?: 月
             if (headerBoolean) {
+                headerYearMonth = true
                 resultList.add(yearMonth)
             } else {
+                headerYearMonth = false
                 val month = yearMonth.substring(5, 7).toInt()
                 resultList.add(month.toString())
             }
@@ -142,7 +144,7 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"
             }
-            holder.tvDateTime.text = DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
+            holder.tvDateTime.text = DateUtil.getDateString(0, Date(dailyEntity.dateTime!!))
             holder.ivMood.visibility =
                 if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {
                     View.GONE

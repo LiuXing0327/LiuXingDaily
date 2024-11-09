@@ -3,10 +3,8 @@ package com.liuxing.daily
 import android.app.Application
 import android.content.SharedPreferences
 import android.os.Environment
-import android.util.Log
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.util.ThemeModeUtil
-import java.io.File
 
 /**
  * Author：流星

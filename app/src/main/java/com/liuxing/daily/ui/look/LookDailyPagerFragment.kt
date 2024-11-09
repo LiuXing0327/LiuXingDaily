@@ -127,116 +127,111 @@ class LookDailyPagerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         dailyTextView = view.findViewById(R.id.tv_content)
+        initData()
+    }
+
+    /**
+     * 初始化数据
+     */
+    private fun initData() {
+        initViewModel()
+        setTitleVisibility()
+        setDailyContent()
+        setDailyBackgroundColor()
+        setDailyUuid()
+        setDailyDateTime()
+        setDailyWords()
+        setDailyData()
+    }
+
+    /**
+     * 初始化视图模型
+     */
+    private fun initViewModel() {
+        dailyViewModel = DailyViewModel(requireActivity().application)
+    }
+
+    /**
+     * 设置标题显示
+     */
+    private fun setTitleVisibility() {
         binding.tvTitle.visibility = if (title!!.isEmpty()) {
             View.GONE
         } else {
             View.VISIBLE
         }
+    }
 
-        when {
-            !singlePassword.isNullOrEmpty() -> {
-                binding.tvTitle.text = "***"
-                dailyTextView.text = "***"
-                binding.ivMood.visibility = View.GONE
-                binding.ivWeather.visibility = View.GONE
+    /**
+     * 设置日记内容
+     */
+    private fun setDailyContent() {
+        if (!singlePassword.isNullOrEmpty()) {
+            binding.tvTitle.text = "***"
+            dailyTextView.text = "***"
+            binding.ivMood.visibility = View.GONE
+            binding.ivWeather.visibility = View.GONE
+        } else {
+            binding.tvTitle.text = title
+            dailyTextView.text = content
+            binding.ivMood.visibility = moodIndex.let {
+                if (it == 0 || it == null) View.GONE else {
+                    binding.ivMood.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            requireContext(),
+                            ConstUtil.moodList[it.minus(1)]
+                        )
+                    )
+                    View.VISIBLE
+                }
             }
-            else -> {
-                binding.tvTitle.text = title
-                dailyTextView.text = content
-                binding.ivMood.visibility = moodIndex.let {
-                    if (it == 0 || it == null) View.GONE else {
-                        binding.ivMood.setImageDrawable(
-                            ContextCompat.getDrawable(
-                                requireContext(),
-                                ConstUtil.moodList[it.minus(1)]
-                            )
+            binding.ivWeather.visibility = weatherIndex.let {
+                if (it == 0 || it == null) View.GONE else {
+                    binding.ivWeather.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            requireContext(),
+                            ConstUtil.weatherList[it.minus(1)]
                         )
-                        View.VISIBLE
-                    }
+                    )
+                    View.VISIBLE
                 }
-                binding.ivWeather.visibility = weatherIndex.let {
-                    if (it == 0 || it == null) View.GONE else {
-                        binding.ivWeather.setImageDrawable(
-                            ContextCompat.getDrawable(
-                                requireContext(),
-                                ConstUtil.weatherList[it.minus(1)]
-                            )
-                        )
-                        View.VISIBLE
-                    }
-                }
-                dailyViewModel = DailyViewModel(requireActivity().application)
-                dailyViewModel.queryDailyImageByUuid(dailyUuid!!)
-                    .observe(
-                        viewLifecycleOwner
-                    ) { imageList ->
-                        if (imageList.isNotEmpty()) {
-                            mutableListOf = mutableSetOf()
-                            imageList.forEach { dailyImageEntity ->
-                                if (FileUtil().checkFileExists(dailyImageEntity.imagePath.toString())) {
-                                    dailyImageEntity.imagePath?.let { imagePath ->
-                                        mutableListOf.add(
-                                            imagePath
-                                        )
-                                    }
-                                }
-                            }
-
-                            dailyTextView.setImagePathList(
-                                content!!,
-                                mutableListOf.toList()
-                            )
-
-                            val currentContent = content ?: ""
-                            val updatedContent = StringBuilder(currentContent)
-                            val existingImagePaths = mutableListOf<String>()
-                            imageList.forEach { dailyImageEntity ->
-                                val imagePath = dailyImageEntity.imagePath.toString()
-                                val imgTag = "<img src=\"$imagePath\"/>"
-                                if (FileUtil().checkFileExists(imagePath)) {
-                                    existingImagePaths.add(imagePath)
-                                    if (!currentContent.contains(imgTag)) {
-                                        if (updatedContent.isNotEmpty()) {
-                                            updatedContent.append("\n")
-                                        }
-                                        updatedContent.append(imgTag)
-                                    }
-                                } else {
-                                    dailyViewModel.deleteSelectPathImage(imagePath)
-                                }
-                            }
-                            if (updatedContent.toString() != currentContent) {
-                                dailyTextView.text = updatedContent.toString()
-                                dailyViewModel.updateDaily(
-                                    DailyEntity(
-                                        id,
-                                        title,
-                                        updatedContent.toString(),
-                                        dateTime,
-                                        backgroundColorIndex,
-                                        singlePassword,
-                                        moodIndex,
-                                        weatherIndex,
-                                        dailyUuid,
-                                        false
-                                    )
-                                )
-                            }
-                        }
-                    }
-
             }
         }
-        dailyTextView.setDailyUuid(dailyUuid!!)
-        binding.tvDateTime.text = DateUtil.getDateString(2, Date(dateTime!!))
+    }
+
+    /**
+     * 设置日记背景颜色
+     */
+    private fun setDailyBackgroundColor() {
         val cardBackgroundColor = when (backgroundColorIndex) {
             1 -> ContextCompat.getColor(requireContext(), R.color.color_2)
             2 -> ContextCompat.getColor(requireContext(), R.color.color_3)
             3 -> ContextCompat.getColor(requireContext(), R.color.color_4)
+            4 -> ContextCompat.getColor(requireContext(), R.color.color_5)
+            5 -> ContextCompat.getColor(requireContext(), R.color.color_6)
             else -> android.R.color.transparent
         }
         binding.cardView.setCardBackgroundColor(cardBackgroundColor)
+    }
 
+    /**
+     * 设置日记Uuid
+     */
+    private fun setDailyUuid() {
+        dailyTextView.setDailyUuid(dailyUuid!!)
+    }
+
+    /**
+     * 设置日记的日期时间
+     */
+    private fun setDailyDateTime() {
+        binding.tvDateTime.text = DateUtil.getDateString(0, Date(dateTime!!))
+    }
+
+    /**
+     * 设置日记字数
+     */
+    private fun setDailyWords() {
         "${title!!.length.plus(TextUtil.getWordCount(content!!))}${
             getString(
                 R.string.word
@@ -244,6 +239,70 @@ class LookDailyPagerFragment : Fragment() {
         }".also {
             binding.tvDailyCount.text = it
         }
+    }
+
+    /**
+     * 设置日记数据
+     */
+    private fun setDailyData() {
+        dailyViewModel.queryDailyImageByUuid(dailyUuid!!)
+            .observe(
+                viewLifecycleOwner
+            ) { imageList ->
+                if (imageList.isNotEmpty()) {
+                    mutableListOf = mutableSetOf()
+                    imageList.forEach { dailyImageEntity ->
+                        if (FileUtil().checkFileExists(dailyImageEntity.imagePath.toString())) {
+                            dailyImageEntity.imagePath?.let { imagePath ->
+                                mutableListOf.add(
+                                    imagePath
+                                )
+                            }
+                        }
+                    }
+
+                    dailyTextView.setImagePathList(
+                        content!!,
+                        mutableListOf.toList()
+                    )
+
+                    val currentContent = content ?: ""
+                    val updatedContent = StringBuilder(currentContent)
+                    val existingImagePaths = mutableListOf<String>()
+                    imageList.forEach { dailyImageEntity ->
+                        val imagePath = dailyImageEntity.imagePath.toString()
+                        val imgTag = "<img src=\"$imagePath\"/>"
+                        if (FileUtil().checkFileExists(imagePath)) {
+                            existingImagePaths.add(imagePath)
+                            if (!currentContent.contains(imgTag)) {
+                                if (updatedContent.isNotEmpty()) {
+                                    updatedContent.append("\n")
+                                }
+                                updatedContent.append(imgTag)
+                            }
+                        } else {
+                            dailyViewModel.deleteSelectPathImage(imagePath)
+                        }
+                    }
+                    if (updatedContent.toString() != currentContent) {
+                        dailyTextView.text = updatedContent.toString()
+                        dailyViewModel.updateDaily(
+                            DailyEntity(
+                                id,
+                                title,
+                                updatedContent.toString(),
+                                dateTime,
+                                backgroundColorIndex,
+                                singlePassword,
+                                moodIndex,
+                                weatherIndex,
+                                dailyUuid,
+                                false
+                            )
+                        )
+                    }
+                }
+            }
     }
 
     override fun onResume() {

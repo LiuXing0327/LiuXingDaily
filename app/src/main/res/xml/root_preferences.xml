@@ -36,15 +36,6 @@
         app:iconSpaceReserved="false"
         app:title="@string/daily">
 
-<!--        <ListPreference
-            android:entryValues="@array/date_time_values"
-            android:key="date_time_preference"
-            android:title="日期时间格式"
-            app:defaultValue="@string/format_0"
-            app:entries="@array/date_time_entries"
-            app:iconSpaceReserved="false"
-            app:summary="@string/format_0" />-->
-
         <com.liuxing.daily.view.CustomYearMonthSwitchPreference />
 
         <com.liuxing.daily.view.CustomAutoSaveDailySwitchPreference />

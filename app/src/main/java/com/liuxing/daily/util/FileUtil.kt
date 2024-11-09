@@ -43,4 +43,15 @@ class FileUtil {
             file.delete()
         }
     }
+
+    /**
+     * 是否是图片
+     *
+     * @param file 文件
+     * @return 结果
+     */
+    fun isImageFile(file: File): Boolean {
+        val extension = file.extension.lowercase()
+        return extension == "jpg"
+    }
 }
