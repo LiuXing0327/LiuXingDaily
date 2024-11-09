@@ -28,12 +28,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
+import com.liuxing.daily.adapter.ChangeDailyCardColorAdapter
 import com.liuxing.daily.adapter.MoodAdapter
 import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
@@ -56,14 +57,22 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.Objects
 
+private const val BACK_GROUND_COLOR_INDEX = "backgroundColorIndex"
+private const val MOOD_INDEX = "moodIndex"
+private const val TEMP_MOOD_INDEX = "tempMoodIndex"
+private const val WEATHER_INDEX = "weatherIndex"
+private const val TEMP_WEATHER_INDEX = "tempWeatherIndex"
+
 class EditDailyActivity : AppCompatActivity() {
 
     private lateinit var activityEditDailyBinding: ActivityEditDailyBinding
     private var backgroundColorIndex: Int = 0
     private lateinit var dailyViewModel: DailyViewModel
     private var singlePassword: String? = ""
-    private var moodIndex: Int = 0
-    private var weatherIndex: Int = 0
+    private var moodIndex = 0
+    private var tempMoodIndex = 0
+    private var weatherIndex = 0
+    private var tempWeatherIndex = 0
     private var dailyUuid: String = ""
     private val imageList = mutableSetOf<String>()
     private var originalImageListIndex: Int = 0
@@ -84,7 +93,7 @@ class EditDailyActivity : AppCompatActivity() {
             insets
         }
         initView()
-        initData()
+        initData(savedInstanceState)
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
         SoftHideKeyBoardUtil(this)
@@ -106,7 +115,7 @@ class EditDailyActivity : AppCompatActivity() {
     /**
      * 初始化数据
      */
-    private fun initData() {
+    private fun initData(savedInstanceState: Bundle?) {
         setActionBar()
         initViewModel()
         setDailyTitle()
@@ -123,6 +132,7 @@ class EditDailyActivity : AppCompatActivity() {
         setDailyBackgroundColor(getDailyBackgroundColorIndex())
         setDailyBackgroundColorIndex()
         checkedTitleLength()
+        restoreIndex(savedInstanceState)
     }
 
     /**
@@ -167,7 +177,7 @@ class EditDailyActivity : AppCompatActivity() {
      * 获取日记日期时间
      */
     private fun getDailyDateTime(): String =
-        DateUtil.getDateString(2, Date(intent.getLongExtra("daily_date_time", 0)))
+        DateUtil.getDateString(0, Date(intent.getLongExtra("daily_date_time", 0)))
 
     /**
      * 设置日记日期时间
@@ -232,67 +242,18 @@ class EditDailyActivity : AppCompatActivity() {
      * 设置日记背景颜色
      */
     private fun setDailyBackgroundColor(index: Int) {
-        when (index) {
-            1 -> {
-                activityEditDailyBinding.main.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.color_2
-                    )
-                )
-                activityEditDailyBinding.toolbar.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.color_2
-                    )
-                )
-            }
-
-            2 -> {
-                activityEditDailyBinding.main.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.color_3
-                    )
-                )
-                activityEditDailyBinding.toolbar.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.color_3
-                    )
-                )
-            }
-
-            3 -> {
-                activityEditDailyBinding.main.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.color_4
-                    )
-                )
-                activityEditDailyBinding.toolbar.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.color_4
-                    )
-                )
-            }
-
-            else -> {
-                activityEditDailyBinding.main.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        android.R.color.transparent
-                    )
-                )
-                activityEditDailyBinding.toolbar.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        android.R.color.transparent
-                    )
-                )
-            }
-        }
+        activityEditDailyBinding.main.setBackgroundColor(
+            ContextCompat.getColor(
+                this,
+                ConstUtil.backgroundColorList[index]
+            )
+        )
+        activityEditDailyBinding.toolbar.setBackgroundColor(
+            ContextCompat.getColor(
+                this,
+                ConstUtil.backgroundColorList[index]
+            )
+        )
 
     }
 
@@ -431,26 +392,25 @@ class EditDailyActivity : AppCompatActivity() {
                         materialAlertDialogBuilder.setView(view)
                         val dialog = materialAlertDialogBuilder.create()
                         dialog.show()
-                        view.findViewById<MaterialCardView>(R.id.color_1).setOnClickListener {
-                            backgroundColorIndex = 0
-                            setDailyBackgroundColor(backgroundColorIndex)
-                            dialog.dismiss()
-                        }
-                        view.findViewById<MaterialCardView>(R.id.color_2).setOnClickListener {
-                            backgroundColorIndex = 1
-                            setDailyBackgroundColor(backgroundColorIndex)
-                            dialog.dismiss()
-                        }
-                        view.findViewById<MaterialCardView>(R.id.color_3).setOnClickListener {
-                            backgroundColorIndex = 2
-                            setDailyBackgroundColor(backgroundColorIndex)
-                            dialog.dismiss()
-                        }
-                        view.findViewById<MaterialCardView>(R.id.color_4).setOnClickListener {
-                            backgroundColorIndex = 3
-                            setDailyBackgroundColor(backgroundColorIndex)
-                            dialog.dismiss()
-                        }
+                        val colorRecycler = view.findViewById<RecyclerView>(R.id.color_recycler)
+                        colorRecycler.layoutManager = LinearLayoutManager(this@EditDailyActivity)
+                        colorRecycler.adapter =
+                            ChangeDailyCardColorAdapter(ConstUtil.backgroundColorList) { selectedColor, position ->
+                                backgroundColorIndex = position
+                                activityEditDailyBinding.main.setBackgroundColor(
+                                    ContextCompat.getColor(
+                                        this@EditDailyActivity,
+                                        selectedColor
+                                    )
+                                )
+                                activityEditDailyBinding.toolbar.setBackgroundColor(
+                                    ContextCompat.getColor(
+                                        this@EditDailyActivity,
+                                        selectedColor
+                                    )
+                                )
+                                dialog.dismiss()
+                            }
                     }
 
                     R.id.item_save -> isDailyNullOrEquals()
@@ -459,13 +419,27 @@ class EditDailyActivity : AppCompatActivity() {
                         MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
                             setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                             setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                                val fileUtil = FileUtil()
+                                dailyViewModel.queryDailyImageByUuid(dailyUuid)
+                                    .observe(this@EditDailyActivity) { dailyImageList ->
+                                        val existingImagePaths =
+                                            dailyImageList.map { it.imagePath }.toSet()
+                                        if (existingImagePaths.isNotEmpty()) {
+                                            val list = existingImagePaths.toList()
+                                            list.forEach {
+                                                if (fileUtil.checkFileExists(it!!)) {
+                                                    fileUtil.deleteFile(it)
+                                                }
+                                            }
+                                        }
+                                    }
                                 dailyViewModel.deletePathImageByDailyUuid(dailyUuid)
                                 dailyViewModel.deleteDaily(
                                     DailyEntity(
                                         id = getDailyId(),
                                         title = activityEditDailyBinding.inputTitle.text.toString(),
                                         content = dailyTextInputEdit.text.toString(),
-                                        dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
+                                        dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 0),
                                         backgroundColorIndex = backgroundColorIndex,
                                         dailyUUID = dailyUuid
                                     )
@@ -606,19 +580,7 @@ class EditDailyActivity : AppCompatActivity() {
                         }
                         moodAdapter.setOnItemClickListener(object : OnItemClickListener {
                             override fun onItemClick(position: Int) {
-                                if (position == ConstUtil.moodList.size - 1) {
-                                    moodIndex = 0
-                                    activityEditDailyBinding.ivMood.visibility = View.GONE
-                                } else {
-                                    activityEditDailyBinding.ivMood.setImageDrawable(
-                                        ContextCompat.getDrawable(
-                                            this@EditDailyActivity,
-                                            ConstUtil.moodList[position]
-                                        )
-                                    )
-                                    moodIndex = position + 1
-                                    activityEditDailyBinding.ivMood.visibility = View.VISIBLE
-                                }
+                                setMoodIcon(position)
                                 dialog?.dismiss()
                             }
 
@@ -643,18 +605,7 @@ class EditDailyActivity : AppCompatActivity() {
                         }
                         weatherAdapter.setOnItemClickListener(object : OnItemClickListener {
                             override fun onItemClick(position: Int) {
-                                if (position == ConstUtil.weatherList.size - 1) {
-                                    activityEditDailyBinding.ivWeather.visibility = View.GONE
-                                } else {
-                                    activityEditDailyBinding.ivWeather.visibility = View.VISIBLE
-                                    activityEditDailyBinding.ivWeather.setImageDrawable(
-                                        ContextCompat.getDrawable(
-                                            this@EditDailyActivity,
-                                            ConstUtil.weatherList[position]
-                                        )
-                                    )
-                                    weatherIndex = position.plus(1)
-                                }
+                                setWeatherIcon(position)
                                 dialog.dismiss()
                             }
 
@@ -676,6 +627,48 @@ class EditDailyActivity : AppCompatActivity() {
             }
 
         })
+    }
+
+    /**
+     * 设置心情图标
+     */
+    private fun setMoodIcon(position: Int) {
+        if (position == ConstUtil.moodList.size - 1) {
+            moodIndex = 0
+            tempMoodIndex = 0
+            activityEditDailyBinding.ivMood.visibility = View.GONE
+        } else {
+            activityEditDailyBinding.ivMood.setImageDrawable(
+                ContextCompat.getDrawable(
+                    this@EditDailyActivity,
+                    ConstUtil.moodList[position]
+                )
+            )
+            moodIndex = position
+            tempMoodIndex = 1
+            activityEditDailyBinding.ivMood.visibility = View.VISIBLE
+        }
+    }
+
+    /**
+     * 设置天气图标
+     */
+    private fun setWeatherIcon(position: Int) {
+        if (position == ConstUtil.weatherList.size - 1) {
+            weatherIndex = 0
+            tempWeatherIndex = 0
+            activityEditDailyBinding.ivWeather.visibility = View.GONE
+        } else {
+            activityEditDailyBinding.ivWeather.visibility = View.VISIBLE
+            activityEditDailyBinding.ivWeather.setImageDrawable(
+                ContextCompat.getDrawable(
+                    this@EditDailyActivity,
+                    ConstUtil.weatherList[position]
+                )
+            )
+            weatherIndex = position
+            tempWeatherIndex = 1
+        }
     }
 
     /**
@@ -763,7 +756,7 @@ class EditDailyActivity : AppCompatActivity() {
                 id = getDailyId(),
                 title = activityEditDailyBinding.inputTitle.text.toString(),
                 content = dailyTextInputEdit.text.toString(),
-                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 2),
+                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 0),
                 backgroundColorIndex = backgroundColorIndex,
                 singlePassword = HashUtil.hashSHA256(singlePassword.toString()),
                 moodIndex = moodIndex,
@@ -897,6 +890,48 @@ class EditDailyActivity : AppCompatActivity() {
     }
 
     companion object {
-        var isSystemExit = false
+        private var isSystemExit = false
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(BACK_GROUND_COLOR_INDEX, backgroundColorIndex)
+        outState.putInt(MOOD_INDEX, moodIndex)
+        outState.putInt(TEMP_MOOD_INDEX, tempMoodIndex)
+        outState.putInt(WEATHER_INDEX, weatherIndex)
+        outState.putInt(TEMP_WEATHER_INDEX, tempWeatherIndex)
+    }
+
+    /**
+     * 恢复索引
+     */
+    private fun restoreIndex(savedInstanceState: Bundle?) {
+        if (savedInstanceState != null) {
+            backgroundColorIndex = savedInstanceState.getInt(BACK_GROUND_COLOR_INDEX)
+            activityEditDailyBinding.main.setBackgroundColor(
+                ContextCompat.getColor(
+                    this@EditDailyActivity,
+                    ConstUtil.backgroundColorList[backgroundColorIndex]
+                )
+            )
+            activityEditDailyBinding.toolbar.setBackgroundColor(
+                ContextCompat.getColor(
+                    this@EditDailyActivity,
+                    ConstUtil.backgroundColorList[backgroundColorIndex]
+                )
+            )
+
+            val moodIndex = savedInstanceState.getInt(MOOD_INDEX)
+            val tempMoodIndex = savedInstanceState.getInt(TEMP_MOOD_INDEX)
+            if (tempMoodIndex != 0) {
+                setMoodIcon(moodIndex)
+            }
+
+            val weatherIndex = savedInstanceState.getInt(WEATHER_INDEX)
+            val tempWeatherIndex = savedInstanceState.getInt(TEMP_WEATHER_INDEX)
+            if (tempWeatherIndex != 0) {
+                setWeatherIcon(weatherIndex)
+            }
+        }
     }
 }

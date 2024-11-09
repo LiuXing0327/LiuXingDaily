@@ -26,7 +26,6 @@ import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
-import java.util.Objects
 
 class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -55,14 +54,14 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         val groupedMap = when (currentSortIndex) {
             1 -> sortedByDescending.sortedBy { it.value.dateTime }
-                .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
+                .groupBy { DateUtil.getDateString(0, Date(it.value.dateTime!!)).substring(0, 7) }
             else -> sortedByDescending.sortedByDescending { it.value.dateTime }
-                .groupBy { DateUtil.getDateString(2, Date(it.value.dateTime!!)).substring(0, 7) }
+                .groupBy { DateUtil.getDateString(0, Date(it.value.dateTime!!)).substring(0, 7) }
         }
 
         val toSortedMap = groupedMap.mapKeys { dailyEntity ->
             dailyEntity.key to DateUtil.getDateString(
-                2,
+                0,
                 Date(dailyEntity.value.first().value.dateTime!!)
             )
         }.mapKeys { it.key.first }
@@ -72,8 +71,10 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             val headerBoolean = sharedPreferences.getBoolean("switch_preference_header_display", true)
             // 判断设置开关添加 -> 年月 ?: 月
             if (headerBoolean) {
+                headerYearMonth = true
                 resultList.add(yearMonth)
             } else {
+                headerYearMonth = false
                 val month = yearMonth.substring(5, 7).toInt()
                 resultList.add(month.toString())
             }
@@ -129,7 +130,7 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"
             }
-            holder.tvDateTime.text = DateUtil.getDateString(2, Date(dailyEntity.dateTime!!))
+            holder.tvDateTime.text = DateUtil.getDateString(0, Date(dailyEntity.dateTime!!))
             setBackgroundColor(dailyEntity, holder)
             holder.ivMood.visibility =
                 if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {

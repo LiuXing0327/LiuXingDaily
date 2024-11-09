@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -95,11 +94,11 @@ class LookDailyActivity : AppCompatActivity() {
                     val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
                     val sortedByDescending = if (currentSortIndex == 1) {
                         filter.sortedBy {
-                            DateUtil.getDateString(2, Date(it.dateTime!!))
+                            DateUtil.getDateString(0, Date(it.dateTime!!))
                         }
                     } else {
                         filter.sortedByDescending {
-                            DateUtil.getDateString(2, Date(it.dateTime!!))
+                            DateUtil.getDateString(0, Date(it.dateTime!!))
                         }
                     }
 
@@ -108,19 +107,25 @@ class LookDailyActivity : AppCompatActivity() {
                             savedInstanceState.getInt(VIEW_PAGER_INDEX, 0)
                         else {
                             val position = intent.getIntExtra("POSITION", 0)
-                            if (position >= 0 && position < filter.size) {
+                            if (position in filter.indices) {
                                 val intentPosition = filter[position]
                                 currentIndex =
                                     sortedByDescending.indexOfFirst { it.id == intentPosition.id }
                             }
                         }
                     }
-                    if (currentIndex >= 0 && currentIndex < sortedByDescending.size) {
+                    if (currentIndex >= sortedByDescending.size) {
+                        currentIndex = sortedByDescending.size - 1
+                    }
+                    if (currentIndex in sortedByDescending.indices) {
                         dailyEntity = sortedByDescending[currentIndex]
                         val lookDailyPagerAdapter =
                             LookDailyPagerAdapter(this@LookDailyActivity, sortedByDescending)
                         lookDailyBinding.viewPagerDaily.adapter = lookDailyPagerAdapter
-                        lookDailyBinding.viewPagerDaily.setCurrentItem(currentIndex, false)
+                        lookDailyBinding.viewPagerDaily.setCurrentItem(
+                            currentIndex,
+                            false
+                        )
                         originalSignalPassword = dailyEntity.singlePassword ?: ""
                         lookDailyBinding.viewPagerDaily.registerOnPageChangeCallback(object :
                             ViewPager2.OnPageChangeCallback() {

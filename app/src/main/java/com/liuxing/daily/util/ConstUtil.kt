@@ -47,6 +47,8 @@ object ConstUtil {
         android.R.color.transparent,
         R.color.color_2,
         R.color.color_3,
-        R.color.color_4
+        R.color.color_4,
+        R.color.color_5,
+        R.color.color_6
     )
 }

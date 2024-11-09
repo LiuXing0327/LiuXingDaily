@@ -20,5 +20,5 @@ data class DailyImageEntity(
     @Expose(deserialize = true, serialize = true) var dailyUuid: String?,
 
     @ColumnInfo(name = "IMAGE_PATH")
-    @Expose(deserialize = true, serialize = true) val imagePath: String?
+    @Expose(deserialize = true, serialize = true) var imagePath: String?
 )

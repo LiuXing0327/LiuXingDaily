@@ -1,0 +1,48 @@
+package com.liuxing.daily.adapter
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
+import com.liuxing.daily.R
+
+/**
+ * Author：流星
+ * DateTime：2024/11/9 16:04
+ * Description：切换颜色的适配器
+ */
+class ChangeDailyCardColorAdapter(
+    private val colorList: List<Int>,
+    private val onColorSelected: (Int,Int) -> Unit
+) :
+    RecyclerView.Adapter<ChangeDailyCardColorAdapter.ViewHolder>() {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_change_daily_card_color, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun getItemCount(): Int {
+        return colorList.size
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val color = colorList[position]
+        holder.colorCard.setCardBackgroundColor(
+            ContextCompat.getColor(
+                holder.itemView.context,
+                color
+            )
+        )
+        holder.itemView.setOnClickListener {
+            onColorSelected(color,position)
+        }
+    }
+
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val colorCard: MaterialCardView = itemView.findViewById(R.id.color_card)
+    }
+}

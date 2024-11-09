@@ -7,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.viewpager2.widget.ViewPager2
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.LookImageAdapter
 import com.liuxing.daily.databinding.ActivityLookDailyImageBinding
-import com.liuxing.daily.ui.edit.EditDailyActivity
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
@@ -79,6 +79,14 @@ class LookDailyImageActivity : AppCompatActivity() {
                     currentImagePath = list.firstOrNull().toString()
                     binding.imagePager.currentItem = dailyImagePosition - 1
                 }
+                binding.toolbar.title = "${dailyImagePosition + 1}/${dailyImageList.size}"
+                binding.imagePager.registerOnPageChangeCallback(object :
+                    ViewPager2.OnPageChangeCallback() {
+                    override fun onPageSelected(position: Int) {
+                        super.onPageSelected(position)
+                        binding.toolbar.title = "${position + 1}/${dailyImageList.size}"
+                    }
+                })
             } else {
                 finish()
             }

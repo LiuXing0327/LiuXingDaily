@@ -172,10 +172,11 @@ class RecyclerBinFragment : Fragment() {
         super.onResume()
         val sharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (sharedPreferences.getBoolean(
-                "switch_preference_header_display",
-                true
-            ) != recyclerBinAdapter.headerYearMonth
+        val headerYearMonth = sharedPreferences.getBoolean(
+            "switch_preference_header_display",
+            true
+        )
+        if (headerYearMonth != recyclerBinAdapter.headerYearMonth
         ) {
             setRecyclerDaily()
         }
