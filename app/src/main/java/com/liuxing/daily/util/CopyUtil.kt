@@ -10,6 +10,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.UUID
 
 object CopyUtil {
@@ -66,6 +67,62 @@ object CopyUtil {
             inputStream?.close()
 
             return file.absolutePath
+        }
+        return ""
+    }
+
+    fun copyVideoToMyAppDir(context: Context, videoUri: Uri): String {
+        val externalFilesDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+        if (externalFilesDir != null) {
+            val copyVideoName = UUID.randomUUID().toString() + ".mp4"
+            val file = File(externalFilesDir, copyVideoName)
+
+            try {
+                val inputStream = context.contentResolver.openInputStream(videoUri)
+                    ?: return ""
+                val outputStream = FileOutputStream(file)
+                val buffer = ByteArray(1024 * 4)
+                var length: Int
+                while (inputStream.read(buffer).also { length = it } != -1) {
+                    outputStream.write(buffer, 0, length)
+                }
+                // 关流
+                inputStream.close()
+                outputStream.close()
+
+                return file.absolutePath
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return ""
+    }
+
+    /**
+     * 复制音频文件到应用私有目录
+     *
+     * @param context 上下文
+     * @param audioUri 音频文件的 URI
+     * @return 复制后的音频文件路径
+     */
+    fun copyAudioToMyAppDir(context: Context, audioUri: Uri): String {
+        val externalFilesDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        if (externalFilesDir != null) {
+            val copyAudioName = UUID.randomUUID().toString() + ".mp3"
+            val file = File(externalFilesDir, copyAudioName)
+            val inputStream: InputStream? = context.contentResolver.openInputStream(audioUri)
+            if (inputStream != null) {
+                FileOutputStream(file).use { outputStream ->
+                    val buffer = ByteArray(1024)
+                    var bytesRead: Int
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        outputStream.write(buffer, 0, bytesRead)
+                    }
+                }
+                // 关流
+                inputStream.close()
+                return file.absolutePath
+            }
         }
         return ""
     }

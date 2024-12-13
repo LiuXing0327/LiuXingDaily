@@ -1,6 +1,7 @@
 package com.liuxing.daily.ui.look
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +29,7 @@ private const val SINGLE_PASSWORD = "singlePassword"
 private const val MOOD_INDEX = "moodIndex"
 private const val WEATHER_INDEX = "weatherIndex"
 private const val DAILY_UUID = "dailyUUID"
+private const val DAILY_LABEL = "dailyLabel"
 
 /**
  * A simple [Fragment] subclass.
@@ -48,7 +50,10 @@ class LookDailyPagerFragment : Fragment() {
     private var dailyUuid: String? = ""
     private lateinit var dailyViewModel: DailyViewModel
     private lateinit var dailyTextView: DailyTextView
-    private var mutableListOf: MutableSet<String> = mutableSetOf()
+    private var imageList: MutableSet<String> = mutableSetOf()
+    private var videoList: MutableSet<String> = mutableSetOf()
+    private var audioList: MutableSet<String> = mutableSetOf()
+    private var dailyLabel: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +67,7 @@ class LookDailyPagerFragment : Fragment() {
             moodIndex = it.getInt(MOOD_INDEX)
             weatherIndex = it.getInt(WEATHER_INDEX)
             dailyUuid = it.getString(DAILY_UUID)
+            dailyLabel = it.getString(DAILY_LABEL)
         }
     }
 
@@ -94,7 +100,8 @@ class LookDailyPagerFragment : Fragment() {
             singlePassword: String?,
             moodInt: Int?,
             weatherIndex: Int?,
-            dailyUUID: String?
+            dailyUUID: String?,
+            dailyLabel: String?
         ) =
             LookDailyPagerFragment().apply {
                 arguments = Bundle().apply {
@@ -107,6 +114,7 @@ class LookDailyPagerFragment : Fragment() {
                     moodInt?.let { putInt(MOOD_INDEX, it) }
                     weatherIndex?.let { putInt(WEATHER_INDEX, it) }
                     dailyUUID?.let { putString(DAILY_UUID, it) }
+                    dailyLabel?.let { putString(DAILY_LABEL, it) }
                 }
             }
     }
@@ -142,6 +150,7 @@ class LookDailyPagerFragment : Fragment() {
         setDailyDateTime()
         setDailyWords()
         setDailyData()
+        setLabelVisibility()
     }
 
     /**
@@ -197,6 +206,7 @@ class LookDailyPagerFragment : Fragment() {
                 }
             }
         }
+        binding.tvLabel.text = dailyLabel
     }
 
     /**
@@ -245,70 +255,116 @@ class LookDailyPagerFragment : Fragment() {
      * 设置日记数据
      */
     private fun setDailyData() {
-        dailyViewModel.queryDailyImageByUuid(dailyUuid!!)
-            .observe(
-                viewLifecycleOwner
-            ) { imageList ->
-                if (imageList.isNotEmpty()) {
-                    mutableListOf = mutableSetOf()
-                    imageList.forEach { dailyImageEntity ->
-                        if (FileUtil().checkFileExists(dailyImageEntity.imagePath.toString())) {
-                            dailyImageEntity.imagePath?.let { imagePath ->
-                                mutableListOf.add(
-                                    imagePath
-                                )
-                            }
-                        }
-                    }
+        fun <T> setDailyList(
+            dailyList: List<T>,
+            getPath: (T) -> String?,
+            tagGenerator: (String) -> String
+        ): MutableSet<String> {
+            val pathSet = mutableSetOf<String>()
+            val currentContent = content ?: ""
+            val updatedContent = StringBuilder(currentContent)
+            val existingPaths = mutableListOf<String>()
 
-                    dailyTextView.setImagePathList(
-                        content!!,
-                        mutableListOf.toList()
-                    )
-
-                    val currentContent = content ?: ""
-                    val updatedContent = StringBuilder(currentContent)
-                    val existingImagePaths = mutableListOf<String>()
-                    imageList.forEach { dailyImageEntity ->
-                        val imagePath = dailyImageEntity.imagePath.toString()
-                        val imgTag = "<img src=\"$imagePath\"/>"
-                        if (FileUtil().checkFileExists(imagePath)) {
-                            existingImagePaths.add(imagePath)
-                            if (!currentContent.contains(imgTag)) {
-                                if (updatedContent.isNotEmpty()) {
-                                    updatedContent.append("\n")
-                                }
-                                updatedContent.append(imgTag)
-                            }
-                        } else {
-                            dailyViewModel.deleteSelectPathImage(imagePath)
+            dailyList.forEach { entity ->
+                val path = getPath(entity).toString()
+                if (FileUtil().checkFileExists(path)) {
+                    pathSet.add(path)
+                    existingPaths.add(path)
+                    val tag = tagGenerator(path)
+                    if (!currentContent.contains(tag)) {
+                        if (updatedContent.isNotEmpty()) {
+                            updatedContent.append("\n")
                         }
+                        updatedContent.append(tag)
                     }
-                    if (updatedContent.toString() != currentContent) {
-                        dailyTextView.text = updatedContent.toString()
-                        dailyViewModel.updateDaily(
-                            DailyEntity(
-                                id,
-                                title,
-                                updatedContent.toString(),
-                                dateTime,
-                                backgroundColorIndex,
-                                singlePassword,
-                                moodIndex,
-                                weatherIndex,
-                                dailyUuid,
-                                false
-                            )
-                        )
-                    }
+                } else {
+                    dailyViewModel.deleteSelectPathImage(path)
                 }
             }
+
+            if (updatedContent.toString() != currentContent) {
+                dailyTextView.text = updatedContent.toString()
+                dailyViewModel.updateDaily(
+                    DailyEntity(
+                        id,
+                        title,
+                        updatedContent.toString(),
+                        dateTime,
+                        backgroundColorIndex,
+                        singlePassword,
+                        moodIndex,
+                        weatherIndex,
+                        dailyUuid,
+                        false,
+                        dailyLabel
+                    )
+                )
+            }
+            return pathSet
+        }
+        dailyViewModel.queryDailyVideoByUuid(dailyUuid!!).observe(viewLifecycleOwner) { videoList ->
+            if (videoList.isNotEmpty()) {
+                this.videoList = setDailyList(
+                    videoList,
+                    getPath = { it.videoPath },
+                    tagGenerator = { path -> "<video src=\"$path\"/>" }
+                )
+
+                dailyTextView.setImagePathList(
+                    content!!,
+                    this.imageList.toList(),
+                    this.videoList.toList(),
+                    this.audioList.toList()
+                )
+            }
+        }
+        dailyViewModel.queryDailyImageByUuid(dailyUuid!!).observe(viewLifecycleOwner) { imageList ->
+            if (imageList.isNotEmpty()) {
+                this.imageList = setDailyList(
+                    imageList,
+                    getPath = { it.imagePath },
+                    tagGenerator = { path -> "<img src=\"$path\"/>" }
+                )
+
+                dailyTextView.setImagePathList(
+                    content!!,
+                    this.imageList.toList(),
+                    this.videoList.toList(),
+                    this.audioList.toList()
+                )
+            }
+        }
+        dailyViewModel.queryDailyAudioByUuid(dailyUuid!!).observe(viewLifecycleOwner) { audioList ->
+            if (audioList.isNotEmpty()) {
+                this.audioList = setDailyList(
+                    audioList,
+                    getPath = { it.audioPath },
+                    tagGenerator = { path -> "<audio src=\"$path\"/>" })
+
+                dailyTextView.setImagePathList(
+                    content!!,
+                    this.imageList.toList(),
+                    this.videoList.toList(),
+                    this.audioList.toList()
+                )
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        val updatedContent = dailyTextView.checkImage(content.toString(), mutableListOf.toList())
+        // 获取去除无效图片标签后的文本
+        val contentWithoutInvalidImages =
+            dailyTextView.checkImageExists(content.toString(), imageList.toList())
+        // 获取去除无效视频标签后的文本
+        val contentWithoutInvalidVideos =
+            dailyTextView.checkVideoExists(contentWithoutInvalidImages, videoList.toList())
+        // 获取去除无效音频标签后的文本
+        val updatedContent =
+            dailyTextView.checkAudioExists(contentWithoutInvalidVideos, audioList.toList())
+        // 如果更新后的内容和原始内容不同，则进行更新
         if (updatedContent != content) {
+            content = updatedContent
             dailyViewModel.updateDaily(
                 DailyEntity(
                     id,
@@ -320,9 +376,17 @@ class LookDailyPagerFragment : Fragment() {
                     moodIndex,
                     weatherIndex,
                     dailyUuid,
-                    false
+                    false,
+                    dailyLabel
                 )
             )
         }
+    }
+
+    /**
+     * 设置标签显示
+     */
+    private fun setLabelVisibility() {
+        binding.lLabel.visibility = if (dailyLabel.isNullOrEmpty()) View.GONE else View.VISIBLE
     }
 }

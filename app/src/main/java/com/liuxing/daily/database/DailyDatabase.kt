@@ -7,12 +7,16 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.liuxing.daily.dao.DailyDao
+import com.liuxing.daily.dao.DailyLabelDao
+import com.liuxing.daily.entity.DailyAudioEntity
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyImageEntity
+import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.entity.DailyVideoEntity
 
 @Database(
-    entities = [DailyEntity::class, DailyImageEntity::class],
-    version = 5,
+    entities = [DailyEntity::class, DailyImageEntity::class, DailyLabelEntity::class, DailyVideoEntity::class,DailyAudioEntity::class],
+    version = 8,
     exportSchema = false
 )
 abstract class DailyDatabase : RoomDatabase() {
@@ -26,7 +30,15 @@ abstract class DailyDatabase : RoomDatabase() {
                     DailyDatabase::class.java,
                     "daily_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,MOGRATION_4_5)
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8
+                    )
                     .build()
                 INSTANCE = instance
                 return instance
@@ -35,6 +47,7 @@ abstract class DailyDatabase : RoomDatabase() {
     }
 
     abstract fun getDailyDao(): DailyDao
+    abstract fun getDailyLabelDao(): DailyLabelDao
 
     /**
      * 数据库升级
@@ -87,9 +100,51 @@ abstract class DailyDatabase : RoomDatabase() {
      *
      * 新增字段 IS_DELETED
      */
-    object MOGRATION_4_5 : Migration(4, 5) {
+    object MIGRATION_4_5 : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE DAILY_INFO ADD COLUMN IS_DELETED INTEGER NOT NULL DEFAULT 0")
         }
+    }
+
+    /**
+     * 数据库升级
+     *
+     * MIGRATION_5_6 5 -> 6
+     *
+     * 新增 DAILY_LABEL 表
+     */
+    object MIGRATION_5_6 : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `DAILY_LABEL` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `LABEL` TEXT)")
+            db.execSQL("ALTER TABLE DAILY_INFO ADD COLUMN DAILY_LABEL TEXT")
+        }
+    }
+
+
+    /**
+     * 数据库升级
+     *
+     * MIGRATION_6_7 6 -> 7
+     *
+     * 新增 DAILY_VIDEO 表
+     */
+    object MIGRATION_6_7 : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `DAILY_VIDEO` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `DAILY_UUID` TEXT,`VIDEO_PATH` TEXT)")
+        }
+    }
+
+    /**
+     * 数据库升级
+     *
+     * MIGRATION_7_8 7 -> 8
+     *
+     * 新增 DAILY_AUDIO 表
+     */
+    object MIGRATION_7_8 : Migration(7,8){
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `DAILY_AUDIO` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `DAILY_UUID` TEXT,`AUDIO_PATH` TEXT)")
+        }
+
     }
 }

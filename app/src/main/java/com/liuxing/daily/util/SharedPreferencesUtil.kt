@@ -25,6 +25,9 @@ object SharedPreferencesUtil {
      * @param weatherIndex 天气索引
      * @param dailyUuid 日记识别码
      * @param imageListNotNull 图片集合不为空
+     * @param dailyLabel 日记标签
+     * @param videoListNotNull 视频集合不为空
+     * @param audioListNotNull 音频集合不为空
      */
     fun autoSaveDailySharedPreferences(
         context: Context,
@@ -37,7 +40,10 @@ object SharedPreferencesUtil {
         moodIndex: Int,
         weatherIndex: Int,
         dailyUuid: String,
-        imageListNotNull: Boolean
+        imageListNotNull: Boolean,
+        dailyLabel: String,
+        videoListNotNull: Boolean,
+        audioListNotNull: Boolean
     ) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         sharedPreferences.edit {
@@ -69,6 +75,9 @@ object SharedPreferencesUtil {
                 "switch_preference_auto_save_image_list_not_null",
                 imageListNotNull
             )
+            putString("switch_preference_auto_save_daily_label", dailyLabel)
+            putBoolean("switch_preference_auto_save_video_list_not_null", videoListNotNull)
+            putBoolean("switch_preference_auto_save_video_list_not_null", audioListNotNull)
             apply()
         }
     }

@@ -2,6 +2,11 @@ package com.liuxing.daily.view
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.text.Spannable
 import android.text.SpannableString
@@ -11,12 +16,19 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ImageSpan
 import android.util.AttributeSet
+import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.google.android.material.textview.MaterialTextView
+import com.liuxing.daily.R
+import com.liuxing.daily.ui.audio.PlayAudioActivity
 import com.liuxing.daily.ui.image.LookDailyImageActivity
+import com.liuxing.daily.ui.video.LookDailyVideoActivity
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
+import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
  * Author：流星
@@ -27,6 +39,8 @@ class DailyTextView : MaterialTextView {
 
     private val context: Context
     private var imagePathList: MutableSet<String> = mutableSetOf()
+    private var videoPathList: MutableSet<String> = mutableSetOf()
+    private var audioPathList: MutableSet<String> = mutableSetOf()
     private var dailyUuid: String = ""
 
     constructor(context: Context) : super(context) {
@@ -62,10 +76,19 @@ class DailyTextView : MaterialTextView {
      * @param text 日记内容
      * @param newImagePathList 新的图片路径集合
      */
-    fun setImagePathList(text: String, newImagePathList: List<String>) {
+    fun setImagePathList(
+        text: String,
+        newImagePathList: List<String>,
+        newVideoPathList: List<String>,
+        newAudioPathList: List<String>
+    ) {
         this.imagePathList.clear()
         this.imagePathList.addAll(newImagePathList)
-        setFormattedText(text, newImagePathList)
+        this.videoPathList.clear()
+        this.videoPathList.addAll(newVideoPathList)
+        this.audioPathList.clear()
+        this.audioPathList.addAll(newAudioPathList)
+        setFormattedText(text, newImagePathList, newVideoPathList, newAudioPathList)
     }
 
     /**
@@ -73,31 +96,52 @@ class DailyTextView : MaterialTextView {
      *
      * @param text 日记内容
      * @param newImagePathList 新的图片路径集合
+     * @param newVideoPathList 新的视频路径集合
      */
     private fun setFormattedText(
         text: String,
-        newImagePathList: List<String>
+        newImagePathList: List<String>,
+        newVideoPathList: List<String>,
+        newAudioPathList: List<String>
     ) {
         val spannableString = SpannableStringBuilder()
         var currentIndex = 0
+        val tags = mutableListOf<Pair<Int, SpannableString>>()
         newImagePathList.forEachIndexed { imageIndex, imagePath ->
             val imgTag = "<img src=\"$imagePath\"/>"
             val imgTagIndex = text.indexOf(imgTag, currentIndex)
-
             if (imgTagIndex != -1) {
-                if (imgTagIndex > currentIndex) {
-                    spannableString.append(text.substring(currentIndex, imgTagIndex))
-                }
-                val imageSpannable = createImageSpannable(imagePath, imageIndex)
-                spannableString.append(imageSpannable)
-                currentIndex = imgTagIndex + imgTag.length
+                tags.add(imgTagIndex to createImageSpannable(imagePath, imageIndex))
             }
+        }
+        newVideoPathList.forEachIndexed { videoIndex, videoPath ->
+            val videoTag = "<video src=\"$videoPath\"/>"
+            val videoTagIndex = text.indexOf(videoTag, currentIndex)
+            if (videoTagIndex != -1) {
+                tags.add(videoTagIndex to createVideoSpannable(videoPath, videoIndex))
+            }
+        }
+        newAudioPathList.forEachIndexed { audioIndex, audioPath ->
+            val audioTag = "<audio src=\"$audioPath\"/>"
+            val audioTagIndex = text.indexOf(audioTag, currentIndex)
+            if (audioTagIndex != -1) {
+                tags.add((audioTagIndex to createAudioSpannable(audioPath, audioIndex)))
+            }
+        }
+        tags.sortBy { it.first }
+        tags.forEach { (tagIndex, replacementSpan) ->
+            if (tagIndex > currentIndex) {
+                spannableString.append(text.substring(currentIndex, tagIndex))
+            }
+            spannableString.append(replacementSpan)
+            currentIndex = tagIndex + replacementSpan.length
         }
         if (currentIndex < text.length) {
             spannableString.append(text.substring(currentIndex))
         }
         setText(spannableString)
     }
+
 
     /**
      * 创建图片
@@ -159,13 +203,13 @@ class DailyTextView : MaterialTextView {
     }
 
     /**
-     * 检查图片是否存在
+     * 检查图片是否存在，并去除不存在的视频标签
      *
      * @param text 日记内容
      * @param imagePathList 图片路径集合
-     * @return 结果
+     * @return 去除后的文本，去除了不存在视频的标签
      */
-    fun checkImage(text: String, imagePathList: List<String>): String {
+    fun checkImageExists(text: String, imagePathList: List<String>): String {
         val sb = StringBuilder(text)
         imagePathList.forEach { imagePath ->
             val imgTag = "<img src=\"$imagePath\"/>"
@@ -181,4 +225,209 @@ class DailyTextView : MaterialTextView {
         }
         return sb.toString()
     }
+
+    /**
+     * 创建视频占位符
+     *
+     * @param videoPath 视频路径
+     * @param videoPathIndex 视频路径索引
+     *
+     * @return SpannableString
+     */
+    private fun createVideoSpannable(videoPath: String, videoPathIndex: Int): SpannableString {
+        val videoTag = "<video src=\"$videoPath\"/>"
+        val bitmap = createVideoThumbnail(videoPath) ?: return SpannableString(
+            ContextCompat.getDrawable(
+                context,
+                android.R.color.transparent
+            )?.let {
+                SpannableString("").apply {
+                    setSpan(ImageSpan(it), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            } ?: SpannableString("")
+        )
+        val originalWidth = bitmap.width
+        val originalHeight = bitmap.height
+        val maxWidth = resources.displayMetrics.widthPixels - 40
+        val toWidth = maxWidth.toFloat() / originalWidth
+        val scaleFactor = maxWidth.toFloat() / originalWidth
+        val newWidth = maxWidth
+        val newHeight = (originalHeight * toWidth).toInt()
+        val ss = SpannableString(videoTag)
+        val createBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(createBitmap)
+        val matrix = Matrix()
+        matrix.setScale(scaleFactor, scaleFactor)
+        canvas.drawBitmap(bitmap, matrix, null)
+        val playDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_play_arrow_24)
+        val playBitmap = playDrawable?.let {
+            val width = it.intrinsicWidth
+            val height = it.intrinsicHeight
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            it.setBounds(0, 0, width, height)
+            it.draw(canvas)
+            bitmap
+        }
+        playBitmap?.let {
+            val centerX = (newWidth - it.width) / 2f
+            val centerY = (newHeight - it.height) / 2f
+            canvas.drawBitmap(it, centerX, centerY, null)
+        }
+        val drawable = BitmapDrawable(resources, createBitmap).apply {
+            setBounds(0, 0, newWidth, newHeight)
+        }
+        val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
+        ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        ss.setSpan(
+            createVideoClickableSpan(videoPathIndex),
+            0,
+            ss.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        return ss
+    }
+
+
+    /**
+     * 创建视频点击事件
+     *
+     * @param videoPathIndex 视频路径索引
+     */
+    private fun createVideoClickableSpan(videoPathIndex: Int) = object : ClickableSpan() {
+        override fun onClick(widget: View) {
+            val intent = Intent(context, LookDailyVideoActivity::class.java).apply {
+                putExtra("look_daily_video_path", videoPathList.elementAt(videoPathIndex))
+                putExtra("look_daily_video_position", videoPathIndex)
+                putExtra("look_daily_video_uuid", dailyUuid)
+            }
+            context.startActivity(intent)
+        }
+
+        override fun updateDrawState(ds: TextPaint) {}
+    }
+
+    /**
+     * 检查视频是否存在，并去除不存在的视频标签
+     *
+     * @param text 日记内容
+     * @param videoPathList 视频路径集合
+     * @return 去除后的文本，去除了不存在视频的标签
+     */
+    fun checkVideoExists(text: String, videoPathList: List<String>): String {
+        val sb = StringBuilder(text)
+        videoPathList.forEach { videoPath ->
+            val videoTag = "<video src=\"$videoPath\"/>"
+            if (!FileUtil().checkFileExists(videoPath)) {
+                var startIndex = sb.indexOf(videoTag)
+                while (startIndex != -1) {
+                    val endIndex = startIndex + videoTag.length
+                    sb.delete(startIndex, endIndex)
+                    startIndex = sb.indexOf(videoTag, startIndex)
+                }
+            }
+        }
+        return sb.toString()
+    }
+
+    /**
+     * 创建音频占位符
+     *
+     * @param audioPath 音频路径
+     * @param audioIndex 音频索引
+     * @return CharSequence 返回带有音频的SpannableString
+     */
+    private fun createAudioSpannable(audioPath: String, audioIndex: Int): SpannableString {
+        val audioTag = "<audio src=\"$audioPath\"/>"
+        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_24)
+            ?: return SpannableString("")
+        val maxWidth = resources.displayMetrics.widthPixels - 40
+        val borderHeightDp = 40
+        val borderHeightPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            borderHeightDp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
+        val iconHeightDp = 24
+        val iconHeightPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            iconHeightDp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
+        val originalWidth = iconDrawable.intrinsicWidth
+        val originalHeight = iconDrawable.intrinsicHeight
+        val scaleFactor = iconHeightPx.toFloat() / originalHeight.toFloat()
+        val iconWidthPx = (originalWidth * scaleFactor).toInt()
+        iconDrawable.setBounds(0, 0, iconWidthPx, iconHeightPx)
+        val bitmapWithBorder =
+            Bitmap.createBitmap(maxWidth, borderHeightPx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmapWithBorder)
+        val borderPaint = Paint().apply {
+            color = Color.BLACK
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+        }
+        canvas.drawRect(0f, 0f, maxWidth.toFloat(), borderHeightPx.toFloat(), borderPaint)
+
+        val centerX = (maxWidth - iconWidthPx) / 2f
+        val centerY = (borderHeightPx - iconHeightPx) / 2f
+        canvas.drawBitmap(iconDrawable.toBitmap(), centerX, centerY, null)
+        val drawableWithBorder = BitmapDrawable(resources, bitmapWithBorder).apply {
+            setBounds(0, 0, maxWidth, borderHeightPx)
+        }
+        val ss = SpannableString(audioTag)
+        val imageSpan = ImageSpan(drawableWithBorder, ImageSpan.ALIGN_BASELINE)
+        ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        ss.setSpan(
+            createAudioClickableSpan(audioIndex),
+            0,
+            ss.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        return ss
+    }
+
+    /**
+     * 创建音频点击事件
+     *
+     * @param audioPathIndex 音频路径索引
+     */
+    private fun createAudioClickableSpan(audioPathIndex: Int) = object : ClickableSpan() {
+        override fun onClick(widget: View) {
+            val intent = Intent(context, PlayAudioActivity::class.java).apply {
+                putExtra("look_daily_audio_path", audioPathList.elementAt(audioPathIndex))
+                putExtra("look_daily_audio_position", audioPathIndex)
+                putExtra("look_daily_audio_uuid", dailyUuid)
+            }
+            context.startActivity(intent)
+        }
+
+        override fun updateDrawState(ds: TextPaint) {}
+    }
+
+    /**
+     * 检查音频是否存在，并去除不存在的音频标签
+     *
+     * @param text 日记内容
+     * @param audioPathList 音频路径集合
+     * @return 去除后的文本，去除了不存在音频的标签
+     */
+    fun checkAudioExists(text: String, audioPathList: List<String>): String {
+        val sb = StringBuilder(text)
+        audioPathList.forEach { audioPath ->
+            val audioTag = "<audio src=\"$audioPath\"/>"
+            if (!FileUtil().checkFileExists(audioPath)) {
+                var startIndex = sb.indexOf(audioTag)
+                while (startIndex != -1) {
+                    val endIndex = startIndex + audioTag.length
+                    sb.delete(startIndex, endIndex)
+                    startIndex = sb.indexOf(audioTag, startIndex)
+                }
+            }
+        }
+        return sb.toString()
+    }
+
 }

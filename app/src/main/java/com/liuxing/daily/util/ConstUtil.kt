@@ -51,4 +51,6 @@ object ConstUtil {
         R.color.color_5,
         R.color.color_6
     )
+
+    const val VIDEO_TAG_TEMPLATE = "<video src=\"%s\"/>"
 }

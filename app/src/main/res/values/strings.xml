@@ -112,4 +112,11 @@
     <string name="restore">还原</string>
     <string name="do_you_want_to_delete_or_restore_the_daily">你想要删除还是还原这篇日记？</string>
     <string name="gallery">图库</string>
+    <string name="create_label">创建标签</string>
+    <string name="rename">重命名</string>
+    <string name="the_label_is_empty">标签为空</string>
+    <string name="the_label_already_exists">标签已存在</string>
+    <string name="label">标签</string>
+    <string name="add_video">添加视频</string>
+    <string name="add_audio">添加音频</string>
 </resources>

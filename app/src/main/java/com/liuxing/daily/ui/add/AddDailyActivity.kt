@@ -35,6 +35,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.ChangeDailyCardColorAdapter
 import com.liuxing.daily.adapter.MoodAdapter
+import com.liuxing.daily.adapter.SelectDailyLabelAdapter
 import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
@@ -60,6 +61,7 @@ private const val MOOD_INDEX = "moodIndex"
 private const val TEMP_MOOD_INDEX = "tempMoodIndex"
 private const val WEATHER_INDEX = "weatherIndex"
 private const val TEMP_WEATHER_INDEX = "tempWeatherIndex"
+private const val DAILY_LABEL = "dailyLabel"
 
 class AddDailyActivity : AppCompatActivity() {
 
@@ -73,8 +75,14 @@ class AddDailyActivity : AppCompatActivity() {
     private var tempWeatherIndex = 0
     private val dailyUuid = UUID.randomUUID().toString()
     private val imageList = mutableSetOf<String>()
+    private val videoList = mutableSetOf<String>()
+    private val audioList = mutableSetOf<String>()
     private val tempImageList = mutableSetOf<String>()
+    private val tempVideoList = mutableSetOf<String>()
+    private val tempAudioList = mutableSetOf<String>()
     private lateinit var dailyTextInputEdit: DailyTextInputEdit
+    private var dailyLabelList = mutableListOf<String>()
+    private var dailyLabel: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,6 +131,7 @@ class AddDailyActivity : AppCompatActivity() {
         setDateTime()
         checkedTitleLength()
         restoreIndex(savedInstanceState)
+        setDailyLabel()
     }
 
     /**
@@ -355,13 +364,76 @@ class AddDailyActivity : AppCompatActivity() {
                             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                             addCategory(Intent.CATEGORY_OPENABLE)
                         }
-                        addImageLauncher.launch(intent)
+                        addLauncher.launch(intent)
+                    }
+
+                    R.id.item_add_video -> {
+                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                            setType("video/*")
+                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addLauncher.launch(intent)
+                    }
+
+                    R.id.item_add_audio -> {
+                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                            setType("audio/*")
+                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addLauncher.launch(intent)
+                    }
+
+                    R.id.item_label -> {
+                        val view =
+                            layoutInflater.inflate(R.layout.dialog_select_daily_label_layout, null)
+                        val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
+                        val linearLayoutManager = LinearLayoutManager(this@AddDailyActivity)
+                        recyclerView.layoutManager = linearLayoutManager
+                        val selectDailyLabelAdapter = SelectDailyLabelAdapter(dailyLabelList)
+                        recyclerView.adapter = selectDailyLabelAdapter
+                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                            setTitle(getString(R.string.label))
+                            setView(view)
+                            setPositiveButton(getString(R.string.not_add)) { _, _ ->
+                                dailyLabel = ""
+                                activityAddDailyBinding.lLabel?.visibility = View.GONE
+                            }
+                            setNegativeButton(getString(R.string.cancel), null)
+                            val dialog = create()
+                            dialog.show()
+                            selectDailyLabelAdapter.setOnItemClickListener(object :
+                                OnItemClickListener {
+                                override fun onItemClick(position: Int) {
+                                    dailyLabel = dailyLabelList[position]
+                                    activityAddDailyBinding.tvLabel?.text = dailyLabel
+                                    activityAddDailyBinding.lLabel?.visibility = View.VISIBLE
+                                    dialog.dismiss()
+                                }
+
+                            })
+                        }
                     }
                 }
 
                 return true
             }
         })
+    }
+
+    /**
+     * 设置日记标签
+     */
+    private fun setDailyLabel() {
+        dailyViewModel.queryAllDailyLabel().observe(this) { dailyLabelList ->
+            val sortedBy = dailyLabelList.sortedBy { it.label?.lowercase() }
+            sortedBy.forEach {
+                it.label?.let { it1 -> this.dailyLabelList.add(it1) }
+            }
+        }
     }
 
     /**
@@ -379,7 +451,7 @@ class AddDailyActivity : AppCompatActivity() {
                     ConstUtil.moodList[position]
                 )
             )
-            moodIndex = position
+            moodIndex = position + 1
             tempMoodIndex = 1
             activityAddDailyBinding.ivMood.visibility = View.VISIBLE
         }
@@ -401,7 +473,7 @@ class AddDailyActivity : AppCompatActivity() {
                     ConstUtil.weatherList[position]
                 )
             )
-            weatherIndex = position
+            weatherIndex = position + 1
             tempWeatherIndex = 1
         }
     }
@@ -449,9 +521,10 @@ class AddDailyActivity : AppCompatActivity() {
                     ),
                     backgroundColorIndex = backgroundColorIndex,
                     singlePassword = HashUtil.hashSHA256(singlePassword.toString()),
-                    moodIndex = if (tempMoodIndex == 0) moodIndex else moodIndex + 1,
-                    weatherIndex = if (tempWeatherIndex == 0) weatherIndex else weatherIndex + 1,
-                    dailyUUID = dailyUuid
+                    moodIndex = moodIndex,
+                    weatherIndex = weatherIndex,
+                    dailyUUID = dailyUuid,
+                    dailyLabel = dailyLabel
                 )
             )
             finish()
@@ -487,7 +560,7 @@ class AddDailyActivity : AppCompatActivity() {
                 .setPositiveButton(getString(R.string.sure)) { dialog, which ->
                     // 将自动保存的数据清空
                     autoSaveDailySharedPreferences(
-                        this, 1, "", "", 0, 0, "", 0, 0, "", false,
+                        this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false,false
                     )
                     isSystemExit = false
                     saveDaily()
@@ -495,10 +568,12 @@ class AddDailyActivity : AppCompatActivity() {
                 .setNegativeButton(getString(R.string.cancel)) { dialog, which ->
                     // 将自动保存的数据清空
                     autoSaveDailySharedPreferences(
-                        this, 1, "", "", 0, 0, "", 0, 0, "", false,
+                        this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false,false
                     )
                     isSystemExit = false
                     notSaveToDeleteAppImage()
+                    notSaveToDeleteAppVideo()
+                    notSaveToDeleteAppAudio()
                     finish()
                 }
                 .create()
@@ -523,12 +598,36 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     /**
+     * 不保存则删除应用私有目录下对应的视频
+     */
+    private fun notSaveToDeleteAppVideo() {
+        CoroutineScope(Dispatchers.IO).launch {
+            dailyViewModel.deletePathVideoByDailyUuid(dailyUuid)
+            videoList.forEach { path ->
+                FileUtil().deleteFile(path)
+            }
+        }
+    }
+
+    /**
+     * 不保存则删除应用私有目录下对应的音频
+     */
+    private fun notSaveToDeleteAppAudio() {
+        CoroutineScope(Dispatchers.IO).launch {
+            dailyViewModel.deletePathAudioByDailyUuid(dailyUuid)
+            audioList.forEach { path ->
+                FileUtil().deleteFile(path)
+            }
+        }
+    }
+
+    /**
      * 判断主要内容是否不为空
      */
     private fun contentIsNotNull(): Boolean {
         return activityAddDailyBinding.inputTitle.text!!.trim()
             .isNotEmpty() || dailyTextInputEdit.text!!.trim()
-            .isNotEmpty() || imageList.isNotEmpty()
+            .isNotEmpty() || imageList.isNotEmpty() || videoList.isNotEmpty() || audioList.isNotEmpty()
     }
 
     /**
@@ -566,7 +665,10 @@ class AddDailyActivity : AppCompatActivity() {
                 moodIndex,
                 weatherIndex,
                 dailyUuid,
-                imageList.isNotEmpty()
+                imageList.isNotEmpty(),
+                dailyLabel,
+                videoList.isNotEmpty(),
+                audioList.isNotEmpty()
             )
         }
     }
@@ -576,9 +678,9 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     /**
-     * 添加图片启动器
+     * 添加启动器
      */
-    private val addImageLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+    private val addLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
         object : ActivityResultCallback<ActivityResult> {
             override fun onActivityResult(result: ActivityResult) {
@@ -586,16 +688,30 @@ class AddDailyActivity : AppCompatActivity() {
                     if (result.resultCode != Activity.RESULT_OK) return
                     val data = result.data ?: return
                     tempImageList.clear()
+                    tempVideoList.clear()
                     data.clipData?.let { clipData ->
                         for (i in 0 until clipData.itemCount) {
-                            addImage(clipData.getItemAt(i).uri)
+                            val uri = clipData.getItemAt(i).uri
+                            selectUri(uri)
                         }
                     } ?: data.data?.let { uri ->
-                        addImage(uri)
+                        selectUri(uri)
                     }
-                    dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
-                    dailyTextInputEdit.insertImages(tempImageList.toList())
+                    if (tempImageList.isNotEmpty()) {
+                        dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+                        dailyTextInputEdit.insertImages(tempImageList.toList())
+                    }
+                    if (tempVideoList.isNotEmpty()) {
+                        dailyViewModel.insertDailyVideoPath(dailyUuid, tempVideoList.toList())
+                        dailyTextInputEdit.insertVideos(tempVideoList.toList())
+                    }
+                    if (tempAudioList.isNotEmpty()) {
+                        dailyViewModel.insertDailyAudioPath(dailyUuid, tempAudioList.toList())
+                        dailyTextInputEdit.insertAudio(tempAudioList.toList())
+                    }
                     tempImageList.clear()
+                    tempVideoList.clear()
+                    tempAudioList.clear()
                 } catch (e: Exception) {
                     MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
                         setMessage(getString(R.string.add_failed))
@@ -606,6 +722,30 @@ class AddDailyActivity : AppCompatActivity() {
                 }
             }
         })
+
+    /**
+     * 选择 uri
+     *
+     * @param uri 文件
+     */
+    private fun selectUri(uri: Uri) {
+        val type = contentResolver.getType(uri)
+        type?.let {
+            when {
+                it.startsWith("image/") -> {
+                    addImage(uri)
+                }
+
+                it.startsWith("video/") -> {
+                    addVideo(uri)
+                }
+
+                it.startsWith("audio/") -> {
+                    addAudio(uri)
+                }
+            }
+        }
+    }
 
     /**
      * 添加图片
@@ -619,6 +759,29 @@ class AddDailyActivity : AppCompatActivity() {
         tempImageList.add(copyImageToMyAppDir)
     }
 
+    /**
+     * 添加视频
+     *
+     * @param uri 视频
+     */
+    private fun addVideo(uri: Uri) {
+        val copyImageToMyAppDir =
+            CopyUtil.copyVideoToMyAppDir(this@AddDailyActivity, uri)
+        videoList.add(copyImageToMyAppDir)
+        tempVideoList.add(copyImageToMyAppDir)
+    }
+
+    /**
+     * 添加音频
+     *
+     * @param uri 音频
+     */
+    private fun addAudio(uri: Uri) {
+        val copyAudioToMyAppDir = CopyUtil.copyAudioToMyAppDir(this, uri)
+        audioList.add(copyAudioToMyAppDir)
+        tempAudioList.add(copyAudioToMyAppDir)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(BACK_GROUND_COLOR_INDEX, backgroundColorIndex)
@@ -626,6 +789,7 @@ class AddDailyActivity : AppCompatActivity() {
         outState.putInt(TEMP_MOOD_INDEX, tempMoodIndex)
         outState.putInt(WEATHER_INDEX, weatherIndex)
         outState.putInt(TEMP_WEATHER_INDEX, tempWeatherIndex)
+        outState.putString(DAILY_LABEL, dailyLabel)
     }
 
     /**
@@ -650,13 +814,25 @@ class AddDailyActivity : AppCompatActivity() {
             val moodIndex = savedInstanceState.getInt(MOOD_INDEX)
             val tempMoodIndex = savedInstanceState.getInt(TEMP_MOOD_INDEX)
             if (tempMoodIndex != 0) {
-                setMoodIcon(moodIndex)
+                if (moodIndex == 0) setMoodIcon(ConstUtil.moodList.size - 1) else setMoodIcon(
+                    moodIndex - 1
+                )
             }
 
             val weatherIndex = savedInstanceState.getInt(WEATHER_INDEX)
             val tempWeatherIndex = savedInstanceState.getInt(TEMP_WEATHER_INDEX)
             if (tempWeatherIndex != 0) {
-                setWeatherIcon(weatherIndex)
+                if (weatherIndex == 0) setWeatherIcon(ConstUtil.weatherList.size - 1) else setWeatherIcon(
+                    weatherIndex - 1
+                )
+            }
+
+            dailyLabel = savedInstanceState.getString(DAILY_LABEL) ?: ""
+            activityAddDailyBinding.tvLabel.text = dailyLabel
+            activityAddDailyBinding.lLabel.visibility = if (dailyLabel.isNotEmpty()) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
         }
     }
