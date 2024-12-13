@@ -6,8 +6,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import com.liuxing.daily.entity.DailyAudioEntity
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyImageEntity
+import com.liuxing.daily.entity.DailyVideoEntity
 
 @Dao
 interface DailyDao {
@@ -47,4 +49,34 @@ interface DailyDao {
 
     @Query("SELECT COUNT(*) FROM DAILY_IMAGE")
     fun queryImageCount(): LiveData<Int>
+
+    @Insert
+    suspend fun insertDailyVideoPath(vararg dailyVideoEntity: DailyVideoEntity)
+
+    @Query("DELETE FROM DAILY_VIDEO WHERE VIDEO_PATH = :videoPath")
+    suspend fun deleteDailySelectPathVideo(vararg videoPath: String)
+
+    @Query("DELETE FROM DAILY_VIDEO WHERE DAILY_UUID = :dailyUuid")
+    suspend fun deleteDailyVideoPathByDailyUuid(dailyUuid: String)
+
+    @Query("SELECT * FROM DAILY_VIDEO WHERE DAILY_UUID = :dailyUuid")
+    fun queryDailyVideoByUuid(dailyUuid: String): LiveData<List<DailyVideoEntity>>
+
+    @Query("SELECT * FROM DAILY_VIDEO WHERE DAILY_UUID = :dailyUuid")
+    suspend fun queryDailyVideoByUuidToList(dailyUuid: String): List<DailyVideoEntity>
+
+    @Insert
+    suspend fun insertDailyAudioPath(vararg dailyAudioEntity: DailyAudioEntity)
+
+    @Query("DELETE FROM DAILY_AUDIO WHERE AUDIO_PATH = :audioPath")
+    suspend fun deleteDailySelectPathAudio(vararg audioPath: String)
+
+    @Query("DELETE FROM DAILY_AUDIO WHERE DAILY_UUID = :dailyUuid")
+    suspend fun deleteDailyAudioPathByDailyUuid(vararg dailyUuid: String)
+
+    @Query("SELECT * FROM DAILY_AUDIO WHERE DAILY_UUID =:dailyUuid")
+    fun queryDailyAudioByUuid(dailyUuid: String): LiveData<List<DailyAudioEntity>>
+
+    @Query("SELECT * FROM DAILY_AUDIO WHERE DAILY_UUID =:dailyUuid")
+    suspend fun queryDailyAudioByUuidToList(dailyUuid: String): List<DailyAudioEntity>
 }

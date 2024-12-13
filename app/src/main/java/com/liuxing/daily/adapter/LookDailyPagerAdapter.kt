@@ -28,7 +28,8 @@ class LookDailyPagerAdapter(
             dailyEntity.singlePassword,
             dailyEntity.moodIndex,
             dailyEntity.weatherIndex,
-            dailyEntity.dailyUUID
+            dailyEntity.dailyUUID,
+            dailyEntity.dailyLabel
         )
     }
 }

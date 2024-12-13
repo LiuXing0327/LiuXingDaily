@@ -191,7 +191,8 @@ class LookDailyActivity : AppCompatActivity() {
                                             dailyEntity.moodIndex,
                                             dailyEntity.weatherIndex,
                                             dailyEntity.dailyUUID,
-                                            true
+                                            true,
+                                            dailyEntity.dailyLabel
                                         )
                                     )
                                 }
@@ -208,8 +209,13 @@ class LookDailyActivity : AppCompatActivity() {
                                         dailyViewModel.deletePathImageByDailyUuid(
                                             it
                                         )
+                                        dailyViewModel.deletePathVideoByDailyUuid(
+                                            it
+                                        )
+                                        dailyViewModel.deletePathAudioByDailyUuid(
+                                            it
+                                        )
                                     }
-                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
                                     dailyViewModel.deleteDaily(dailyEntity)
                                 }
                                 setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
@@ -224,7 +230,8 @@ class LookDailyActivity : AppCompatActivity() {
                                             dailyEntity.moodIndex,
                                             dailyEntity.weatherIndex,
                                             dailyEntity.dailyUUID,
-                                            true
+                                            true,
+                                            dailyEntity.dailyLabel
                                         )
                                     )
                                 }
@@ -263,6 +270,7 @@ class LookDailyActivity : AppCompatActivity() {
                         intent.putExtra("mood_index", dailyEntity.moodIndex)
                         intent.putExtra("weather_index", dailyEntity.weatherIndex)
                         intent.putExtra("daily_uuid", dailyEntity.dailyUUID)
+                        intent.putExtra("daily_label", dailyEntity.dailyLabel)
                         intent.setClass(this@LookDailyActivity, EditDailyActivity::class.java)
                         startActivity(intent)
                     }
@@ -370,7 +378,9 @@ class LookDailyActivity : AppCompatActivity() {
                                                                     "",
                                                                     dailyEntity.moodIndex,
                                                                     dailyEntity.weatherIndex,
-                                                                    dailyEntity.dailyUUID
+                                                                    dailyEntity.dailyUUID,
+                                                                    false,
+                                                                    dailyEntity.dailyLabel
                                                                 )
                                                             )
                                                             SnackbarUtil.showSnackbarShort(

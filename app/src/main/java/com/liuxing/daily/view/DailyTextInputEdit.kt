@@ -1,6 +1,11 @@
 package com.liuxing.daily.view
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.text.Editable
 import android.text.Spannable
@@ -8,13 +13,16 @@ import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ImageSpan
 import android.util.AttributeSet
-import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.google.android.material.textfield.TextInputEditText
+import com.liuxing.daily.R
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
-import kotlin.math.abs
+import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
  * Author：流星
@@ -32,6 +40,13 @@ class DailyTextInputEdit : TextInputEditText {
     private var imageDeletionListener: ImageDeletionListener? = null
     private val imageMap: MutableMap<String, String> = mutableMapOf()
     private var oldImageList: List<String> = listOf()
+    private var oldVideoList: List<String> = listOf()
+    private var audioInsertionListener: AudioInsertionListener? = null
+    private var videoInsertionListener: VideoInsertionListener? = null
+    private var audioPathList: MutableSet<String> = mutableSetOf()
+    private var videoPathList: MutableSet<String> = mutableSetOf()
+    private var videoDeletionListener: VideoDeletionListener? = null
+    private var audioDeletionListener: AudioDeletionListener? = null
 
     constructor(context: Context) : super(context) {
         this.context = context
@@ -64,6 +79,28 @@ class DailyTextInputEdit : TextInputEditText {
     }
 
     /**
+     * 设置旧版本的视频集合
+     *
+     * @param oldVideoList 旧版本的视频集合
+     */
+    fun setOldVideoList(oldVideoList: List<String>) {
+        this.oldVideoList = oldVideoList
+        val missingVideos = oldVideoList.filterNot { videoPathList.contains(it) }
+        if (missingVideos.isNotEmpty()) {
+            insertVideos(missingVideos)
+        }
+    }
+
+    /**
+     * 获取旧版本的视频集合
+     *
+     * @return 旧版本的视频集合
+     */
+    fun getOldVideoList(): List<String> {
+        return oldVideoList
+    }
+
+    /**
      * 解析文本中的图片标签
      *
      * @param text 要解析的文本
@@ -85,7 +122,13 @@ class DailyTextInputEdit : TextInputEditText {
      */
     fun setEditContent(content: String) {
         val imagePaths = extractImagePaths(content)
+        val videoPaths = extractVideoPaths(content)
+        val audioPaths = extractAudioPaths(content)
+
         this.imagePathList = imagePaths.toMutableSet()
+        this.videoPathList = videoPaths.toMutableSet()
+        this.audioPathList = audioPaths.toMutableSet()
+
         val editableContent = Editable.Factory.getInstance().newEditable(content)
         imagePaths.forEach { imagePath ->
             val imgTag = "<img src=\"$imagePath\"/>"
@@ -96,8 +139,62 @@ class DailyTextInputEdit : TextInputEditText {
                 )
             }
         }
+
+        videoPaths.forEach { videoPath ->
+            val videoTag = "<video src=\"$videoPath\"/>"
+            val startIndex = editableContent.indexOf(videoTag)
+            if (startIndex != -1) {
+                editableContent.replace(
+                    startIndex, startIndex + videoTag.length, createVideoSpannable(videoPath)
+                )
+            }
+        }
+
+        audioPaths.forEach { audioPath ->
+            val audioTag = "<audio src=\"$audioPath\"/>"
+            val startIndex = editableContent.indexOf(audioTag)
+            if (startIndex != -1) {
+                editableContent.replace(
+                    startIndex,
+                    startIndex + audioTag.length,
+                    createAudioSpannable(audioPath)
+                )
+            }
+        }
+
         text = editableContent
     }
+
+    /**
+     * 解析视频路径
+     *
+     * @param text 文本内容
+     * @return 视频路径列表
+     */
+    private fun extractVideoPaths(text: String): List<String> {
+        val videoPaths = mutableListOf<String>()
+        val regex = Regex("<video src=\"(.*?)\"/>")
+        regex.findAll(text).forEach { matchResult ->
+            matchResult.groupValues.getOrNull(1)?.let { videoPaths.add(it) }
+        }
+        return videoPaths
+    }
+
+    /**
+     * 解析音频路径
+     *
+     * @param text 文本内容
+     * @return 音频路径列表
+     */
+    private fun extractAudioPaths(text: String): List<String> {
+        val audioPaths = mutableListOf<String>()
+        val regex = Regex("<audio src=\"(.*?)\"/>")
+        regex.findAll(text).forEach { matchResult ->
+            matchResult.groupValues.getOrNull(1)?.let { audioPaths.add(it) }
+        }
+        return audioPaths
+    }
+
 
     /**
      * 初始化
@@ -189,10 +286,20 @@ class DailyTextInputEdit : TextInputEditText {
             isImageInserted = false
             if (s.length < previousText!!.length) {
                 val deletedString = previousText!!.substring(start, start + before)
-                val removePathList = imagePathList.filter { deletedString.contains(it) }
-                removePathList.forEach { imagePath ->
+                val removeImagePathList = imagePathList.filter { deletedString.contains(it) }
+                removeImagePathList.forEach { imagePath ->
                     imagePathList.remove(imagePath)
                     imageDeletionListener?.onImageDeleted(imagePath)
+                }
+                val removeVideoPathList = videoPathList.filter { deletedString.contains(it) }
+                removeVideoPathList.forEach { videoPath ->
+                    videoPathList.remove(videoPath)
+                    videoDeletionListener?.onVideoDeleted(videoPath)
+                }
+                val removeAudioPathList = audioPathList.filter { deletedString.contains(it) }
+                removeAudioPathList.forEach { audioPath ->
+                    audioPathList.remove(audioPath)
+                    audioDeletionListener?.onAudioDeleted(audioPath)
                 }
             }
         }
@@ -289,4 +396,244 @@ class DailyTextInputEdit : TextInputEditText {
         }
         return super.dispatchTouchEvent(event)
     }
+
+    /**
+     * 音频插入监听
+     */
+    interface AudioInsertionListener {
+        fun onAudioInserted()
+    }
+
+    /**
+     * 视频插入监听
+     */
+    interface VideoInsertionListener {
+        fun onVideoInserted()
+    }
+
+    /**
+     * 设置音频插入监听
+     */
+    fun setAudioInsertionListener(listener: AudioInsertionListener?) {
+        this.audioInsertionListener = listener
+    }
+
+    /**
+     * 设置视频插入监听
+     */
+    fun setVideoInsertionListener(listener: VideoInsertionListener?) {
+        this.videoInsertionListener = listener
+    }
+
+    interface AudioDeletionListener {
+        fun onAudioDeleted(audioPath: String)
+    }
+
+    interface VideoDeletionListener {
+        fun onVideoDeleted(videoPath: String)
+    }
+
+    fun setAudioDeletionListener(listener: AudioDeletionListener?) {
+        this.audioDeletionListener = listener
+    }
+
+    fun setVideoDeletionListener(listener: VideoDeletionListener?) {
+        this.videoDeletionListener = listener
+    }
+
+    /**
+     * 插入音频
+     *
+     * @param audioPaths 音频路径集合
+     */
+    fun insertAudio(audioPaths: List<String?>) {
+        val editable = text ?: return
+        this.audioPathList.clear()
+        val currentLength = editable.length
+        audioPaths.forEach { path ->
+            path?.let {
+                if (!this.audioPathList.contains(it) && FileUtil().checkFileExists(it)) {
+                    this.audioPathList.add(it)
+                    if (!editable.contains(createAudioSpannable(it))) {
+                        // 确保格式一致性
+                        if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
+                            editable.insert(selectionStart, "\n\n")
+                        }
+                        val sequence = createAudioSpannable(it)
+                        if (selectionStart + sequence.length in 0..currentLength) {
+                            editable.insert(selectionStart, sequence)
+                        } else {
+                            editable.append(sequence)
+                        }
+                        val newLength = editable.length
+                        if (selectionStart + sequence.length <= newLength) {
+                            editable.insert(selectionStart + sequence.length, "\n")
+                        } else {
+                            editable.append("\n")
+                        }
+                        setSelection(text.toString().length)
+                        audioInsertionListener?.onAudioInserted()
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 插入视频
+     *
+     * @param videoPaths 视频路径集合
+     */
+    fun insertVideos(videoPaths: List<String?>) {
+        val editable = text ?: return
+        this.videoPathList.clear()
+        val currentLength = editable.length
+        videoPaths.forEach { path ->
+            path?.let {
+                if (!this.videoPathList.contains(it) && FileUtil().checkFileExists(it)) {
+                    this.videoPathList.add(it)
+                    if (!editable.contains(createVideoSpannable(it))) {
+                        if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
+                            editable.insert(selectionStart, "\n\n")
+                        }
+                        val sequence = createVideoSpannable(it)
+                        if (selectionStart + sequence.length in 0..currentLength) {
+                            editable.insert(selectionStart, sequence)
+                        } else {
+                            editable.append(sequence)
+                        }
+                        val newLength = editable.length
+                        if (selectionStart + sequence.length <= newLength) {
+                            editable.insert(selectionStart + sequence.length, "\n")
+                        } else {
+                            editable.append("\n")
+                        }
+                        setSelection(text.toString().length)
+                        videoInsertionListener?.onVideoInserted()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 创建音频占位符
+     *
+     * @param audioPath 音频路径
+     * @return CharSequence 返回带有音频的SpannableString
+     */
+    private fun createAudioSpannable(audioPath: String): CharSequence {
+        val audioTag = "<audio src=\"$audioPath\"/>"
+        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_24)
+        val maxWidth = resources.displayMetrics.widthPixels - 40
+        val borderHeightDp = 40
+        val borderHeightPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            borderHeightDp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
+        iconDrawable?.let {
+            val iconHeightDp = 24
+            val iconHeightPx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                iconHeightDp.toFloat(),
+                resources.displayMetrics
+            ).toInt()
+            val originalWidth = it.intrinsicWidth
+            val originalHeight = it.intrinsicHeight
+            val scaleFactor = iconHeightPx.toFloat() / originalHeight.toFloat()
+            val iconWidthPx = (originalWidth * scaleFactor).toInt()
+            it.setBounds(0, 0, iconWidthPx, iconHeightPx)
+            val bitmapWithBorder =
+                Bitmap.createBitmap(maxWidth, borderHeightPx, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmapWithBorder)
+            val borderPaint = Paint().apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeWidth = 4f
+            }
+            canvas.drawRect(0f, 0f, maxWidth.toFloat(), borderHeightPx.toFloat(), borderPaint)
+            val centerX = (maxWidth - iconWidthPx) / 2f
+            val centerY = (borderHeightPx - iconHeightPx) / 2f
+            canvas.drawBitmap(it.toBitmap(), centerX, centerY, null)
+            val drawableWithBorder = BitmapDrawable(resources, bitmapWithBorder).apply {
+                setBounds(0, 0, maxWidth, borderHeightPx)  // 设置最终的绘制范围
+            }
+            val ss = SpannableString(audioTag)
+            val imageSpan = ImageSpan(drawableWithBorder, ImageSpan.ALIGN_BASELINE)
+            ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+            return ss
+        }
+
+        return SpannableString("")
+    }
+
+    /**
+     * 创建视频占位符
+     *
+     * @param videoPath 视频路径
+     * @return CharSequence 返回包含视频占位符的 SpannableString
+     */
+    private fun createVideoSpannable(videoPath: String): CharSequence {
+        val videoTag = "<video src=\"$videoPath\"/>"
+        val bitmap = createVideoThumbnail(videoPath) ?: return SpannableString(
+            ContextCompat.getDrawable(
+                context,
+                android.R.color.transparent
+            )?.let {
+                SpannableString("").apply {
+                    setSpan(ImageSpan(it), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            } ?: SpannableString("")
+        )
+        val originalWidth = bitmap.width
+        val originalHeight = bitmap.height
+        val maxWidth = resources.displayMetrics.widthPixels - 40
+        val toWidth = maxWidth.toFloat() / originalWidth
+        val scaleFactor = maxWidth.toFloat() / originalWidth
+        val newWidth = maxWidth
+        val newHeight = (originalHeight * toWidth).toInt()
+        val ss = SpannableString(videoTag)
+        val createBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(createBitmap)
+        val matrix = Matrix()
+        matrix.setScale(scaleFactor, scaleFactor)
+        canvas.drawBitmap(bitmap, matrix, null)
+        val playDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_play_arrow_24)
+        val playBitmap = playDrawable?.let {
+            val width = it.intrinsicWidth
+            val height = it.intrinsicHeight
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            it.setBounds(0, 0, width, height)
+            it.draw(canvas)
+            bitmap
+        }
+        playBitmap?.let {
+            val centerX = (newWidth - it.width) / 2f
+            val centerY = (newHeight - it.height) / 2f
+            canvas.drawBitmap(it, centerX, centerY, null)
+        }
+        val drawable = BitmapDrawable(resources, createBitmap).apply {
+            setBounds(0, 0, newWidth, newHeight)
+        }
+        val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
+        ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        return ss
+    }
+
+
+    /**
+     * 获取插入的音频路径集合
+     */
+    fun getInsertedAudios(): List<String> = audioPathList.filter { text?.contains(it) == true }
+
+    /**
+     * 获取插入的视频路径集合
+     */
+    fun getInsertedVideos(): List<String> = videoPathList.filter { text?.contains(it) == true }
+
 }

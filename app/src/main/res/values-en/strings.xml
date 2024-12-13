@@ -109,4 +109,11 @@
     <string name="restore">Restore</string>
     <string name="do_you_want_to_delete_or_restore_the_daily">Do you want to delete or restore the daily?</string>
     <string name="gallery">Gallery</string>
+    <string name="create_label">Create Label</string>
+    <string name="rename">Rename</string>
+    <string name="the_label_is_empty">The label is empty</string>
+    <string name="the_label_already_exists">The label already exists</string>
+    <string name="label">Label</string>
+    <string name="add_video">Add Video</string>
+    <string name="add_audio">Add Audio</string>
 </resources>

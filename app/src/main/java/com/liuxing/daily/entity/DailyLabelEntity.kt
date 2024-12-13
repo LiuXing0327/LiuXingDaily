@@ -1,0 +1,23 @@
+package com.liuxing.daily.entity
+
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.gson.annotations.Expose
+
+/**
+ * Author：流星
+ * DateTime：2024/11/12 9:59
+ * Description：日记标签的实体类
+ */
+@Entity(tableName = "DAILY_LABEL")
+data class DailyLabelEntity(
+
+    @PrimaryKey(autoGenerate = true)
+    @Expose(deserialize = false, serialize = false)
+    val id: Long? = null,
+
+    @ColumnInfo(name = "LABEL")
+    @Expose(deserialize = true, serialize = true)
+    var label: String?
+)

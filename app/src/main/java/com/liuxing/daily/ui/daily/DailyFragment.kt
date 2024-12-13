@@ -193,9 +193,37 @@ class DailyFragment : Fragment() {
                                         }
                                     }
                                     dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                                }
+                            dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
+                                .observe(viewLifecycleOwner) { dailyVideoList ->
+                                    val existingVideoPaths =
+                                        dailyVideoList.map { it.videoPath }.toSet()
+                                    if (existingVideoPaths.isNotEmpty()) {
+                                        val list = existingVideoPaths.toList()
+                                        list.forEach {
+                                            if (fileUtil.checkFileExists(it!!)) {
+                                                fileUtil.deleteFile(it)
+                                            }
+                                        }
+                                    }
+                                    dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
+                                }
+                            dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
+                                .observe(viewLifecycleOwner) { dailyAudioList ->
+                                    val existingAudioPaths =
+                                        dailyAudioList.map { it.audioPath }.toSet()
+                                    if (existingAudioPaths.isNotEmpty()) {
+                                        val list = existingAudioPaths.toList()
+                                        list.forEach {
+                                            if (fileUtil.checkFileExists(it!!)) {
+                                                fileUtil.deleteFile(it)
+                                            }
+                                        }
+                                    }
+                                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
+                                }
                                     dailyViewModel.deleteDaily(dailyEntity)
                                 }
-                        }
                         setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
                             dailyViewModel.updateDaily(
                                 DailyEntity(

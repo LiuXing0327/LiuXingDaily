@@ -1,4 +1,3 @@
-import com.android.tools.r8.internal.TR
 
 plugins {
     alias(libs.plugins.android.application)
@@ -15,8 +14,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.2"
+        versionCode = 9
+        versionName = "2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,8 +60,8 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
 
     // Navigation
-    implementation("androidx.navigation:navigation-ui-ktx:2.8.1")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.8.1")
+    implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.8.4")
 
     // Gson
     implementation("com.google.code.gson:gson:2.11.0")

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
@@ -30,4 +31,10 @@
             android:title="@string/recycler_bin" />
     </group>
 
+    <item android:title="标签" android:id="@+id/item_menu_label" >
+        <menu >
+            <group
+                android:id="@+id/g_label"/>
+        </menu>
+    </item>
 </menu>

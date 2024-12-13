@@ -79,7 +79,7 @@ object CheckAppUpdateUtil {
     /**
      * 提示不用更新的弹窗或检查失败
      */
-    private fun checkFailedOrNoVersionDialog(context: Context,message:String){
+    fun checkFailedOrNoVersionDialog(context: Context,message:String){
         Handler(Looper.getMainLooper()).post {
             MaterialAlertDialogBuilder(context)
                 .setMessage(message)

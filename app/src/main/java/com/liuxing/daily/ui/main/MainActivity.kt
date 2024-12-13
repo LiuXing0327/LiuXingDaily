@@ -7,17 +7,22 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
+import android.view.MenuItem
+import android.view.SubMenu
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -27,6 +32,8 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -34,10 +41,13 @@ import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailySearchAdapter
 import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
-import com.liuxing.daily.entity.DailyWithImage
+import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.entity.DailyWithMedia
+import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
+import com.liuxing.daily.ui.label.DailyLabelActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
@@ -80,6 +90,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private var sharedPreferences: SharedPreferences? = null
     private var isUpdating = false
+    private lateinit var headerView: View
+    private lateinit var tvDailyCount: MaterialTextView
+    private lateinit var tvDailyTextCount: MaterialTextView
+    private lateinit var tvDailyImageCount: MaterialTextView
+    private lateinit var navigationViewMenu: Menu
+    private lateinit var gLabel: SubMenu
+    private lateinit var createLabel: MenuItem
+    private var dailyLabelList: List<DailyLabelEntity> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,24 +112,40 @@ class MainActivity : AppCompatActivity() {
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
         val handler = Handler(Looper.getMainLooper())
+
         okHttpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                val jsonString = response.body?.string()
-                val jsonObject = JSONObject(jsonString.toString())
-                val latestVersionCode = jsonObject.getInt("versionCode")
-                val currentVersionCode = VersionUtil.getVersionCode(this@MainActivity)
-                if (latestVersionCode > currentVersionCode) {
-                    handler.post {
-                        CheckAppUpdateUtil.checkUpdate(this@MainActivity)
-                    }
-
+                handler.post {
+                    e.printStackTrace()
+                    CheckAppUpdateUtil.checkFailedOrNoVersionDialog(
+                        this@MainActivity,
+                        getString(R.string.failed_to_check_for_updates)
+                    )
                 }
             }
 
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    val jsonString = response.body?.string()
+                    val jsonObject = JSONObject(jsonString!!)
+                    val latestVersionCode = jsonObject.getInt("versionCode")
+                    val currentVersionCode = VersionUtil.getVersionCode(this@MainActivity)
+
+                    if (latestVersionCode > currentVersionCode) {
+                        handler.post {
+                            CheckAppUpdateUtil.checkUpdate(this@MainActivity)
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    handler.post {
+                        CheckAppUpdateUtil.checkFailedOrNoVersionDialog(
+                            this@MainActivity,
+                            getString(R.string.failed_to_check_for_updates)
+                        )
+                    }
+                }
+            }
         })
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(
@@ -119,6 +153,7 @@ class MainActivity : AppCompatActivity() {
             onBackPressedCallback
         )
         insertAutoDaily()
+        initView()
         initData()
     }
 
@@ -137,7 +172,15 @@ class MainActivity : AppCompatActivity() {
                 "switch_preference_auto_save_image_list_not_null",
                 false
             )
-            if (autoSaveTitle!!.isNotEmpty() || autoSaveContent!!.isNotEmpty() || autoSaveImageIsNotNull) {
+            val autoSaveVideoIsNotNull = sharedPreferences.getBoolean(
+                "switch_preference_auto_save_video_list_not_null",
+                false
+            )
+            val autoSaveAudioIsNotNull = sharedPreferences.getBoolean(
+                "switch_preference_auto_save_audio_list_not_null",
+                false
+            )
+            if (autoSaveTitle!!.isNotEmpty() || autoSaveContent!!.isNotEmpty() || autoSaveImageIsNotNull || autoSaveVideoIsNotNull || autoSaveAudioIsNotNull) {
                 val insertUpdate =
                     sharedPreferences.getInt("switch_preference_auto_save_is_insert_or_update", 0)
                 val autoSaveDateTime =
@@ -155,6 +198,8 @@ class MainActivity : AppCompatActivity() {
                     sharedPreferences.getInt("switch_preference_auto_save_weather_index", 0)
                 val autoSaveDailyUuid =
                     sharedPreferences.getString("switch_preference_auto_save_daily_uuid", "")
+                val autoSaveDailyLabel =
+                    sharedPreferences.getString("switch_preference_auto_save_daily_label", "")
                 initViewModel()
                 when (insertUpdate) {
                     1 -> dailyViewModel.updateDaily(
@@ -167,7 +212,8 @@ class MainActivity : AppCompatActivity() {
                             singlePassword = autoSaveSinglePassword,
                             moodIndex = autoSaveMoodIndex,
                             weatherIndex = autoSaveWeatherIndex,
-                            dailyUUID = autoSaveDailyUuid
+                            dailyUUID = autoSaveDailyUuid,
+                            dailyLabel = autoSaveDailyLabel
                         )
                     )
 
@@ -182,7 +228,8 @@ class MainActivity : AppCompatActivity() {
                                 singlePassword = autoSaveSinglePassword,
                                 moodIndex = autoSaveMoodIndex,
                                 weatherIndex = autoSaveWeatherIndex,
-                                dailyUUID = autoSaveDailyUuid
+                                dailyUUID = autoSaveDailyUuid,
+                                dailyLabel = autoSaveDailyLabel
                             )
                         )
                     }
@@ -190,7 +237,7 @@ class MainActivity : AppCompatActivity() {
 
                 // 将自动保存的数据清空
                 SharedPreferencesUtil.autoSaveDailySharedPreferences(
-                    this, 1, "", "", 0, 0, "", 0, 0, "", false,
+                    this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false, false
                 )
             }
         }
@@ -214,6 +261,7 @@ class MainActivity : AppCompatActivity() {
         floatingOnClick()
         onDestinationChanged()
         setDailyData()
+        getDailyLabel()
     }
 
     /**
@@ -599,35 +647,68 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val zipInputStream = ZipInputStream(inputStream)
-        val diaryWithImageList = mutableListOf<DailyWithImage>()
+        val diaryWithMediaList = mutableListOf<DailyWithMedia>()
         val processedFileList = mutableSetOf<String>()
+
         val imageDir = File(getExternalFilesDir(null), "Pictures")
+        val audioDir = File(getExternalFilesDir(null), "Music")
+        val videoDir = File(getExternalFilesDir(null), "Movies")
+
         if (!imageDir.exists()) imageDir.mkdirs()
+        if (!audioDir.exists()) audioDir.mkdirs()
+        if (!videoDir.exists()) videoDir.mkdirs()
+
         var zipEntry: ZipEntry?
         while (zipInputStream.nextEntry.also { zipEntry = it } != null) {
             val entryName = zipEntry!!.name
-            if (entryName.endsWith(".json")) {
-                if (processedFileList.contains(entryName)) {
-                    zipInputStream.closeEntry()
-                    continue
-                }
-                val reader = InputStreamReader(zipInputStream)
-                val gson = Gson()
-                val dailyWithImage = gson.fromJson(reader, DailyWithImage::class.java)
-                diaryWithImageList.add(dailyWithImage)
-                processedFileList.add(entryName)
-            } else if (entryName.startsWith("Pictures/")) {
-                val imageFile = File(imageDir, zipEntry!!.name.removePrefix("Pictures/"))
-                val imageOutputStream =
-                    withContext(Dispatchers.IO) {
-                        FileOutputStream(imageFile)
+            when {
+                entryName.endsWith(".json") -> {
+                    if (processedFileList.contains(entryName)) {
+                        zipInputStream.closeEntry()
+                        continue
                     }
-                zipInputStream.copyTo(imageOutputStream)
-                val imagePath = imageFile.absolutePath
-                diaryWithImageList.forEach { dailyWithImage ->
-                    dailyWithImage.imageList.forEach { dailyImageEntity ->
-                        if (dailyImageEntity.imagePath == null) {
-                            dailyImageEntity.imagePath = imagePath
+                    val reader = InputStreamReader(zipInputStream)
+                    val gson = Gson()
+                    val dailyWithMedia = gson.fromJson(reader, DailyWithMedia::class.java)
+                    diaryWithMediaList.add(dailyWithMedia)
+                    processedFileList.add(entryName)
+                }
+                entryName.startsWith("Pictures/") -> {
+                    val imageFile = File(imageDir, zipEntry!!.name.removePrefix("Pictures/"))
+                    val imageOutputStream = withContext(Dispatchers.IO) { FileOutputStream(imageFile) }
+                    zipInputStream.copyTo(imageOutputStream)
+                    val imagePath = imageFile.absolutePath
+                    diaryWithMediaList.forEach { dailyWithImage ->
+                        dailyWithImage.imageList?.forEach { dailyImageEntity ->
+                            if (dailyImageEntity.imagePath == null) {
+                                dailyImageEntity.imagePath = imagePath
+                            }
+                        }
+                    }
+                }
+                entryName.startsWith("Music/") -> {
+                    val audioFile = File(audioDir, zipEntry!!.name.removePrefix("Music/"))
+                    val audioOutputStream = withContext(Dispatchers.IO) { FileOutputStream(audioFile) }
+                    zipInputStream.copyTo(audioOutputStream)
+                    val audioPath = audioFile.absolutePath
+                    diaryWithMediaList.forEach { dailyWithMedia ->
+                        dailyWithMedia.audioList?.forEach { audioEntity ->
+                            if (audioEntity.audioPath == null) {
+                                audioEntity.audioPath = audioPath
+                            }
+                        }
+                    }
+                }
+                entryName.startsWith("Movies/") -> {
+                    val videoFile = File(videoDir, zipEntry!!.name.removePrefix("Movies/"))
+                    val videoOutputStream = withContext(Dispatchers.IO) { FileOutputStream(videoFile) }
+                    zipInputStream.copyTo(videoOutputStream)
+                    val videoPath = videoFile.absolutePath
+                    diaryWithMediaList.forEach { dailyWithMedia ->
+                        dailyWithMedia.videoList?.forEach { videoEntity ->
+                            if (videoEntity.videoPath == null) {
+                                videoEntity.videoPath = videoPath
+                            }
                         }
                     }
                 }
@@ -639,23 +720,42 @@ class MainActivity : AppCompatActivity() {
         withContext(Dispatchers.IO) {
             zipInputStream.close()
         }
-        diaryWithImageList.forEach { dailyWithImage ->
-            val daily = dailyWithImage.dailyEntity
+
+        diaryWithMediaList.forEach { dailyWithMedia ->
+            val daily = dailyWithMedia.dailyEntity
             if (daily != null) {
                 dailyViewModel.insertDaily(daily)
-                dailyWithImage.imageList?.forEach { dailyImageEntity ->
-                    if (dailyImageEntity?.imagePath != null) {
+                dailyWithMedia.imageList?.forEach { dailyImageEntity ->
+                    dailyImageEntity?.imagePath?.let {
                         dailyImageEntity.dailyUuid = daily.dailyUUID
-                        val imagePaths = mutableSetOf(dailyImageEntity.imagePath)
                         dailyViewModel.insertDailyImagePath(
                             dailyImageEntity.dailyUuid.toString(),
-                            imagePaths.toList() as List<String>
+                            listOf(it)
+                        )
+                    }
+                }
+                dailyWithMedia.audioList?.forEach { audioEntity ->
+                    audioEntity?.audioPath?.let {
+                        audioEntity.dailyUuid = daily.dailyUUID
+                        dailyViewModel.insertDailyAudioPath(
+                            audioEntity.dailyUuid.toString(),
+                            listOf(it)
+                        )
+                    }
+                }
+                dailyWithMedia.videoList?.forEach { videoEntity ->
+                    videoEntity?.videoPath?.let {
+                        videoEntity.dailyUuid = daily.dailyUUID
+                        dailyViewModel.insertDailyVideoPath(
+                            videoEntity.dailyUuid.toString(),
+                            listOf(it)
                         )
                     }
                 }
             }
         }
     }
+
 
     /**
      * 导出所有日记启动器
@@ -669,32 +769,37 @@ class MainActivity : AppCompatActivity() {
                 val url = data.data!!
                 val processedFileList = mutableSetOf<String>()
                 CoroutineScope(Dispatchers.IO).launch {
-                    val dailyWithImageList = mutableListOf<DailyWithImage>()
+                    val dailyWithMediaList = mutableListOf<DailyWithMedia>()
                     dailyList.forEach { dailyEntity ->
                         if (!processedFileList.contains(dailyEntity.dailyUUID)) {
                             processedFileList.add(dailyEntity.dailyUUID.toString())
-                            val queryDailyImageByUuidToList =
-                                dailyViewModel.queryDailyImageByUuidToList(dailyEntity.dailyUUID.toString())
-                            dailyWithImageList.add(
-                                DailyWithImage(
+                            val queryImageList = dailyViewModel.queryDailyImageByUuidToList(dailyEntity.dailyUUID.toString())
+                            val queryVideoList = dailyViewModel.queryDailyVideoByUuidToList(dailyEntity.dailyUUID.toString())
+                            val queryAudioList = dailyViewModel.queryDailyAudioByUuidToList(dailyEntity.dailyUUID.toString())
+                            dailyWithMediaList.add(
+                                DailyWithMedia(
                                     dailyEntity,
-                                    queryDailyImageByUuidToList
+                                    queryImageList,
+                                    queryVideoList,
+                                    queryAudioList
                                 )
                             )
                         }
                     }
+
                     val zipOutputStream = ZipOutputStream(contentResolver.openOutputStream(url))
                     // 遍历每个每日条目并将其添加到 ZIP 文件中
-                    dailyWithImageList.forEach { dailyWithImage ->
+                    dailyWithMediaList.forEach { dailyWithMedia ->
                         // 将日记导出为 JSON 文件
-                        val entry = ZipEntry("${dailyWithImage.dailyEntity.dailyUUID}.json")
+                        val entry = ZipEntry("${dailyWithMedia.dailyEntity.dailyUUID}.json")
                         zipOutputStream.putNextEntry(entry)
                         val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-                        val json = gson.toJson(dailyWithImage)
+                        val json = gson.toJson(dailyWithMedia)
                         zipOutputStream.write(json.toByteArray())
                         zipOutputStream.closeEntry()
+
                         // 将关联图像导出到 ZIP 文件中的 Pictures 目录
-                        dailyWithImage.imageList?.forEach { dailyImageEntity ->
+                        dailyWithMedia.imageList?.forEach { dailyImageEntity ->
                             dailyImageEntity?.imagePath?.let { imagePath ->
                                 val imageFile = File(imagePath)
                                 if (imageFile.exists()) {
@@ -706,12 +811,42 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                         }
+
+                        // 将关联视频导出到 ZIP 文件中的 Movies 目录
+                        dailyWithMedia.videoList?.forEach { dailyVideoEntity ->
+                            dailyVideoEntity?.videoPath?.let { videoPath ->
+                                val videoFile = File(videoPath)
+                                if (videoFile.exists()) {
+                                    val videoEntry = ZipEntry("Movies/${videoFile.name}")
+                                    zipOutputStream.putNextEntry(videoEntry)
+                                    val videoStream = FileInputStream(videoFile)
+                                    videoStream.copyTo(zipOutputStream)
+                                    zipOutputStream.closeEntry()
+                                }
+                            }
+                        }
+
+                        // 将关联音频导出到 ZIP 文件中的 Music 目录
+                        dailyWithMedia.audioList?.forEach { dailyAudioEntity ->
+                            dailyAudioEntity?.audioPath?.let { audioPath ->
+                                val audioFile = File(audioPath)
+                                if (audioFile.exists()) {
+                                    val audioEntry = ZipEntry("Music/${audioFile.name}")
+                                    zipOutputStream.putNextEntry(audioEntry)
+                                    val audioStream = FileInputStream(audioFile)
+                                    audioStream.copyTo(zipOutputStream)
+                                    zipOutputStream.closeEntry()
+                                }
+                            }
+                        }
                     }
+
                     // 关流
                     zipOutputStream.close()
                 }
             }
-        })
+        }
+    )
 
     override fun onSupportNavigateUp(): Boolean {
         return NavigationUI.navigateUp(
@@ -737,14 +872,113 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * 初始化视图
+     */
+    private fun initView() {
+        headerView = activityMainBinding.navigationView.getHeaderView(0)
+        navigationViewMenu = activityMainBinding.navigationView.menu
+        navigationViewMenu.findItem(R.id.item_menu_label).subMenu?.let {
+            gLabel = it
+        }
+        createLabelItem()
+        tvDailyCount = headerView.findViewById(R.id.tv_daily_count)
+        tvDailyTextCount = headerView.findViewById(R.id.tv_daily_text_count)
+        tvDailyImageCount = headerView.findViewById(R.id.tv_daily_image_count)
+
+    }
+
+    /**
+     * 创建标签项
+     */
+    private fun createLabelItem() {
+        createLabel = gLabel.add(
+            Menu.NONE, R.id.create_label_id, Menu.NONE,
+            getString(R.string.create_label)
+        )
+            ?.setIcon(R.drawable.baseline_add_24)!!
+        createLabel.setOnMenuItemClickListener {
+            activityMainBinding.main.close()
+            showLabelInputDialog()
+            true
+        }
+    }
+
+    /**
+     * 显示输入标签的对话框
+     */
+    private fun showLabelInputDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
+        val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
+        val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle(getString(R.string.create_label))
+            setView(view)
+            setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                val label = inputLabel.text.toString()
+                if (label.isNotEmpty()) {
+                    addDailyLabel(label)
+                }
+            }
+            setNegativeButton(getString(R.string.cancel), null)
+            val dialog = create()
+            dialog.show()
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.isEnabled = false
+            inputLabel.addTextChangedListener {
+                val inputText = it.toString()
+                val input = dailyLabelList.any { dailyLabelEntity ->
+                    dailyLabelEntity.label == inputText
+                }
+                inputLabelLayout.error = when {
+                    inputText.isEmpty() -> getString(R.string.the_label_is_empty)
+                    input -> getString(R.string.the_label_already_exists)
+                    else -> null
+                }
+                positiveButton.isEnabled = inputText.isNotEmpty() && !input
+            }
+        }
+    }
+
+    /**
+     * 获取日记标签
+     */
+    private fun getDailyLabel() {
+        dailyViewModel.queryAllDailyLabel().observe(this) { dailyLabelList ->
+            this.dailyLabelList = dailyLabelList
+            val sortedBy = dailyLabelList.sortedBy { it.label?.lowercase() }
+            gLabel.clear()
+            sortedBy.forEach { dailyLabelEntity ->
+                gLabel.add(dailyLabelEntity.label).setIcon(R.drawable.baseline_label_24)
+                    .setOnMenuItemClickListener { _ ->
+                        val intent = Intent(this, DailyLabelActivity::class.java).apply {
+                            putExtra("daily_label_id", dailyLabelEntity.id)
+                            putExtra("daily_label_label", dailyLabelEntity.label)
+
+                        }
+                        startActivity(intent)
+                        true
+                    }
+            }
+            createLabel.let {
+                gLabel.removeItem(it.itemId)
+            }
+            createLabelItem()
+        }
+    }
+
+    /**
+     * 创建日记标签
+     *
+     * @param label 标签
+     */
+    private fun addDailyLabel(label: String) {
+        dailyViewModel.insertDailyLabel(DailyLabelEntity(label = label))
+    }
+
+    /**
      * 设置日记数据
      */
     private fun setDailyData() {
-        val headerView = activityMainBinding.navigationView.getHeaderView(0)
-        val tvDailyCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_count)
-        val tvDailyTextCount =
-            headerView.findViewById<MaterialTextView>(R.id.tv_daily_text_count)
-        val tvDailyImageCount = headerView.findViewById<MaterialTextView>(R.id.tv_daily_image_count)
         dailyViewModel.queryImageCount().observe(this) {
             tvDailyImageCount.text = "${it}${getString(R.string.sheet)}"
         }
@@ -862,8 +1096,7 @@ class MainActivity : AppCompatActivity() {
                             val fileUtil = FileUtil()
                             dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
                                 .observe(this@MainActivity) { dailyImageList ->
-                                    val existingImagePaths =
-                                        dailyImageList.map { it.imagePath }.toSet()
+                                    val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
                                     if (existingImagePaths.isNotEmpty()) {
                                         val list = existingImagePaths.toList()
                                         list.forEach {
@@ -873,8 +1106,34 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                     dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                                    dailyViewModel.deleteDaily(dailyEntity)
                                 }
+                            dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
+                                .observe(this@MainActivity) { dailyVideoList ->
+                                    val existingVideoPaths = dailyVideoList.map { it.videoPath }.toSet()
+                                    if (existingVideoPaths.isNotEmpty()) {
+                                        val list = existingVideoPaths.toList()
+                                        list.forEach {
+                                            if (fileUtil.checkFileExists(it!!)) {
+                                                fileUtil.deleteFile(it)
+                                            }
+                                        }
+                                    }
+                                    dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
+                                }
+                            dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
+                                .observe(this@MainActivity) { dailyAudioList ->
+                                    val existingAudioPaths = dailyAudioList.map { it.audioPath }.toSet()
+                                    if (existingAudioPaths.isNotEmpty()) {
+                                        val list = existingAudioPaths.toList()
+                                        list.forEach {
+                                            if (fileUtil.checkFileExists(it!!)) {
+                                                fileUtil.deleteFile(it)
+                                            }
+                                        }
+                                    }
+                                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
+                                }
+                            dailyViewModel.deleteDaily(dailyEntity)
                         }
                         setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
                             dailyViewModel.updateDaily(

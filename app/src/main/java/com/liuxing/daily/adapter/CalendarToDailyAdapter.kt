@@ -129,7 +129,7 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             }
             if (dailyEntity.singlePassword.isNullOrEmpty()) {
                 holder.tvTitle.text = dailyEntity.title
-                holder.tvContent.text = TextUtil.replaceImageTag(dailyEntity.content!!)
+                holder.tvContent.text = TextUtil.replaceTag(dailyEntity.content!!)
             } else {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"

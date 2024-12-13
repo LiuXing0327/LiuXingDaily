@@ -14,6 +14,7 @@ object ImageUtil {
      * 创建图片缩略图
      *
      * @param filePath 图片文件路径
+     * @return 缩略图 Bitmap
      */
     fun createImageThumbnail(filePath: String?): Bitmap? {
         return try {

@@ -14,6 +14,7 @@ import com.liuxing.daily.adapter.RecyclerBinAdapter
 import com.liuxing.daily.databinding.FragmentRecyclerBinBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 // TODO: Rename parameter arguments, choose names that match
@@ -132,17 +133,48 @@ class RecyclerBinFragment : Fragment() {
                     setPositiveButton(
                         getString(R.string.delete)
                     ) { dialog, which ->
+                        val fileUtil = FileUtil()
                         dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
                             .observe(viewLifecycleOwner) { dailyImageList ->
                                 val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
                                 if (existingImagePaths.isNotEmpty()) {
                                     val list = existingImagePaths.toList()
                                     list.forEach {
-                                        dailyViewModel.deleteSelectPathImage(it!!)
+                                        if (fileUtil.checkFileExists(it!!)) {
+                                            fileUtil.deleteFile(it)
+                                        }
                                     }
                                 }
-                                dailyViewModel.deleteDaily(dailyEntity)
+                                dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
                             }
+                        dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
+                            .observe(viewLifecycleOwner) { dailyVideoList ->
+                                val existingVideoPaths = dailyVideoList.map { it.videoPath }.toSet()
+                                if (existingVideoPaths.isNotEmpty()) {
+                                    val list = existingVideoPaths.toList()
+                                    list.forEach {
+                                        if (fileUtil.checkFileExists(it!!)) {
+                                            fileUtil.deleteFile(it)
+                                        }
+                                    }
+                                }
+                                dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
+                            }
+                        dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
+                            .observe(viewLifecycleOwner) { dailyAudioList ->
+                                val existingAudioPaths = dailyAudioList.map { it.audioPath }.toSet()
+                                if (existingAudioPaths.isNotEmpty()) {
+                                    val list = existingAudioPaths.toList()
+                                    list.forEach {
+                                        if (fileUtil.checkFileExists(it!!)) {
+                                            fileUtil.deleteFile(it)
+                                        }
+                                    }
+                                }
+                                dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
+                            }
+                        dailyViewModel.deleteDaily(dailyEntity)
+
                     }
                     setNegativeButton(getString(R.string.restore)) { dialog, which ->
                         dailyViewModel.updateDaily(

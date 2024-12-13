@@ -59,7 +59,7 @@
             android:layout_gravity="end|bottom"
             android:layout_margin="@dimen/dp_16"
             android:text="@string/add"
-            app:icon="@drawable/baseline_edit_24" />
+            app:icon="@drawable/outline_mode_24" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
