@@ -25,6 +25,12 @@
         android:id="@+id/item_add_image"
         android:title="@string/add_image" />
     <item
+        android:id="@+id/item_add_video"
+        android:title="@string/add_video" />
+    <item
+        android:id="@+id/item_add_audio"
+        android:title="@string/add_audio" />
+    <item
         android:id="@+id/item_label"
         android:title="@string/label" />
 </menu>

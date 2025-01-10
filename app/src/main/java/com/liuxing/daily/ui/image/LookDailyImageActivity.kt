@@ -1,8 +1,10 @@
 package com.liuxing.daily.ui.image
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -13,6 +15,7 @@ import com.liuxing.daily.adapter.LookImageAdapter
 import com.liuxing.daily.databinding.ActivityLookDailyImageBinding
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+
 
 class LookDailyImageActivity : AppCompatActivity() {
 
@@ -46,6 +49,7 @@ class LookDailyImageActivity : AppCompatActivity() {
     /**
      * 设置工具栏
      */
+    @SuppressLint("ClickableViewAccessibility")
     private fun setActionBar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {

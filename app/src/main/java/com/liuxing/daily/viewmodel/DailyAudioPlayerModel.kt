@@ -1,10 +1,12 @@
 package com.liuxing.daily.viewmodel
 
-import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.liuxing.daily.ui.video.MyMediaPlayer
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Author：流星
@@ -13,13 +15,11 @@ import com.liuxing.daily.ui.video.MyMediaPlayer
  */
 class DailyAudioPlayerModel : ViewModel() {
     val audioPlayer = MyMediaPlayer()
-    private val _progressVisibility = MutableLiveData(View.VISIBLE)
-    val progressVisibility: LiveData<Int> = _progressVisibility
     private val _playerStatus = MutableLiveData(PlayerStatus.NotReady)
     val playerStatus: LiveData<PlayerStatus> = _playerStatus
     private var audioPath: String? = null
     private val _currentPosition = MutableLiveData(0)
-    val currentPosition: LiveData<Int> = _currentPosition
+    val currentPosition = _currentPosition
     private val _duration = MutableLiveData(0)
     val duration: LiveData<Int> = _duration
 
@@ -48,6 +48,7 @@ class DailyAudioPlayerModel : ViewModel() {
                 _playerStatus.postValue(PlayerStatus.Playing)
                 _duration.postValue(it.duration)
                 it.start()
+                startUpdatingProgress()
             }
             setOnCompletionListener {
                 _playerStatus.postValue(PlayerStatus.Paused)
@@ -78,6 +79,7 @@ class DailyAudioPlayerModel : ViewModel() {
             PlayerStatus.Paused -> {
                 audioPlayer.start()
                 _playerStatus.postValue(PlayerStatus.Playing)
+                startUpdatingProgress()
             }
 
             else -> return
@@ -87,5 +89,14 @@ class DailyAudioPlayerModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         audioPlayer.release()
+    }
+
+    private fun startUpdatingProgress() {
+        viewModelScope.launch {
+            while (_playerStatus.value == PlayerStatus.Playing) {
+                _currentPosition.postValue(audioPlayer.currentPosition)
+                delay(500) // 每 500 毫秒更新一次进度
+            }
+        }
     }
 }

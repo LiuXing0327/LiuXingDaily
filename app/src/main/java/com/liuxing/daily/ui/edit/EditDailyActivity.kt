@@ -1,6 +1,7 @@
 package com.liuxing.daily.ui.edit
 
 import android.app.Activity
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
@@ -154,6 +155,7 @@ class EditDailyActivity : AppCompatActivity() {
         setDailyUuid()
         getDailyImage()
         getDailyVideo()
+        getDailyAudio()
         updateDailyCount()
         initMenu()
         setDailyBackgroundColor(getDailyBackgroundColorIndex())
@@ -374,6 +376,7 @@ class EditDailyActivity : AppCompatActivity() {
                     newImageList.add(dailyImageEntity.imagePath.toString())
                     if (originalImageListIndex == 0) {
                         originalImageList.add(dailyImageEntity.imagePath.toString())
+                        imageList.add(dailyImageEntity.imagePath.toString())
                     }
                 } else {
                     dailyViewModel.deleteSelectPathImage(dailyImageEntity.imagePath.toString())
@@ -410,6 +413,7 @@ class EditDailyActivity : AppCompatActivity() {
                         newVideoList.add(dailyVideoEntity.videoPath.toString())
                         if (originalVideoIndex == 0) {
                             originalVideoList.add(dailyVideoEntity.videoPath.toString())
+                            videoList.add(dailyVideoEntity.videoPath.toString())
                         }
                     } else {
                         dailyViewModel.deleteSelectPathVideo(dailyVideoEntity.videoPath.toString())
@@ -417,6 +421,30 @@ class EditDailyActivity : AppCompatActivity() {
                 }
                 if (dailyTextInputEdit.getOldVideoList() != newVideoList) {
                     dailyTextInputEdit.setOldVideoList(newVideoList.toList())
+                }
+            }
+    }
+
+    /**
+     * 获取日记音频
+     */
+    private fun getDailyAudio() {
+        dailyViewModel.queryDailyAudioByUuid(getDailyUuid().toString())
+            .observe(this) { dailyAudioList ->
+                val newAudioList = mutableSetOf<String>()
+                dailyAudioList.forEach { dailyAudioEntity ->
+                    if (FileUtil().checkFileExists(dailyAudioEntity.audioPath.toString())) {
+                        newAudioList.add(dailyAudioEntity.audioPath.toString())
+                        if (originalAudioIndex == 0) {
+                            originalVideoList.add(dailyAudioEntity.audioPath.toString())
+                            videoList.add(dailyAudioEntity.audioPath.toString())
+                        }
+                    } else {
+                        dailyViewModel.deleteSelectPathVideo(dailyAudioEntity.audioPath.toString())
+                    }
+                }
+                if (dailyTextInputEdit.getOldVideoList() != newAudioList) {
+                    dailyTextInputEdit.setOldVideoList(newAudioList.toList())
                 }
             }
     }
@@ -716,8 +744,29 @@ class EditDailyActivity : AppCompatActivity() {
                             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                             addCategory(Intent.CATEGORY_OPENABLE)
                         }
-                        addImageLauncher.launch(intent)
+                        addLauncher.launch(intent)
                     }
+
+                    R.id.item_add_video -> {
+                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                            setType("video/*")
+                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addLauncher.launch(intent)
+                    }
+
+                    R.id.item_add_audio -> {
+                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                            setType("audio/*")
+                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addLauncher.launch(intent)
+                    }
+
 
                     R.id.item_label -> {
                         val view =
@@ -812,9 +861,9 @@ class EditDailyActivity : AppCompatActivity() {
     }
 
     /**
-     * 添加图片启动器
+     * 添加启动器
      */
-    private val addImageLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+    private val addLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
         object : ActivityResultCallback<ActivityResult> {
             override fun onActivityResult(result: ActivityResult) {
@@ -822,15 +871,30 @@ class EditDailyActivity : AppCompatActivity() {
                     if (result.resultCode != Activity.RESULT_OK) return
                     val data = result.data ?: return
                     tempImageList.clear()
+                    tempVideoList.clear()
                     data.clipData?.let { clipData ->
                         for (i in 0 until clipData.itemCount) {
-                            addImage(clipData.getItemAt(i).uri)
+                            val uri = clipData.getItemAt(i).uri
+                            selectUri(uri)
                         }
                     } ?: data.data?.let { uri ->
-                        addImage(uri)
+                        selectUri(uri)
                     }
-                    dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+                    if (tempImageList.isNotEmpty()) {
+                        dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+                        dailyTextInputEdit.insertImages(tempImageList.toList())
+                    }
+                    if (tempVideoList.isNotEmpty()) {
+                        dailyViewModel.insertDailyVideoPath(dailyUuid, tempVideoList.toList())
+                        dailyTextInputEdit.insertVideos(tempVideoList.toList())
+                    }
+                    if (tempAudioList.isNotEmpty()) {
+                        dailyViewModel.insertDailyAudioPath(dailyUuid, tempAudioList.toList())
+                        dailyTextInputEdit.insertAudio(tempAudioList.toList())
+                    }
                     tempImageList.clear()
+                    tempVideoList.clear()
+                    tempAudioList.clear()
                 } catch (e: Exception) {
                     MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
                         setMessage(getString(R.string.add_failed))
@@ -843,6 +907,30 @@ class EditDailyActivity : AppCompatActivity() {
         })
 
     /**
+     * 选择 uri
+     *
+     * @param uri 文件
+     */
+    private fun selectUri(uri: Uri) {
+        val type = contentResolver.getType(uri)
+        type?.let {
+            when {
+                it.startsWith("image/") -> {
+                    addImage(uri)
+                }
+
+                it.startsWith("video/") -> {
+                    addVideo(uri)
+                }
+
+                it.startsWith("audio/") -> {
+                    addAudio(uri)
+                }
+            }
+        }
+    }
+
+    /**
      * 添加图片
      *
      * @param uri 图片
@@ -852,8 +940,31 @@ class EditDailyActivity : AppCompatActivity() {
             CopyUtil.copyImageToMyAppDir(this@EditDailyActivity, uri)
         imageList.add(copyImageToMyAppDir)
         tempImageList.add(copyImageToMyAppDir)
-        tempImageList2.add(copyImageToMyAppDir)
     }
+
+    /**
+     * 添加视频
+     *
+     * @param uri 视频
+     */
+    private fun addVideo(uri: Uri) {
+        val copyImageToMyAppDir =
+            CopyUtil.copyVideoToMyAppDir(this@EditDailyActivity, uri)
+        videoList.add(copyImageToMyAppDir)
+        tempVideoList.add(copyImageToMyAppDir)
+    }
+
+    /**
+     * 添加音频
+     *
+     * @param uri 音频
+     */
+    private fun addAudio(uri: Uri) {
+        val copyAudioToMyAppDir = CopyUtil.copyAudioToMyAppDir(this, uri)
+        audioList.add(copyAudioToMyAppDir)
+        tempAudioList.add(copyAudioToMyAppDir)
+    }
+
 
     /**
      * 判断日记是否为空
@@ -893,6 +1004,10 @@ class EditDailyActivity : AppCompatActivity() {
      * 保存日记
      */
     private fun saveDaily() {
+        // 保存更新后日记内容到SharedPreferences
+        getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE).edit {
+            putString("daily_update_content", dailyTextInputEdit.text.toString())
+        }
         dailyViewModel.updateDaily(
             DailyEntity(
                 id = getDailyId(),
@@ -1023,7 +1138,7 @@ class EditDailyActivity : AppCompatActivity() {
         ) && backgroundColorIndex == getDailyBackgroundColorIndex() && Objects.equals(
             singlePassword,
             getDailySinglePassword()
-        ) && moodIndex == getDailyMoodIndex() && weatherIndex == getDailyWeatherIndex() && tempImageList2.isEmpty() && dailyLabel == getDailyLabel()
+        ) && moodIndex == getDailyMoodIndex() && weatherIndex == getDailyWeatherIndex() && tempImageList2.isEmpty() && tempAudioList2.isEmpty() && tempVideoList2.isEmpty() && dailyLabel == getDailyLabel()
     }
 
     /**

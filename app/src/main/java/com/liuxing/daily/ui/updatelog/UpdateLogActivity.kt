@@ -160,7 +160,7 @@ class UpdateLogActivity : AppCompatActivity() {
     private fun initStatusBarColor() {
         typedValue = TypedValue()
         theme.resolveAttribute(
-            R.attr.searchViewShowingColor, typedValue, true
+            R.attr.collapsed_status_bar, typedValue, true
         )
         WindowUtil.FollowPatternSetColor(window, typedValue.data)
         window.statusBarColor =

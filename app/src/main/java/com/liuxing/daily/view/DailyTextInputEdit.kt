@@ -239,36 +239,39 @@ class DailyTextInputEdit : TextInputEditText {
      */
     fun insertImages(imagePathList: List<String?>) {
         val editable = text ?: return
-        this.imagePathList.clear()
-        val currentLength = editable.length
+        var isImageAddedThisTime = false
+
         imagePathList.forEach { path ->
             path?.let {
                 if (!this.imagePathList.contains(it) && FileUtil().checkFileExists(it)) {
                     this.imagePathList.add(it)
+
+                    // 检查文本中是否已经插入该图片占位符，避免重复插入
                     if (!editable.contains(createImageSpannable(it))) {
-                        if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
-                            editable.insert(selectionStart, "\n\n")
-                        }
-                        val sequence = createImageSpannable(it)
-                        if (selectionStart + sequence.length in 0..currentLength) {
+                        if (!isImageAddedThisTime) {
+                            if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
+                                editable.insert(selectionStart, "\n\n")
+                            }
+                            val sequence = createImageSpannable(it)
                             editable.insert(selectionStart, sequence)
-                        } else {
-                            editable.append(sequence)
+                            val newLength = editable.length
+                            if (selectionStart + sequence.length <= newLength) {
+                                editable.insert(selectionStart + sequence.length, "\n")
+                            } else {
+                                editable.append("\n")
+                            }
+
+                            isImageInserted = true
+                            isImageAddedThisTime = true
+                            setSelection(editable.length)
+                            imageInsertionListener?.onImageInserted()
                         }
-                        val newLength = editable.length
-                        if (selectionStart + sequence.length <= newLength) {
-                            editable.insert(selectionStart + sequence.length, "\n")
-                        } else {
-                            editable.append("\n")
-                        }
-                        isImageInserted = true
-                        setSelection(text.toString().length)
-                        imageInsertionListener?.onImageInserted()
                     }
                 }
             }
         }
     }
+
 
     /**
      * 获取插入的图片
@@ -578,16 +581,21 @@ class DailyTextInputEdit : TextInputEditText {
      */
     private fun createVideoSpannable(videoPath: String): CharSequence {
         val videoTag = "<video src=\"$videoPath\"/>"
-        val bitmap = createVideoThumbnail(videoPath) ?: return SpannableString(
-            ContextCompat.getDrawable(
-                context,
-                android.R.color.transparent
-            )?.let {
-                SpannableString("").apply {
-                    setSpan(ImageSpan(it), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                }
-            } ?: SpannableString("")
-        )
+        val bitmap = createVideoThumbnail(videoPath)
+        val spannableString = SpannableString(videoTag)
+        // 如果 bitmap 为空
+        if (bitmap == null) {
+            val drawable = ContextCompat.getDrawable(context, android.R.color.transparent)
+            if (drawable != null) {
+                spannableString.setSpan(
+                    ImageSpan(drawable),
+                    0,
+                    spannableString.length,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            return spannableString
+        }
         val originalWidth = bitmap.width
         val originalHeight = bitmap.height
         val maxWidth = resources.displayMetrics.widthPixels - 40

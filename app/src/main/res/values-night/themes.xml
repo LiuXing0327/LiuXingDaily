@@ -4,5 +4,6 @@
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
         <item name="searchViewShowingColor">@color/night_showing_color</item>
+        <item name="collapsed_status_bar">@color/night_collapsed_status_bar_color</item>
     </style>
 </resources>
