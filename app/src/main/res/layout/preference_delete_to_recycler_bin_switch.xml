@@ -12,7 +12,7 @@
         android:id="@+id/switch_delete_to_recycler_bin_daily"
         android:foreground="?attr/selectableItemBackground"
         android:padding="@dimen/dp_16"
-        android:text="删除日记时移入回收站"
+        android:text="@string/move_to_recycle_bin_when_deleting_a_diary"
         android:textSize="@dimen/sp_16" />
 
 </LinearLayout>

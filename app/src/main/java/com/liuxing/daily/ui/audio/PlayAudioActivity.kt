@@ -11,7 +11,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.material.slider.Slider
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityPlayAudioBinding
 import com.liuxing.daily.util.FileUtil
@@ -28,6 +27,7 @@ class PlayAudioActivity : AppCompatActivity() {
     private var audioPath: String? = ""
     private lateinit var dailyAudioPlayerModel: DailyAudioPlayerModel
     private var isUserUpdateProgress = false
+    private var isAudioInitialized = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,23 +69,27 @@ class PlayAudioActivity : AppCompatActivity() {
      */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
-        dailyAudioPlayerModel = ViewModelProvider(this).get(DailyAudioPlayerModel::class.java)
+        dailyAudioPlayerModel = ViewModelProvider(this)[DailyAudioPlayerModel::class.java]
         getAudioPath()
-        audioPath?.let {
-            dailyAudioPlayerModel.setAudioPath(it)
-        }
         dailyAudioPlayerModel.playerStatus.observe(this) { status ->
             val drawableRes =
                 if (status == PlayerStatus.Playing) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24
             activityPlayAudioBinding.floatingActionButton.setImageResource(drawableRes)
         }
+        lifecycle.addObserver(dailyAudioPlayerModel.audioPlayer)
     }
 
     /**
      * 获取音频路径
      */
     private fun getAudioPath() {
+        if (isAudioInitialized) return
         audioPath = intent.getStringExtra("look_daily_audio_path")
+        audioPath?.let {
+            dailyAudioPlayerModel.audioPlayer.reset()
+            dailyAudioPlayerModel.setAudioPath(it)
+            isAudioInitialized = true
+        }
     }
 
     /**
@@ -165,5 +169,16 @@ class PlayAudioActivity : AppCompatActivity() {
             }
         } else finish()
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("currentPosition", dailyAudioPlayerModel.audioPlayer.currentPosition)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val savedPosition = savedInstanceState.getInt("currentPosition", 0)
+        dailyAudioPlayerModel.playerSeekToProgress(savedPosition)
     }
 }

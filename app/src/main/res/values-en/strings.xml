@@ -116,4 +116,5 @@
     <string name="label">Label</string>
     <string name="add_video">Add Video</string>
     <string name="add_audio">Add Audio</string>
+    <string name="move_to_recycle_bin_when_deleting_a_diary">Move to Recycle Bin when deleting a diary</string>
 </resources>

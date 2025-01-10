@@ -83,10 +83,10 @@ class DailyTextView : MaterialTextView {
         newAudioPathList: List<String>
     ) {
         this.imagePathList.clear()
-        this.imagePathList.addAll(newImagePathList)
         this.videoPathList.clear()
-        this.videoPathList.addAll(newVideoPathList)
         this.audioPathList.clear()
+        this.imagePathList.addAll(newImagePathList)
+        this.videoPathList.addAll(newVideoPathList)
         this.audioPathList.addAll(newAudioPathList)
         setFormattedText(text, newImagePathList, newVideoPathList, newAudioPathList)
     }
@@ -140,6 +140,7 @@ class DailyTextView : MaterialTextView {
             spannableString.append(text.substring(currentIndex))
         }
         setText(spannableString)
+        invalidate()
     }
 
 

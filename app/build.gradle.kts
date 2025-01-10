@@ -2,8 +2,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id("kotlin-kapt")
-    id("kotlin-parcelize")
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -14,8 +13,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "2.3"
+        versionCode = 10
+        versionName = "2.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -55,23 +54,23 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Room
-    implementation("androidx.room:room-ktx:2.6.1")
-    implementation("androidx.room:room-runtime:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
 
     // Navigation
-    implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.8.4")
+    implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.navigation.fragment.ktx)
 
     // Gson
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation(libs.gson)
 
     // OkHttp
-    implementation("com.squareup.okhttp3:okhttp:4.4.1")
+    implementation(libs.okhttp)
 
     // Glide
-    implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.glide)
 
     // PhotoView
-    implementation("com.github.chrisbanes:PhotoView:2.3.0")
+    implementation(libs.photoview)
 }

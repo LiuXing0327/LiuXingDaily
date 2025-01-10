@@ -31,7 +31,7 @@
             android:title="@string/recycler_bin" />
     </group>
 
-    <item android:title="标签" android:id="@+id/item_menu_label" >
+    <item android:title="@string/label" android:id="@+id/item_menu_label" >
         <menu >
             <group
                 android:id="@+id/g_label"/>

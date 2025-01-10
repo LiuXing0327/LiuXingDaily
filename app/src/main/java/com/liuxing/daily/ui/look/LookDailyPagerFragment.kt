@@ -1,11 +1,12 @@
 package com.liuxing.daily.ui.look
 
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
@@ -123,15 +124,16 @@ class LookDailyPagerFragment : Fragment() {
      * 更新密码
      */
     fun updateSinglePassword(singlePassword: String?) {
-        this.singlePassword = singlePassword
         if (singlePassword != this.singlePassword) {
+            this.singlePassword = singlePassword
             binding.tvTitle.text = "***"
             binding.tvContent.text = "***"
         } else {
-            arguments?.getString(TITLE).also { binding.tvTitle.text = it }
-            arguments?.getString(CONTENT).also { binding.tvContent.text = it }
+            binding.tvTitle.text = title
+            binding.tvContent.text = content
         }
     }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         dailyTextView = view.findViewById(R.id.tv_content)
@@ -299,6 +301,35 @@ class LookDailyPagerFragment : Fragment() {
                         dailyLabel
                     )
                 )
+            }
+            // 从SharedPreferences获取更新后日记内容
+            val sharedPreferences =
+                requireActivity().getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE)
+            val dailyUpdateContentText = sharedPreferences.getString("daily_update_content", "")
+            // 确保不为空，以免死循环
+            if(dailyUpdateContentText != ""){
+                // 如果保存的内容与最新内容不同，则重新更新
+                if (dailyUpdateContentText != updatedContent.toString()) {
+                    dailyViewModel.updateDaily(
+                        DailyEntity(
+                            id,
+                            title,
+                            dailyUpdateContentText,
+                            dateTime,
+                            backgroundColorIndex,
+                            singlePassword,
+                            moodIndex,
+                            weatherIndex,
+                            dailyUuid,
+                            false,
+                            dailyLabel
+                        )
+                    )
+                    // 更新完毕后清空
+                    sharedPreferences.edit {
+                        putString("daily_update_content", "")
+                    }
+                }
             }
             return pathSet
         }
