@@ -1,10 +1,15 @@
 package com.liuxing.daily
 
 import android.app.Application
+import android.app.UiModeManager
+import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.os.Environment
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
-import com.liuxing.daily.util.ThemeModeUtil
+import com.liuxing.daily.util.LogUtil
+import com.liuxing.daily.util.ThemeUtil
 
 /**
  * Author：流星
@@ -27,7 +32,7 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initSharePreferences()
-        ThemeModeUtil.setThemeMode(sharedPreferences!!.getInt("theme_mode_preference", 0))
+        ThemeUtil.setThemeMode(sharedPreferences!!.getInt("theme_mode_preference", 0))
         this.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     }
 

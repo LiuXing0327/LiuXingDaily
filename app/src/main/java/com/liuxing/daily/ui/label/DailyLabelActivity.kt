@@ -16,6 +16,7 @@ import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityDailyLabelBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 private const val DAILY_LABEL = "daily_label_label"
@@ -31,6 +32,7 @@ class DailyLabelActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         dailyLabelBinding = ActivityDailyLabelBinding.inflate(layoutInflater)
         setContentView(dailyLabelBinding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->

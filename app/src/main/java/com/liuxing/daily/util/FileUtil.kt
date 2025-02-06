@@ -54,4 +54,25 @@ class FileUtil {
         val extension = file.extension.lowercase()
         return extension == "jpg"
     }
+
+    /**
+     * 获取图片路径
+     *
+     * @param file 文件路径
+     * @return 路径集合
+     */
+    fun getFilePaths(file: File): List<String> {
+        val paths = mutableListOf<String>()
+        if (file.isDirectory) {
+            val files = file.listFiles()
+            if (files != null) {
+                for (childFile in files) {
+                    paths.addAll(getFilePaths(childFile))
+                }
+            }
+        } else {
+            paths.add(file.absolutePath)
+        }
+        return paths
+    }
 }

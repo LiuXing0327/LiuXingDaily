@@ -5,6 +5,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -49,6 +50,8 @@ import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferenc
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
+import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.view.DailyTextInputEdit
 import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -86,14 +89,15 @@ class AddDailyActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         activityAddDailyBinding = ActivityAddDailyBinding.inflate(layoutInflater)
         setContentView(activityAddDailyBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
+        }*/
         initView()
         initData(savedInstanceState)
         // 添加返回键回调
@@ -125,6 +129,7 @@ class AddDailyActivity : AppCompatActivity() {
      */
     private fun initData(savedInstanceState: Bundle?) {
         setActionBar()
+        initStatusBarColor()
         initMenu()
         setDailyCount()
         initViewModel()
@@ -141,6 +146,19 @@ class AddDailyActivity : AppCompatActivity() {
         setSupportActionBar(activityAddDailyBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
         this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    /**
+     * 初始化状态栏颜色
+     */
+    private fun initStatusBarColor() {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(
+            R.attr.collapsed_status_bar, typedValue, true
+        )
+        WindowUtil.followPatternSetColor(window,this)
+        window.statusBarColor =
+            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**

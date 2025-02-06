@@ -2,18 +2,18 @@ package com.liuxing.daily.ui.image
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.LookImageAdapter
 import com.liuxing.daily.databinding.ActivityLookDailyImageBinding
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 
@@ -26,14 +26,15 @@ class LookDailyImageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+       // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         binding = ActivityLookDailyImageBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
+        }*/
         initData()
     }
 
@@ -42,6 +43,7 @@ class LookDailyImageActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
+        initStatusBarColor()
         initViewmodel()
         loadDailyImage()
     }
@@ -56,6 +58,19 @@ class LookDailyImageActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(false)
         }
+    }
+
+    /**
+     * 初始化状态栏颜色
+     */
+    private fun initStatusBarColor() {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(
+            R.attr.collapsed_status_bar, typedValue, true
+        )
+        WindowUtil.followPatternSetColor(window,this)
+        window.statusBarColor =
+            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**

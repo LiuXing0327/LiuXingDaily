@@ -1,6 +1,7 @@
 package com.liuxing.daily.util
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 
@@ -80,5 +81,56 @@ object SharedPreferencesUtil {
             putBoolean("switch_preference_auto_save_video_list_not_null", audioListNotNull)
             apply()
         }
+    }
+
+    private const val PREF_NAME = "AppPreferences"
+    private var sharedPreferences: SharedPreferences? = null
+
+    /**
+     * 获取 SharedPreferences
+     *
+     * @param context 上下文
+     * @return sharedPreferences
+     */
+    private fun getSharedPreferences(context: Context): SharedPreferences {
+        if (sharedPreferences == null) {
+            sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        }
+        return sharedPreferences!!
+    }
+
+    /**
+     * 获取 SharedPreferences.Editor
+     *
+     * @param context 上下文
+     * @return SharedPreferences.Editor
+     */
+    private fun getEditor(context: Context): SharedPreferences.Editor? {
+        return getSharedPreferences(context).edit()
+    }
+
+    /**
+     * 存储数据
+     *
+     * @param context 上下文
+     * @param key 键
+     * @param value 值
+     */
+    fun putInt(context: Context, key: String, value: Int) {
+        val editor = getEditor(context) ?: return
+        editor.putInt(key, value)
+        editor.apply()
+    }
+
+    /**
+     * 获取数据
+     *
+     * @param context 上下文
+     * @param key 键
+     * @param defValue 默认值
+     * @return 存储的值
+     */
+    fun getInt(context: Context, key: String, defValue: Int): Int {
+        return getSharedPreferences(context).getInt(key, defValue)
     }
 }

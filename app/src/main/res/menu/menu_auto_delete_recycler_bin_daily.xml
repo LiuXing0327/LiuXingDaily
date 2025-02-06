@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/item_close"
+        android:title="@string/close" />
+    <item
+        android:id="@+id/item_3"
+        android:title="@string/days_3" />
+    <item
+        android:id="@+id/item_7"
+        android:title="@string/days_7" />
+    <item
+        android:id="@+id/item_14"
+        android:title="@string/days_14" />
+    <item
+        android:id="@+id/item_30"
+        android:title="@string/days_30" />
+
+</menu>

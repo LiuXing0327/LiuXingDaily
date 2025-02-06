@@ -4,13 +4,12 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
@@ -27,6 +26,9 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.HashUtil
 import com.liuxing.daily.util.SnackbarUtil
+import com.liuxing.daily.util.TextUtil
+import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 
@@ -44,14 +46,15 @@ class LookDailyActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        //  enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         lookDailyBinding = ActivityLookDailyBinding.inflate(layoutInflater)
         setContentView(lookDailyBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                    insets
+                }*/
         initData(savedInstanceState)
     }
 
@@ -60,6 +63,7 @@ class LookDailyActivity : AppCompatActivity() {
      */
     private fun initData(savedInstanceState: Bundle?) {
         setActionBar()
+        initStatusBarColor()
         initViewModel()
         loadDailyToViewPager(savedInstanceState)
         initSharedPreferences()
@@ -72,6 +76,19 @@ class LookDailyActivity : AppCompatActivity() {
         setSupportActionBar(lookDailyBinding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    /**
+     * 初始化状态栏颜色
+     */
+    private fun initStatusBarColor() {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(
+            R.attr.collapsed_status_bar, typedValue, true
+        )
+        WindowUtil.followPatternSetColor(window,this)
+        window.statusBarColor =
+            ContextCompat.getColor(this@LookDailyActivity, android.R.color.transparent)
     }
 
     /**
@@ -287,7 +304,12 @@ class LookDailyActivity : AppCompatActivity() {
             R.id.item_copy -> {
                 when {
                     originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
-                        dailyEntity.content?.let { CopyUtil.copyTextToClipboard(this, it) }
+                        dailyEntity.content?.let {
+                            CopyUtil.copyTextToClipboard(
+                                this,
+                                TextUtil.replaceTag(it, "")
+                            )
+                        }
                         SnackbarUtil.showSnackbarShort(
                             lookDailyBinding.viewPagerDaily,
                             getString(R.string.copy_successful)

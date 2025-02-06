@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityLookGalleryImageBinding
 import com.liuxing.daily.databinding.FragmentLookGalleryImageBinding
+import com.liuxing.daily.util.ThemeUtil
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER

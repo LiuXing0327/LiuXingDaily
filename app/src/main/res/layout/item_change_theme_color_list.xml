@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/dp_80"
+    android:id="@+id/theme_color_card"
+    android:layout_height="@dimen/dp_80"
+    android:backgroundTint="?attr/colorSurfaceContainer"
+    android:clickable="true"
+    android:layout_margin="@dimen/dp_6"
+    android:foreground="?attr/selectableItemBackground">
+
+    <com.liuxing.daily.view.RoundTricolorView
+        android:id="@+id/round_tricolor_view"
+        android:layout_width="@dimen/dp_54"
+        android:layout_height="@dimen/dp_54"
+        android:layout_gravity="center"
+        android:layout_margin="@dimen/dp_8" />
+
+    <ImageView
+        android:id="@+id/ic_selected"
+        android:layout_width="@dimen/dp_30"
+        android:layout_height="@dimen/dp_30"
+        android:layout_gravity="end"
+        android:layout_margin="@dimen/dp_2"
+        android:background="@drawable/baseline_check_circle_24" />
+
+</com.google.android.material.card.MaterialCardView>

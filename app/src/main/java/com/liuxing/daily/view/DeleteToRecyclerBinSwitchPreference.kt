@@ -14,7 +14,7 @@ import com.liuxing.daily.R
  * DateTime：2024/10/29 18:08
  * Description：
  */
-class CustomDeleteToRecyclerBinSwitchPreference(
+class DeleteToRecyclerBinSwitchPreference(
     context: Context,
     attrs: AttributeSet,
 ) : Preference(context, attrs) {

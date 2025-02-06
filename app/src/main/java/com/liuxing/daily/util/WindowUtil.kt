@@ -1,7 +1,10 @@
 package com.liuxing.daily.util
 
+import android.content.Context
 import android.view.View
 import android.view.Window
+import androidx.core.content.ContextCompat
+import com.liuxing.daily.R
 
 /**
  * Author：流星
@@ -11,14 +14,21 @@ import android.view.Window
 object WindowUtil {
 
     /**
-     * 浅色模式：-1120012
-     * 深色墨色：-13685706
+     * 跟随主题模式设置颜色
+     *
+     *                  浅色模式：-1
+     *                  深色模式：-16777216
+     *
+     * @param window Window
+     * @param context 上下文
      */
-    fun FollowPatternSetColor(window: Window, ColorValue: Int) =
-        if (ColorValue == -1120012) {
+    fun followPatternSetColor(window: Window, context: Context) {
+        val color = ContextCompat.getColor(context, R.color.mode)
+        if (color == -1) {
             window.decorView
                 .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
         } else {
             window.decorView.setSystemUiVisibility(0)
         }
+    }
 }

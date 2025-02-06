@@ -2,19 +2,20 @@ package com.liuxing.daily.view
 
 import android.content.Context
 import android.util.AttributeSet
+import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
-import com.liuxing.daily.util.LogUtil
 
 /**
  * Author：流星
  * DateTime：2024/10/7 上午11:31
  * Description：
  */
-class CustomYearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
+class YearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {
 
     init {
@@ -27,7 +28,6 @@ class CustomYearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
 
         val switchYearMonthDisplay =
             holder.findViewById(R.id.switch_year_month_display) as MaterialSwitch
-
         switchYearMonthDisplay.isChecked = sharedPreferences.getBoolean("switch_preference_header_display", true)
         switchYearMonthDisplay.setOnCheckedChangeListener { buttonView, isChecked ->
             sharedPreferences.edit()

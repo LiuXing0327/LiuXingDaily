@@ -52,5 +52,8 @@ object ConstUtil {
         R.color.color_6
     )
 
-    const val VIDEO_TAG_TEMPLATE = "<video src=\"%s\"/>"
+    // 媒体标签正则
+    val imageRegex = Regex("<img\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
+    val videoRegex = Regex("<video\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
+    val audioRegex = Regex("<audio\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
 }
