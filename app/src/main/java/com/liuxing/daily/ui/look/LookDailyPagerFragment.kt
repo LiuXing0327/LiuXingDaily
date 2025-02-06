@@ -2,6 +2,7 @@ package com.liuxing.daily.ui.look
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,11 +13,18 @@ import com.liuxing.daily.R
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.ConstUtil.audioRegex
+import com.liuxing.daily.util.ConstUtil.imageRegex
+import com.liuxing.daily.util.ConstUtil.videoRegex
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.view.DailyTextView
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
@@ -184,6 +192,46 @@ class LookDailyPagerFragment : Fragment() {
             binding.ivWeather.visibility = View.GONE
         } else {
             binding.tvTitle.text = title
+
+
+            val updatedContent = StringBuilder(content ?: "")
+            CoroutineScope(Dispatchers.IO).launch {
+                val dailyImages =
+                    dailyViewModel.queryDailyImageByUuidToList(dailyUuid!!)
+                val dailyVideos =
+                    dailyViewModel.queryDailyVideoByUuidToList(dailyUuid!!)
+                val dailyAudios =
+                    dailyViewModel.queryDailyAudioByUuidToList(dailyUuid!!)
+
+                val validImagePaths = dailyImages.map { it.imagePath }.toSet()
+                val validVideoPaths = dailyVideos.map { it.videoPath }.toSet()
+                val validAudioPaths = dailyAudios.map { it.audioPath }.toSet()
+
+                removeUselessTags(imageRegex,validImagePaths,updatedContent)
+                removeUselessTags(videoRegex,validVideoPaths,updatedContent)
+                removeUselessTags(audioRegex,validAudioPaths,updatedContent)
+
+                // 更新content内容并设置标志，避免重复更新
+                if (content != updatedContent.toString()) {
+                    content = updatedContent.toString()
+                    dailyViewModel.updateDaily(
+                        DailyEntity(
+                            id,
+                            title,
+                            updatedContent.toString(),
+                            dateTime,
+                            backgroundColorIndex,
+                            singlePassword,
+                            moodIndex,
+                            weatherIndex,
+                            dailyUuid,
+                            false,
+                            dailyLabel
+                        )
+                    )
+
+                }
+            }
             dailyTextView.text = content
             binding.ivMood.visibility = moodIndex.let {
                 if (it == 0 || it == null) View.GONE else {
@@ -209,6 +257,23 @@ class LookDailyPagerFragment : Fragment() {
             }
         }
         binding.tvLabel.text = dailyLabel
+    }
+
+    private fun removeUselessTags(
+        regex: Regex,
+        validPaths: Set<String?>,
+        updatedContent: StringBuilder
+    ) {
+        regex.findAll(updatedContent).forEach { matchResult ->
+            val tagPath = matchResult.groupValues[1]
+            if (!validPaths.contains(tagPath)) {
+                val tagToRemove = matchResult.value
+                val startIndex = updatedContent.indexOf(tagToRemove)
+                if (startIndex != -1) {
+                    updatedContent.replace(startIndex, startIndex + tagToRemove.length, "")
+                }
+            }
+        }
     }
 
     /**

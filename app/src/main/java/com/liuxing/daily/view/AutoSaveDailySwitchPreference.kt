@@ -13,7 +13,7 @@ import com.liuxing.daily.R
  * DateTime：2024/10/7 上午11:31
  * Description：自定义自动保存开关偏好
  */
-class CustomAutoSaveDailySwitchPreference(context: Context, attrs: AttributeSet) :
+class AutoSaveDailySwitchPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {
 
     init {

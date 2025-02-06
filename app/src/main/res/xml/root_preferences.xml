@@ -36,11 +36,13 @@
         app:iconSpaceReserved="false"
         app:title="@string/daily">
 
-        <com.liuxing.daily.view.CustomYearMonthSwitchPreference />
+        <com.liuxing.daily.view.YearMonthSwitchPreference />
 
-        <com.liuxing.daily.view.CustomAutoSaveDailySwitchPreference />
+        <com.liuxing.daily.view.AutoSaveDailySwitchPreference />
 
-        <com.liuxing.daily.view.CustomDeleteToRecyclerBinSwitchPreference />
+        <com.liuxing.daily.view.DeleteToRecyclerBinSwitchPreference />
+
+        <com.liuxing.daily.view.AutoDeleteRecyclerBinDailyPreference />
 
     </PreferenceCategory>
 
@@ -51,8 +53,13 @@
         <Preference
             app:iconSpaceReserved="false"
             app:key="theme_mode_preference"
-            app:summary="跟随系统"
+            app:summary="@string/follow_the_system"
             app:title="@string/theme_mode" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="appearance_preference"
+            app:title="@string/appearance"/>
 
     </PreferenceCategory>
 

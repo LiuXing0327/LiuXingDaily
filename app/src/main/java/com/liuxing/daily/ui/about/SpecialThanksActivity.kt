@@ -5,6 +5,8 @@ import android.util.TypedValue
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
@@ -12,6 +14,7 @@ import com.liuxing.daily.R
 import com.liuxing.daily.adapter.SpecialThanksAdapter
 import com.liuxing.daily.data.SpecialThanksData
 import com.liuxing.daily.databinding.ActivitySpecialThanksBinding
+import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
 
 class SpecialThanksActivity : AppCompatActivity() {
@@ -23,9 +26,10 @@ class SpecialThanksActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         specialThanksBinding = ActivitySpecialThanksBinding.inflate(layoutInflater)
         setContentView(specialThanksBinding.root)
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*                ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                     insets
@@ -34,7 +38,7 @@ class SpecialThanksActivity : AppCompatActivity() {
         theme.resolveAttribute(
             R.attr.collapsed_status_bar, typedValue, true
         )
-        WindowUtil.FollowPatternSetColor(window, typedValue.data)
+        WindowUtil.followPatternSetColor(window,this)
         window.statusBarColor =
             ContextCompat.getColor(this@SpecialThanksActivity, android.R.color.transparent)
         initData()

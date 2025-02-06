@@ -14,6 +14,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityPlayAudioBinding
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.viewmodel.DailyAudioPlayerModel
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.PlayerStatus
@@ -32,6 +33,7 @@ class PlayAudioActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         activityPlayAudioBinding = ActivityPlayAudioBinding.inflate(layoutInflater)
         setContentView(activityPlayAudioBinding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->

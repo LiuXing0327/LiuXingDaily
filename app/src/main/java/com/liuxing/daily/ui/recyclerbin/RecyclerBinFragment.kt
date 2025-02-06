@@ -188,7 +188,8 @@ class RecyclerBinFragment : Fragment() {
                                 dailyEntity.moodIndex,
                                 dailyEntity.weatherIndex,
                                 dailyEntity.dailyUUID,
-                                false
+                                false,
+                                dailyRecyclerDateTime = null
                             )
                         )
                     }
@@ -210,6 +211,10 @@ class RecyclerBinFragment : Fragment() {
         )
         if (headerYearMonth != recyclerBinAdapter.headerYearMonth
         ) {
+            setRecyclerDaily()
+        }
+        val autoDeleteIndex = sharedPreferences.getInt("auto_delete_recycler_bin_daily", 7)
+        if(autoDeleteIndex != recyclerBinAdapter.autoDeleteDays){
             setRecyclerDaily()
         }
     }

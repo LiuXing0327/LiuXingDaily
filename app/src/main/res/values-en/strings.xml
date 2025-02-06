@@ -117,4 +117,12 @@
     <string name="add_video">Add Video</string>
     <string name="add_audio">Add Audio</string>
     <string name="move_to_recycle_bin_when_deleting_a_diary">Move to Recycle Bin when deleting a diary</string>
+    <string name="auto_delete_message">%1$s | "Will be automatically deleted in %2$s days</string>
+    <string name="regularly_automatically_delete_the_diaries_in_the_recycle_bin">Regularly automatically delete the diaries in the recycle bin</string>
+    <string name="close">Close</string>
+    <string name="days_3">3 days</string>
+    <string name="days_7">7 days</string>
+    <string name="days_14">14 days</string>
+    <string name="days_30">30 days</string>
+    <string name="appearance">Appearance</string>
 </resources>

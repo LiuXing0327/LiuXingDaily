@@ -96,7 +96,7 @@
     <string name="from_new_to_old">从新到旧</string>
     <string name="from_old_to_new">从旧到新</string>
     <string name="chinese_simplified">简体中文</string>
-    <string name="english">英语</string>
+    <string name="english">English</string>
     <string name="language">语言</string>
     <string name="sad">难过</string>
     <string name="agitated">激动</string>
@@ -120,4 +120,12 @@
     <string name="add_video">添加视频</string>
     <string name="add_audio">添加音频</string>
     <string name="move_to_recycle_bin_when_deleting_a_diary">删除日记时移入回收站</string>
+    <string name="auto_delete_message">%1$s | 还有%2$s天自动删除</string>
+    <string name="regularly_automatically_delete_the_diaries_in_the_recycle_bin">定期自动删除回收站里的日记</string>
+    <string name="close">关闭</string>
+    <string name="days_3">3天</string>
+    <string name="days_7">7天</string>
+    <string name="days_14">14天</string>
+    <string name="days_30">30天</string>
+    <string name="appearance">外观</string>
 </resources>

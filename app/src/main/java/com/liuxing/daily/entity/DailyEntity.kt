@@ -46,5 +46,8 @@ data class DailyEntity(
     @Expose(deserialize = true, serialize = true) val isDeleted: Boolean = false,
 
     @ColumnInfo(name = "DAILY_LABEL")
-    @Expose(deserialize = true, serialize = true) val dailyLabel: String? = null
+    @Expose(deserialize = true, serialize = true) val dailyLabel: String? = null,
+
+    @ColumnInfo(name = "DAILY_RECYCLER_DATE_TIME")
+    @Expose(deserialize = true, serialize = true) val dailyRecyclerDateTime: Long? = null
 )

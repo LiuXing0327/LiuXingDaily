@@ -51,7 +51,7 @@
             app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
             app:navGraph="@navigation/daily_navigation" />
 
-        <com.liuxing.daily.view.CustomExtendedFloatingActionButton
+        <com.liuxing.daily.view.ExtendedFloatingActionButton
             android:id="@+id/floating_action_button"
             style="?attr/extendedFloatingActionButtonStyle"
             android:layout_width="wrap_content"

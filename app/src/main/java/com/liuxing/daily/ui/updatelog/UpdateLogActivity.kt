@@ -12,6 +12,7 @@ import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.data.VersionLogData
 import com.liuxing.daily.databinding.ActivityUpdateLogBinding
+import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
 import java.io.BufferedReader
 
@@ -24,14 +25,15 @@ class UpdateLogActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+       // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         activityUpdateLogBinding = ActivityUpdateLogBinding.inflate(layoutInflater)
         setContentView(activityUpdateLogBinding.root)
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                     insets
-                }*/
+        }*/
         initData()
     }
 
@@ -162,7 +164,7 @@ class UpdateLogActivity : AppCompatActivity() {
         theme.resolveAttribute(
             R.attr.collapsed_status_bar, typedValue, true
         )
-        WindowUtil.FollowPatternSetColor(window, typedValue.data)
+        WindowUtil.followPatternSetColor(window,this)
         window.statusBarColor =
             ContextCompat.getColor(this@UpdateLogActivity, android.R.color.transparent)
         setScrollStatusBarColor()

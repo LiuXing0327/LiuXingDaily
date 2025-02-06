@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
@@ -12,11 +13,8 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.FrameLayout
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -25,6 +23,8 @@ import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityLookDailyVideoBinding
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyVideoPlayerModel
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.PlayerStatus
@@ -40,14 +40,15 @@ class LookDailyVideoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+       // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         lookDailyVideoBinding = ActivityLookDailyVideoBinding.inflate(layoutInflater)
         setContentView(lookDailyVideoBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
+        }*/
         initData()
     }
 
@@ -56,6 +57,7 @@ class LookDailyVideoActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
+        initStatusBarColor()
         initViewModel()
         userUpdatePlayerProgress()
         updatePlayerProgress()
@@ -73,6 +75,19 @@ class LookDailyVideoActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(false)
         }
+    }
+
+    /**
+     * 初始化状态栏颜色
+     */
+    private fun initStatusBarColor() {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(
+            R.attr.collapsed_status_bar, typedValue, true
+        )
+        WindowUtil.followPatternSetColor(window,this)
+        window.statusBarColor =
+            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**

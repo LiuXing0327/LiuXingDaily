@@ -16,7 +16,7 @@ import com.liuxing.daily.entity.DailyVideoEntity
 
 @Database(
     entities = [DailyEntity::class, DailyImageEntity::class, DailyLabelEntity::class, DailyVideoEntity::class,DailyAudioEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class DailyDatabase : RoomDatabase() {
@@ -37,7 +37,8 @@ abstract class DailyDatabase : RoomDatabase() {
                         MIGRATION_4_5,
                         MIGRATION_5_6,
                         MIGRATION_6_7,
-                        MIGRATION_7_8
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
                     )
                     .build()
                 INSTANCE = instance
@@ -146,5 +147,18 @@ abstract class DailyDatabase : RoomDatabase() {
             db.execSQL("CREATE TABLE IF NOT EXISTS `DAILY_AUDIO` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `DAILY_UUID` TEXT,`AUDIO_PATH` TEXT)")
         }
 
+    }
+
+    /**
+     * 数据库升级
+     *
+     * MIGRATION_8_9 8 -> 9
+     *
+     * 新增字段 DAILY_RECYCLER_DATE_TIME
+     */
+    object MIGRATION_8_9 : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE DAILY_INFO ADD COLUMN DAILY_RECYCLER_DATE_TIME BIGINT")
+        }
     }
 }

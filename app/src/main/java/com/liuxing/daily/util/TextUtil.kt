@@ -37,16 +37,17 @@ object TextUtil {
      * 替换标签
      *
      * @param text 文本
+     * @param replacement 替代的文本
      * @return 替换结果
      */
-    fun replaceTag(text: String): String {
+    fun replaceTag(text: String, replacement: String = "..."): String {
         val imageRegex = Regex("<img\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
         val videoRegex = Regex("<video\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
         val audioRegex = Regex("<audio\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
         var replacedText = text
-        replacedText = replacedText.replace(imageRegex, "...")
-        replacedText = replacedText.replace(videoRegex, "...")
-        replacedText = replacedText.replace(audioRegex, "...")
+        replacedText = replacedText.replace(imageRegex, replacement)
+        replacedText = replacedText.replace(videoRegex, replacement)
+        replacedText = replacedText.replace(audioRegex, replacement)
 
         return replacedText
     }

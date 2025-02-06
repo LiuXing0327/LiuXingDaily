@@ -1,14 +1,12 @@
 package com.liuxing.daily.ui.settings
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.MenuItem
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -17,20 +15,24 @@ import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
 import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
+import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
-import com.liuxing.daily.util.ThemeModeUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
+import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.util.WindowUtil
 
 
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var activityBinding: SettingsActivityBinding
+    private var currentThemeColorId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         activityBinding = SettingsActivityBinding.inflate(layoutInflater)
         setContentView(activityBinding.root)
         if (savedInstanceState == null) {
@@ -39,13 +41,36 @@ class SettingsActivity : AppCompatActivity() {
                 .replace(R.id.settings, SettingsFragment())
                 .commit()
         }
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                    insets
+                }*/
         setSupportActionBar(activityBinding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
+        initStatusBarColor()
+    }
+
+    /**
+     * 初始化状态栏颜色
+     */
+    private fun initStatusBarColor() {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(
+            R.attr.collapsed_status_bar, typedValue, true
+        )
+        WindowUtil.followPatternSetColor(window, this)
+        window.statusBarColor =
+            ContextCompat.getColor(this, android.R.color.transparent)
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        val themeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
+        if (themeColorId == currentThemeColorId) return
+        ThemeUtil.applyTheme(this)
+        recreate()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -104,7 +129,7 @@ class SettingsActivity : AppCompatActivity() {
                             if (which != themeModeIndex) {
                                 sharedPreferences.edit {
                                     putInt("theme_mode_preference", which)
-                                    ThemeModeUtil.setThemeMode(which)
+                                    ThemeUtil.setThemeMode(which)
                                     requireActivity().recreate()
                                     apply()
                                 }
@@ -115,6 +140,12 @@ class SettingsActivity : AppCompatActivity() {
                     create()
                     show()
                 }
+                true
+            }
+
+            val themeColorPreference = findPreference<Preference>("appearance_preference")
+            themeColorPreference?.setOnPreferenceClickListener {
+                IntentUtil.startActivity(requireContext(), AppearanceSettingsActivity::class.java)
                 true
             }
         }

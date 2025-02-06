@@ -19,8 +19,7 @@ object LogUtil {
     /**
      * 错误
      */
-
     fun e(tag: String, message: String) {
-        Log.e(tag, "logG: $message")
+        Log.e(tag, "logE: $message")
     }
 }

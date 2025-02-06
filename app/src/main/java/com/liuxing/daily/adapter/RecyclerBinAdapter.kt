@@ -1,6 +1,8 @@
 package com.liuxing.daily.adapter
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +29,7 @@ import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 
+
 class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
@@ -35,6 +38,8 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private lateinit var viewLifecycleOwner: LifecycleOwner
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
+    var autoDeleteDays: Int = 0
+    private lateinit var sharedPreferences: SharedPreferences
 
     fun setDailyList(
         context: Context,
@@ -42,27 +47,34 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         dailyViewModel: DailyViewModel,
         viewLifecycleOwner: LifecycleOwner
     ) {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
-
         this.dailyViewModel = dailyViewModel
         this.viewLifecycleOwner = viewLifecycleOwner
 
         // 过滤被回收的数据
         val filteredList = dailyList.filter { it.isDeleted }
-        val sortedByDescending = filteredList.withIndex().sortedByDescending { it.value.dateTime }
+        val sortedByDescending =
+            filteredList.withIndex().sortedByDescending { it.value.dailyRecyclerDateTime }
 
         val groupedMap = when (currentSortIndex) {
-            1 -> sortedByDescending.sortedBy { it.value.dateTime }
-                .groupBy { DateUtil.getDateString(0, Date(it.value.dateTime!!)).substring(0, 7) }
-            else -> sortedByDescending.sortedByDescending { it.value.dateTime }
-                .groupBy { DateUtil.getDateString(0, Date(it.value.dateTime!!)).substring(0, 7) }
+            1 -> sortedByDescending.sortedBy { it.value.dailyRecyclerDateTime }
+                .groupBy {
+                    DateUtil.getDateString(0, Date(it.value.dailyRecyclerDateTime!!))
+                        .substring(0, 7)
+                }
+
+            else -> sortedByDescending.sortedByDescending { it.value.dailyRecyclerDateTime }
+                .groupBy {
+                    DateUtil.getDateString(0, Date(it.value.dailyRecyclerDateTime!!))
+                        .substring(0, 7)
+                }
         }
 
         val toSortedMap = groupedMap.mapKeys { dailyEntity ->
             dailyEntity.key to DateUtil.getDateString(
                 0,
-                Date(dailyEntity.value.first().value.dateTime!!)
+                Date(dailyEntity.value.first().value.dailyRecyclerDateTime!!)
             )
         }.mapKeys { it.key.first }
 
@@ -81,9 +93,10 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             // 根据排序方式添加 DailyEntity 及其索引
             when (currentSortIndex) {
-                1 -> resultList.addAll(list.sortedBy { it.value.dateTime }
+                1 -> resultList.addAll(list.sortedBy { it.value.dailyRecyclerDateTime }
                     .map { Pair(it.value, it.index) })
-                else -> resultList.addAll(list.sortedByDescending { it.value.dateTime }
+
+                else -> resultList.addAll(list.sortedByDescending { it.value.dailyRecyclerDateTime }
                     .map { Pair(it.value, it.index) })
             }
         }
@@ -108,6 +121,7 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
     }
 
+    @SuppressLint("StringFormatMatches")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is DateViewHolder) {
             holder.tvDateHeader.text = categorizedList[position] as String
@@ -130,7 +144,20 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"
             }
-            holder.tvDateTime.text = DateUtil.getDateString(0, Date(dailyEntity.dateTime!!))
+            val startDate = DateUtil.getDateString(1, Date(dailyEntity.dailyRecyclerDateTime!!))
+            val daysBetween = DateUtil.getDaysBetween(startDate)
+            autoDeleteDays = sharedPreferences.getInt("auto_delete_recycler_bin_daily", 7)
+            val dateString = DateUtil.getDateString(0, Date(dailyEntity.dailyRecyclerDateTime!!))
+            if (autoDeleteDays != 0) {
+                val remainingDays = autoDeleteDays - daysBetween
+                holder.tvDateTime.text = holder.tvDateTime.context.getString(
+                    R.string.auto_delete_message,
+                    dateString,
+                    remainingDays
+                )
+            } else {
+                holder.tvDateTime.text = dateString
+            }
             setBackgroundColor(dailyEntity, holder)
             holder.ivMood.visibility =
                 if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {

@@ -7,14 +7,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.SubMenu
 import android.view.View
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -44,7 +42,6 @@ import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
-import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
@@ -53,10 +50,13 @@ import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil
+import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
 import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -75,6 +75,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.util.Date
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -99,10 +100,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gLabel: SubMenu
     private lateinit var createLabel: MenuItem
     private var dailyLabelList: List<DailyLabelEntity> = ArrayList()
+    private var currentThemeColorId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
+        // enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding.root)
         /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -110,6 +113,7 @@ class MainActivity : AppCompatActivity() {
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                     insets
                 }*/
+        currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
         val handler = Handler(Looper.getMainLooper())
@@ -302,6 +306,7 @@ class MainActivity : AppCompatActivity() {
      * 搜索视图的焦点监听
      */
     private fun searchViewFocus() {
+
         activityMainBinding.searchView.editText.setOnFocusChangeListener { v, hasFocus ->
             searchViewShowingStatusBarColor(hasFocus)
         }
@@ -318,7 +323,7 @@ class MainActivity : AppCompatActivity() {
         theme.resolveAttribute(
             R.attr.searchViewShowingColor, typedValue, true
         )
-        WindowUtil.FollowPatternSetColor(window, typedValue.data)
+        WindowUtil.followPatternSetColor(window, this)
         when {
             showing -> {
                 window.statusBarColor = typedValue.data
@@ -552,8 +557,12 @@ class MainActivity : AppCompatActivity() {
                                         dailyViewModel.deletePathImageByDailyUuid(
                                             it
                                         )
+                                        dailyViewModel.deletePathVideoByDailyUuid(it)
+                                        dailyViewModel.deletePathAudioByDailyUuid(it)
                                     }
                                     dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                                    dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
+                                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
                                     dailyViewModel.deleteDaily(dailyEntity)
                                 }
                             }
@@ -980,6 +989,9 @@ class MainActivity : AppCompatActivity() {
      * 设置日记数据
      */
     private fun setDailyData() {
+        val fileUtil = FileUtil()
+        val autoDeleteDays = sharedPreferences!!.getInt("auto_delete_recycler_bin_daily", 7)
+
         dailyViewModel.queryImageCount().observe(this) {
             tvDailyImageCount.text = "${it}${getString(R.string.sheet)}"
         }
@@ -992,6 +1004,75 @@ class MainActivity : AppCompatActivity() {
                 val tempDailyList = dailyList
                 tempDailyList.forEach { dailyEntity ->
                     dailyTextSize += TextUtil.getWordCount(dailyEntity.title!!.plus(dailyEntity.content!!))
+                    if (dailyEntity.isDeleted) {
+                        if (dailyEntity.dailyRecyclerDateTime == null) {
+                            val updatedEntity = DailyEntity(
+                                dailyEntity.id,
+                                dailyEntity.title,
+                                dailyEntity.content,
+                                dailyEntity.dateTime,
+                                dailyEntity.backgroundColorIndex,
+                                dailyEntity.singlePassword,
+                                dailyEntity.moodIndex,
+                                dailyEntity.weatherIndex,
+                                UUID.randomUUID().toString(),
+                                true,
+                                dailyRecyclerDateTime = DateUtil.getCurrentDateTime()
+                            )
+                            dailyViewModel.updateDaily(updatedEntity)
+                        } else {
+                            val startDate =
+                                DateUtil.getDateString(1, Date(dailyEntity.dailyRecyclerDateTime!!))
+                            val daysBetween = DateUtil.getDaysBetween(startDate)
+                            if (autoDeleteDays != 0) {
+                                if (autoDeleteDays - daysBetween <= 0) {
+                                    dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID!!)
+                                        .observe(this@MainActivity) { dailyImageList ->
+                                            val existingImagePaths =
+                                                dailyImageList.map { it.imagePath }
+                                            if (existingImagePaths.isNotEmpty()) {
+                                                val toList = existingImagePaths.toList()
+                                                toList.forEach {
+                                                    if (fileUtil.checkFileExists(it!!)) {
+                                                        fileUtil.deleteFile(it)
+                                                    }
+                                                }
+                                            }
+                                            dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                                        }
+                                    dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID!!)
+                                        .observe(this@MainActivity) { dailyVideoList ->
+                                            val existingVideoPaths =
+                                                dailyVideoList.map { it.videoPath }
+                                            if (existingVideoPaths.isNotEmpty()) {
+                                                val toList = existingVideoPaths.toList()
+                                                toList.forEach {
+                                                    if (fileUtil.checkFileExists(it!!)) {
+                                                        fileUtil.deleteFile(it)
+                                                    }
+                                                }
+                                            }
+                                            dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
+                                        }
+                                    dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID!!)
+                                        .observe(this@MainActivity) { dailyAudioList ->
+                                            val existingAudioPaths =
+                                                dailyAudioList.map { it.audioPath }
+                                            if (existingAudioPaths.isNotEmpty()) {
+                                                val toList = existingAudioPaths.toList()
+                                                toList.forEach {
+                                                    if (fileUtil.checkFileExists(it!!)) {
+                                                        fileUtil.deleteFile(it)
+                                                    }
+                                                }
+                                            }
+                                            dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
+                                        }
+                                    dailyViewModel.deleteDaily(dailyEntity)
+                                }
+                            }
+                        }
+                    }
                     // 如果dailyUUID是空的
                     if (dailyEntity.dailyUUID.isNullOrEmpty()) {
                         isUpdating = true // 开始更新
@@ -1015,12 +1096,13 @@ class MainActivity : AppCompatActivity() {
                 tvDailyTextCount.text = "${dailyTextSize}${getString(R.string.word)}"
             }
         })
+
+        checkContentNotInDatabase()
     }
 
     override fun onResume() {
         super.onResume()
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        val headerYearMonth = sharedPreferences.getBoolean(
+        val headerYearMonth = sharedPreferences?.getBoolean(
             "switch_preference_header_display",
             true
         )
@@ -1159,5 +1241,102 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    /**
+     * 检查数据库中不存在的内容,并将它删除
+     */
+    private fun checkContentNotInDatabase() {
+        val fileUtil = FileUtil()
+        dailyViewModel.queryAllDaily().observe(this) { dailyList ->
+            CoroutineScope(Dispatchers.IO).launch {
+                val filePaths =
+                    fileUtil.getFilePaths(File("/storage/emulated/0/Android/data/com.liuxing.daily/files"))
+                val filesToDelete = mutableListOf<String>()
+
+                for (path in filePaths) {
+
+                    when (File(path).extension) {
+                        "jpg" -> {
+                            var contentExistsInDatabase = false
+
+                            dailyList.forEach {
+                                val dailyImages =
+                                    dailyViewModel.queryDailyImageByUuidToList(it.dailyUUID!!)
+                                dailyImages.forEach { dailyImageEntity ->
+                                    if (dailyImageEntity.imagePath == path) {
+                                        contentExistsInDatabase = true
+                                        return@forEach
+                                    }
+                                }
+                            }
+
+                            if (!contentExistsInDatabase) {
+                                LogUtil.d("delete", path)
+                                filesToDelete.add(path)
+                            }
+                        }
+
+                        "mp4" -> {
+                            var contentExistsInDatabase = false
+
+                            dailyList.forEach {
+                                val dailyVideos =
+                                    dailyViewModel.queryDailyVideoByUuidToList(it.dailyUUID!!)
+
+                                dailyVideos.forEach { dailyVideoEntity ->
+                                    if (dailyVideoEntity.videoPath == path) {
+                                        contentExistsInDatabase = true
+                                        return@forEach
+                                    }
+                                }
+                            }
+
+                            if (!contentExistsInDatabase) {
+                                LogUtil.d("delete", path)
+                                filesToDelete.add(path)
+                            }
+                        }
+
+                        "mp3" -> {
+                            var contentExistsInDatabase = false
+
+                            dailyList.forEach {
+                                val dailyAudios =
+                                    dailyViewModel.queryDailyAudioByUuidToList(it.dailyUUID!!)
+
+                                dailyAudios.forEach { dailyAudioEntity ->
+                                    if (dailyAudioEntity.audioPath == path) {
+                                        contentExistsInDatabase = true
+                                        LogUtil.d("cb", "cb")
+                                        return@forEach
+                                    }
+                                }
+                            }
+
+                            if (!contentExistsInDatabase) {
+                                LogUtil.d("delete", path)
+                                filesToDelete.add(path)
+                            }
+                        }
+                    }
+                }
+
+                filesToDelete.forEach { filepath ->
+                    val fileExists = fileUtil.checkFileExists(filepath)
+                    if (fileExists) {
+                        fileUtil.deleteFile(filepath)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        val themeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
+        if (themeColorId == currentThemeColorId) return
+        ThemeUtil.applyTheme(this)
+        recreate()
     }
 }
