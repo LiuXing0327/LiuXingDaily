@@ -1,16 +1,20 @@
 package com.liuxing.daily.ui.gallery
 
+import android.animation.ObjectAnimator
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import androidx.fragment.app.Fragment
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.bumptech.glide.Glide
-import com.liuxing.daily.R
-import com.liuxing.daily.databinding.ActivityLookGalleryImageBinding
+import android.view.WindowInsets
+import android.view.WindowInsetsController
+import androidx.fragment.app.Fragment
+import com.davemorrissey.labs.subscaleview.ImageSource
+import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.databinding.FragmentLookGalleryImageBinding
-import com.liuxing.daily.util.ThemeUtil
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -67,6 +71,66 @@ class LookGalleryImageFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Glide.with(requireContext()).load(arguments?.getString(ARG_PARAM1)).into(lookGalleryImageBinding.galleryImage)
+        /*        Glide.with(requireContext()).load(arguments?.getString(ARG_PARAM1)).into(lookGalleryImageBinding.galleryImage)*/
+        lookGalleryImageBinding.galleryImage.setImage(
+            ImageSource.uri(
+                arguments?.getString(
+                    ARG_PARAM1
+                )!!
+            )
+        )
+
+        val activityLookGalleryImageBinding =
+            (requireActivity() as LookGalleryImageActivity).lookGalleryImageBinding
+
+        lookGalleryImageBinding.galleryImage.setOnClickListener {
+            activityLookGalleryImageBinding.appBarLayout.let {
+                if (it.visibility == View.VISIBLE) {
+                    enterImmersive(it)
+                    activityLookGalleryImageBinding.main.setBackgroundColor(Color.BLACK)
+                } else {
+                    exitImmersive(it)
+                    activityLookGalleryImageBinding.main.setBackgroundColor(Color.TRANSPARENT)
+                }
+            }
+        }
+    }
+
+    /**
+     * 进入沉侵式
+     *
+     * @param appBarLayout AppBarLayout
+     */
+    private fun enterImmersive(appBarLayout: AppBarLayout) {
+        appBarLayout.visibility = View.GONE
+        requireActivity().isImmersive = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            requireActivity().window.insetsController?.apply {
+                hide(WindowInsets.Type.systemBars())
+                systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            requireActivity().window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
+        }
+    }
+
+    /**
+     * 退出沉侵式
+     *
+     * @param appBarLayout AppBarLayout
+     */
+    private fun exitImmersive(appBarLayout: AppBarLayout) {
+        appBarLayout.visibility = View.VISIBLE
+        requireActivity().isImmersive = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            requireActivity().window.insetsController?.show(WindowInsets.Type.systemBars())
+        } else {
+            @Suppress("DEPRECATION")
+            requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.liuxing.daily.adapter
 
+import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,7 @@ class SpecialThanksAdapter : RecyclerView.Adapter<SpecialThanksAdapter.ViewHolde
         val ivIcon: ImageView = itemView.findViewById(R.id.iv_icon)
         val tvSpecialThanksName: MaterialTextView =
             itemView.findViewById(R.id.tv_special_thanks_name)
+        val tvLink: MaterialTextView = itemView.findViewById(R.id.tv_link)
         val tvRemark: MaterialTextView = itemView.findViewById(R.id.tv_remark)
     }
 
@@ -62,6 +65,8 @@ class SpecialThanksAdapter : RecyclerView.Adapter<SpecialThanksAdapter.ViewHolde
             }
         }
         holder.tvSpecialThanksName.text = specialThanksData.name
+        holder.tvLink.text = Html.fromHtml("<a href='${specialThanksData.link}'>${specialThanksData.link}</a>", Html.FROM_HTML_MODE_COMPACT)
+        holder.tvLink.movementMethod = LinkMovementMethod.getInstance()
         holder.tvRemark.text = specialThanksData.remark
     }
 }

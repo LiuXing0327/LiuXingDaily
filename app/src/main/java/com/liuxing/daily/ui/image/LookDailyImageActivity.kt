@@ -1,10 +1,15 @@
 package com.liuxing.daily.ui.image
 
 import android.annotation.SuppressLint
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
@@ -19,7 +24,7 @@ import com.liuxing.daily.viewmodel.DailyViewModel
 
 class LookDailyImageActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityLookDailyImageBinding
+    lateinit var binding: ActivityLookDailyImageBinding
     private lateinit var dailyViewModel: DailyViewModel
     private var dailyUuid: String? = ""
     private var currentImagePath = ""

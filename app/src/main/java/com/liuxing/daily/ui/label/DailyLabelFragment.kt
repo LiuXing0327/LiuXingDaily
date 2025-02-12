@@ -1,5 +1,6 @@
 package com.liuxing.daily.ui.label
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.liuxing.daily.adapter.DailyLabelAdapter
 import com.liuxing.daily.databinding.FragmentDailyLabelBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 // TODO: Rename parameter arguments, choose names that match
@@ -80,6 +83,7 @@ class DailyLabelFragment : Fragment() {
         initRecyclerView()
         initViewModel()
         setDailyData()
+        setLabelOnItemClick()
     }
 
     /**
@@ -120,6 +124,19 @@ class DailyLabelFragment : Fragment() {
             dailyViewModel,
             viewLifecycleOwner
         )
+    }
+    /**
+     * 设置点击事件
+     */
+    private fun setLabelOnItemClick() {
+        dailyLabelAdapter.setOnItemClickListener(object : OnItemClickListener{
+            override fun onItemClick(position: Int) {
+                val intent = Intent()
+                intent.setClass(requireContext(), LookDailyActivity::class.java)
+                intent.putExtra("POSITION", position)
+                requireActivity().startActivity(intent)
+            }
+        })
     }
 
     /**

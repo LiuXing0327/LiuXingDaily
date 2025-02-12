@@ -18,7 +18,7 @@ import java.io.File
 
 class LookGalleryImageActivity : AppCompatActivity() {
 
-    private lateinit var lookGalleryImageBinding: ActivityLookGalleryImageBinding
+    lateinit var lookGalleryImageBinding: ActivityLookGalleryImageBinding
     private lateinit var dailyViewModel: DailyViewModel
     private val imageList = mutableSetOf<File>()
 

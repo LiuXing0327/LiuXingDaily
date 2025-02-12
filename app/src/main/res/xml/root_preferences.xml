@@ -48,13 +48,7 @@
 
     <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:title="@string/ui">
-
-        <Preference
-            app:iconSpaceReserved="false"
-            app:key="theme_mode_preference"
-            app:summary="@string/follow_the_system"
-            app:title="@string/theme_mode" />
+        app:title="@string/appearance">
 
         <Preference
             app:iconSpaceReserved="false"

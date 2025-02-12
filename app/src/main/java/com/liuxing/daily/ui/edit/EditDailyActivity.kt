@@ -1024,7 +1024,7 @@ class EditDailyActivity : AppCompatActivity() {
     private fun saveDaily() {
         // 保存更新后日记内容到SharedPreferences
         getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE).edit {
-            putString("daily_update_content", dailyTextInputEdit.text.toString())
+            putString("daily_update_content_$dailyUuid", dailyTextInputEdit.text.toString())
         }
         dailyViewModel.updateDaily(
             DailyEntity(
