@@ -1,10 +1,17 @@
 package com.liuxing.daily.ui.appearance
 
+import android.app.ActivityOptions
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.MenuItem
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.ThemeColorAdapter
@@ -17,6 +24,7 @@ import com.liuxing.daily.util.WindowUtil
 class AppearanceSettingsActivity : AppCompatActivity() {
 
     private lateinit var appearanceSettingsBinding: ActivityAppearanceSettingsBinding
+    private var sharedPreferences: SharedPreferences? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +46,8 @@ class AppearanceSettingsActivity : AppCompatActivity() {
     private fun initData() {
         setActionBar()
         initStatusBarColor()
+        initSharedPreferences()
+        changeThemeMode()
         setColorData()
     }
 
@@ -64,6 +74,70 @@ class AppearanceSettingsActivity : AppCompatActivity() {
         WindowUtil.followPatternSetColor(window, this)
         window.statusBarColor =
             ContextCompat.getColor(this, android.R.color.transparent)
+    }
+
+    /**
+     * 初始化SharedPreference
+     */
+    private fun initSharedPreferences() {
+        if (sharedPreferences == null) {
+            sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        }
+    }
+
+    /**
+     * 更改主题模式
+     */
+    private fun changeThemeMode() {
+        val themeModeIndex = sharedPreferences!!.getInt("theme_mode_preference", 0)
+        when (themeModeIndex) {
+            1 -> appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = true
+
+            2 -> appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = true
+
+            else -> appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = true
+        }
+
+        appearanceSettingsBinding.floatingToolbarButtonLight.setOnClickListener {
+            ThemeUtil.setThemeMode(1)
+            saveThemeMode(1)
+            appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = true
+
+            appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = false
+            appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = false
+        }
+
+        appearanceSettingsBinding.floatingToolbarButtonNight.setOnClickListener {
+            ThemeUtil.setThemeMode(2)
+            saveThemeMode(2)
+            appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = false
+
+            appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = true
+
+            appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = false
+        }
+
+        appearanceSettingsBinding.floatingToolbarButtonFollowSystem.setOnClickListener {
+            ThemeUtil.setThemeMode(0)
+            saveThemeMode(0)
+            appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = false
+            appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = false
+
+            appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = true
+        }
+
+    }
+
+    /**
+     * 保存主题模式
+     *
+     * @param themeMode 主题模式索引
+     */
+    private fun saveThemeMode(themeMode: Int) {
+        sharedPreferences!!.edit {
+            putInt("theme_mode_preference", themeMode)
+            apply()
+        }
     }
 
     /**

@@ -19,6 +19,7 @@ import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
@@ -126,6 +127,7 @@ class SettingsActivity : AppCompatActivity() {
                         R.array.theme_mode_entries,
                         themeModeIndex,
                         DialogInterface.OnClickListener { dialog, which ->
+                            LogUtil.d("themeModeIndex",which.toString())
                             if (which != themeModeIndex) {
                                 sharedPreferences.edit {
                                     putInt("theme_mode_preference", which)

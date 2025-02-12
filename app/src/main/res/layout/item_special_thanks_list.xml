@@ -29,10 +29,25 @@
         </LinearLayout>
 
         <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tv_remark"
+            android:id="@+id/tv_link"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="@dimen/sp_16" />
+
+        <LinearLayout
+            android:padding="@dimen/dp_8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceContainer">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tv_remark"
+                android:textIsSelectable="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/sp_16" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

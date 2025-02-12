@@ -2,7 +2,6 @@ package com.liuxing.daily.ui.look
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,7 +23,6 @@ import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
@@ -367,12 +365,14 @@ class LookDailyPagerFragment : Fragment() {
                     )
                 )
             }
+
             // 从SharedPreferences获取更新后日记内容
             val sharedPreferences =
                 requireActivity().getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE)
-            val dailyUpdateContentText = sharedPreferences.getString("daily_update_content", "")
+            val updateKey = "daily_update_content_$dailyUuid"
+            val dailyUpdateContentText = sharedPreferences.getString(updateKey, "").orEmpty()
             // 确保不为空，以免死循环
-            if(dailyUpdateContentText != ""){
+            if (dailyUpdateContentText.isNotEmpty()) {
                 // 如果保存的内容与最新内容不同，则重新更新
                 if (dailyUpdateContentText != updatedContent.toString()) {
                     dailyViewModel.updateDaily(
@@ -390,10 +390,12 @@ class LookDailyPagerFragment : Fragment() {
                             dailyLabel
                         )
                     )
-                    // 更新完毕后清空
-                    sharedPreferences.edit {
-                        putString("daily_update_content", "")
-                    }
+                }
+
+                // 直接清空，避免更新其它日记
+                sharedPreferences.edit {
+                    remove(updateKey)
+                    apply()
                 }
             }
             return pathSet

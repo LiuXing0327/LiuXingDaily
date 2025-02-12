@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:orientation="vertical"
@@ -18,6 +18,51 @@
             android:layout_height="wrap_content"/>
 
     </com.google.android.material.appbar.AppBarLayout>
+
+    <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_margin="@dimen/dp_16"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior">
+
+        <LinearLayout
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_light"
+                style="?attr/materialIconButtonFilledStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:contentDescription="@string/about"
+                app:icon="@drawable/outline_light_mode_24" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_night"
+                style="?attr/materialIconButtonFilledStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:contentDescription="@string/about"
+                app:icon="@drawable/outline_mode_night_24" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_follow_system"
+                style="?attr/materialIconButtonFilledStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:contentDescription="@string/about"
+                app:icon="@drawable/outline_phone_android_24" />
+
+        </LinearLayout>
+
+    </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_theme"

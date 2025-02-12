@@ -317,6 +317,7 @@ class MainActivity : AppCompatActivity() {
      *
      * @param showing 是否显示
      */
+    @Suppress("DEPRECATION")
     private fun searchViewShowingStatusBarColor(showing: Boolean) {
         // 获取主题属性值
         val typedValue = TypedValue()

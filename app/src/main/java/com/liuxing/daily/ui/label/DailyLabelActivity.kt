@@ -1,13 +1,12 @@
 package com.liuxing.daily.ui.label
 
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -17,6 +16,7 @@ import com.liuxing.daily.databinding.ActivityDailyLabelBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 private const val DAILY_LABEL = "daily_label_label"
@@ -31,15 +31,15 @@ class DailyLabelActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         dailyLabelBinding = ActivityDailyLabelBinding.inflate(layoutInflater)
         setContentView(dailyLabelBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                    insets
+                }*/
         initData(savedInstanceState)
     }
 
@@ -49,6 +49,7 @@ class DailyLabelActivity : AppCompatActivity() {
     private fun initData(savedInstanceState: Bundle?) {
         setDailyLabel(savedInstanceState)
         setActionBar()
+        initStatusBarColor()
         initViewModel()
         getDailyLabel()
         this.label?.let { setDailyLabel(it) }
@@ -76,6 +77,16 @@ class DailyLabelActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
             dailyLabelBinding.toolbar.title = this@DailyLabelActivity.label
         }
+    }
+
+    /**
+     * 初始化状态栏颜色
+     */
+    private fun initStatusBarColor() {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(R.attr.collapsed_status_bar, typedValue, true)
+        WindowUtil.followPatternSetColor(window, this)
+        window.statusBarColor = ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**
@@ -113,7 +124,7 @@ class DailyLabelActivity : AppCompatActivity() {
 
             R.id.item_delete -> {
                 MaterialAlertDialogBuilder(this).apply {
-                    setMessage("确定删除${label}标签吗？（不会删除日记）")
+                    setMessage(getString(R.string.are_you_sure_delete_label, label))
                     setPositiveButton(getString(R.string.sure)) { _, _ ->
                         dailyList.forEach { dailyEntity ->
                             if (dailyEntity.dailyLabel == this@DailyLabelActivity.label) {

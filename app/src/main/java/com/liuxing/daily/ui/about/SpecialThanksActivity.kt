@@ -5,8 +5,6 @@ import android.util.TypedValue
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
@@ -84,9 +82,25 @@ class SpecialThanksActivity : AppCompatActivity() {
      */
     private fun setRecyclerData() {
         val specialThanksDataList = setOf(
-            SpecialThanksData("zoyonsheng", "对醒悟推广的支持与帮助", 0),
-            SpecialThanksData("XuRuo", "对醒悟推广的支持与帮助", 0),
-            SpecialThanksData("南城双念", "对醒悟推广的支持与帮助", 0),
+            SpecialThanksData(
+                "zoyonsheng",
+                "对醒悟推广的支持与帮助",
+                "",
+                0
+            ),
+            SpecialThanksData(
+                "XuRuo",
+                "对醒悟推广的支持与帮助",
+                "",
+                0
+            ),
+            SpecialThanksData(
+                "南城双念",
+                "对醒悟推广的支持与帮助",
+                "",
+                0
+            ),
+
             SpecialThanksData(
                 "Gson", "\nCopyright 2008 Google Inc.\n" +
                         "\n" +
@@ -100,7 +114,9 @@ class SpecialThanksActivity : AppCompatActivity() {
                         "distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
                         "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
                         "See the License for the specific language governing permissions and\n" +
-                        "limitations under the License.", 1
+                        "limitations under the License.\n",
+                "https://github.com/google/gson",
+                1
             ),
             SpecialThanksData(
                 "OkHttp", "\nCopyright 2019 Square, Inc.\n" +
@@ -115,9 +131,16 @@ class SpecialThanksActivity : AppCompatActivity() {
                         "distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
                         "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
                         "See the License for the specific language governing permissions and\n" +
-                        "limitations under the License.", 1
+                        "limitations under the License.\n",
+                "https://github.com/square/okhttp",
+                1
             ),
-            SpecialThanksData("Glide","\nBSD, part MIT and Apache 2.0. ",1),
+            SpecialThanksData(
+                "Glide",
+                "\nBSD, part MIT and Apache 2.0.\n",
+                "https://github.com/bumptech/glide",
+                1
+            ),
             SpecialThanksData("PhotoView","\nCopyright 2018 Chris Banes\n" +
                     "\n" +
                     "Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
@@ -130,7 +153,17 @@ class SpecialThanksActivity : AppCompatActivity() {
                     "distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
                     "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
                     "See the License for the specific language governing permissions and\n" +
-                    "limitations under the License.",1)
+                    "limitations under the License.\n",
+                "https://github.com/Baseflow/PhotoView",
+                1
+            ),
+            SpecialThanksData(
+                "subsampling-scale-image-view",
+                "\nCopyright 2018 David Morrissey, and licensed under the Apache License, " +
+                        "Version 2.0. No attribution is necessary but it's very much appreciated. Star this project if you like it!\n",
+                "https://github.com/davemorrissey/subsampling-scale-image-view",
+                1
+            )
         )
         specialThanksAdapter.setSpecialThanksList(specialThanksDataList.toList())
     }

@@ -125,4 +125,5 @@
     <string name="days_14">14 days</string>
     <string name="days_30">30 days</string>
     <string name="appearance">Appearance</string>
+    <string name="are_you_sure_delete_label">Are you sure you want to delete the %1$s label？（The diary will not be deleted）</string>
 </resources>
