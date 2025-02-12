@@ -23,8 +23,8 @@
 </div>
 
 <div>
- <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (1).png" width="50"/>
- <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (2).png" width-="50"/>
+ <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (1).png" width="50%"/>
+ <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (2).png" width-="50%"/>
 </div>
 
 ## License
