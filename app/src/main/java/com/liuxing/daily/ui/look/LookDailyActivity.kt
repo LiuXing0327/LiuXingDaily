@@ -51,9 +51,9 @@ class LookDailyActivity : AppCompatActivity() {
         lookDailyBinding = ActivityLookDailyBinding.inflate(layoutInflater)
         setContentView(lookDailyBinding.root)
         /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                    insets
+                            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                            insets
                 }*/
         initData(savedInstanceState)
     }
@@ -109,15 +109,24 @@ class LookDailyActivity : AppCompatActivity() {
                     val sharedPreferences =
                         PreferenceManager.getDefaultSharedPreferences(this@LookDailyActivity)
                     val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
+
+                    // 分离置顶项和非置顶项
+                    val pinnedItems = filter.filter { it.isPinned }.sortedByDescending { it.dateTime }
+                    val nonPinnedItems = filter.filterNot { it.isPinned }
+
                     val sortedByDescending = if (currentSortIndex == 1) {
-                        filter.sortedBy {
+                        nonPinnedItems.sortedBy {
                             DateUtil.getDateString(0, Date(it.dateTime!!))
                         }
                     } else {
-                        filter.sortedByDescending {
+                        nonPinnedItems.sortedByDescending {
                             DateUtil.getDateString(0, Date(it.dateTime!!))
                         }
                     }
+
+                    val finalList = mutableListOf<DailyEntity>()
+                    finalList.addAll(pinnedItems)
+                    finalList.addAll(sortedByDescending)
 
                     if (currentIndex == 0) {
                         if (savedInstanceState != null) currentIndex =
@@ -127,17 +136,17 @@ class LookDailyActivity : AppCompatActivity() {
                             if (position in filter.indices) {
                                 val intentPosition = filter[position]
                                 currentIndex =
-                                    sortedByDescending.indexOfFirst { it.id == intentPosition.id }
+                                    finalList.indexOfFirst { it.id == intentPosition.id }
                             }
                         }
                     }
-                    if (currentIndex >= sortedByDescending.size) {
-                        currentIndex = sortedByDescending.size - 1
+                    if (currentIndex >= finalList.size) {
+                        currentIndex = finalList.size - 1
                     }
-                    if (currentIndex in sortedByDescending.indices) {
-                        dailyEntity = sortedByDescending[currentIndex]
+                    if (currentIndex in finalList.indices) {
+                        dailyEntity = finalList[currentIndex]
                         val lookDailyPagerAdapter =
-                            LookDailyPagerAdapter(this@LookDailyActivity, sortedByDescending)
+                            LookDailyPagerAdapter(this@LookDailyActivity, finalList)
                         lookDailyBinding.viewPagerDaily.adapter = lookDailyPagerAdapter
                         lookDailyBinding.viewPagerDaily.setCurrentItem(
                             currentIndex,
@@ -149,7 +158,7 @@ class LookDailyActivity : AppCompatActivity() {
                             override fun onPageSelected(position: Int) {
                                 super.onPageSelected(position)
                                 currentIndex = position
-                                dailyEntity = sortedByDescending[currentIndex]
+                                dailyEntity = finalList[currentIndex]
                                 originalSignalPassword = dailyEntity.singlePassword ?: ""
                                 originalSignalPasswordMap[dailyEntity.id!!] = originalSignalPassword
                                 tempSignalPasswordMap[dailyEntity.id!!] = originalSignalPassword
@@ -209,7 +218,8 @@ class LookDailyActivity : AppCompatActivity() {
                                             dailyEntity.weatherIndex,
                                             dailyEntity.dailyUUID,
                                             true,
-                                            dailyEntity.dailyLabel
+                                            dailyEntity.dailyLabel,
+                                            isPinned = dailyEntity.isPinned
                                         )
                                     )
                                 }
@@ -248,7 +258,8 @@ class LookDailyActivity : AppCompatActivity() {
                                             dailyEntity.weatherIndex,
                                             dailyEntity.dailyUUID,
                                             true,
-                                            dailyEntity.dailyLabel
+                                            dailyEntity.dailyLabel,
+                                            isPinned = dailyEntity.isPinned
                                         )
                                     )
                                 }
@@ -402,7 +413,8 @@ class LookDailyActivity : AppCompatActivity() {
                                                                     dailyEntity.weatherIndex,
                                                                     dailyEntity.dailyUUID,
                                                                     false,
-                                                                    dailyEntity.dailyLabel
+                                                                    dailyEntity.dailyLabel,
+                                                                    isPinned = dailyEntity.isPinned
                                                                 )
                                                             )
                                                             SnackbarUtil.showSnackbarShort(

@@ -37,6 +37,7 @@ private const val MOOD_INDEX = "moodIndex"
 private const val WEATHER_INDEX = "weatherIndex"
 private const val DAILY_UUID = "dailyUUID"
 private const val DAILY_LABEL = "dailyLabel"
+private const val IS_PINNED = "isPinned"
 
 /**
  * A simple [Fragment] subclass.
@@ -61,6 +62,7 @@ class LookDailyPagerFragment : Fragment() {
     private var videoList: MutableSet<String> = mutableSetOf()
     private var audioList: MutableSet<String> = mutableSetOf()
     private var dailyLabel: String? = null
+    private var isPinned: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +77,7 @@ class LookDailyPagerFragment : Fragment() {
             weatherIndex = it.getInt(WEATHER_INDEX)
             dailyUuid = it.getString(DAILY_UUID)
             dailyLabel = it.getString(DAILY_LABEL)
+            isPinned = it.getBoolean(IS_PINNED)
         }
     }
 
@@ -108,7 +111,8 @@ class LookDailyPagerFragment : Fragment() {
             moodInt: Int?,
             weatherIndex: Int?,
             dailyUUID: String?,
-            dailyLabel: String?
+            dailyLabel: String?,
+            pinned: Boolean
         ) =
             LookDailyPagerFragment().apply {
                 arguments = Bundle().apply {
@@ -122,6 +126,7 @@ class LookDailyPagerFragment : Fragment() {
                     weatherIndex?.let { putInt(WEATHER_INDEX, it) }
                     dailyUUID?.let { putString(DAILY_UUID, it) }
                     dailyLabel?.let { putString(DAILY_LABEL, it) }
+                    putBoolean(IS_PINNED, pinned)
                 }
             }
     }
@@ -224,7 +229,8 @@ class LookDailyPagerFragment : Fragment() {
                             weatherIndex,
                             dailyUuid,
                             false,
-                            dailyLabel
+                            dailyLabel,
+                            isPinned = isPinned
                         )
                     )
 
@@ -284,6 +290,7 @@ class LookDailyPagerFragment : Fragment() {
             3 -> ContextCompat.getColor(requireContext(), R.color.color_4)
             4 -> ContextCompat.getColor(requireContext(), R.color.color_5)
             5 -> ContextCompat.getColor(requireContext(), R.color.color_6)
+            6 -> ContextCompat.getColor(requireContext(), R.color.color_7)
             else -> android.R.color.transparent
         }
         binding.cardView.setCardBackgroundColor(cardBackgroundColor)
@@ -361,7 +368,8 @@ class LookDailyPagerFragment : Fragment() {
                         weatherIndex,
                         dailyUuid,
                         false,
-                        dailyLabel
+                        dailyLabel,
+                        isPinned = isPinned
                     )
                 )
             }
@@ -387,7 +395,8 @@ class LookDailyPagerFragment : Fragment() {
                             weatherIndex,
                             dailyUuid,
                             false,
-                            dailyLabel
+                            dailyLabel,
+                            isPinned = isPinned
                         )
                     )
                 }
@@ -475,7 +484,8 @@ class LookDailyPagerFragment : Fragment() {
                     weatherIndex,
                     dailyUuid,
                     false,
-                    dailyLabel
+                    dailyLabel,
+                    isPinned = isPinned
                 )
             )
         }

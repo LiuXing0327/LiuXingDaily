@@ -129,4 +129,21 @@
     <string name="days_30">30天</string>
     <string name="appearance">外观</string>
     <string name="are_you_sure_delete_label">确定删除%1$s标签吗？（不会删除日记）</string>
+    <string name="new_label">新建</string>
+    <string name="pinned">置顶</string>
+    <string name="cancel_pinned">取消置顶</string>
+    <string name="webdav_backup">WebDav 备份</string>
+    <string name="account_number">账号</string>
+    <string name="password">密码</string>
+    <string name="failed_to_backup_data">备份数据失败</string>
+    <string name="backup_success">备份成功</string>
+    <string name="export_success">导出成功</string>
+    <string name="backup">备份</string>
+    <string name="restore_2">恢复</string>
+    <string name="recovery_successful">恢复成功</string>
+    <string name="recovery_failed">恢复失败</string>
+    <string name="encryption_no_encryption_no_input">加密（不加密不输入）</string>
+    <string name="require_password_to_import">需要密码才能导入</string>
+    <string name="import_successful">导入成功</string>
+    <string name="help">帮助</string>
 </resources>

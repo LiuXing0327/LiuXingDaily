@@ -18,14 +18,14 @@ class SoftHideKeyBoardUtil(activity: Activity) {
     private val frameLayoutParams: FrameLayout.LayoutParams =
         childOfContent.layoutParams as FrameLayout.LayoutParams
     private var contentHeight = 0
-    private var isfirst = true
+    private var isFirst = true
     private val statusBarHeight = 0
 
     init {
         childOfContent.viewTreeObserver.addOnGlobalLayoutListener {
-            if (isfirst) {
+            if (isFirst) {
                 contentHeight = childOfContent.height
-                isfirst = false
+                isFirst = false
             }
             resizeChildOfContent()
         }

@@ -1,10 +1,13 @@
 package com.liuxing.daily.util
 
 import android.content.Context
+import android.os.Build
 import android.view.View
 import android.view.Window
+import android.view.WindowInsets
 import androidx.core.content.ContextCompat
 import com.liuxing.daily.R
+
 
 /**
  * Author：流星
@@ -25,10 +28,9 @@ object WindowUtil {
     fun followPatternSetColor(window: Window, context: Context) {
         val color = ContextCompat.getColor(context, R.color.mode)
         if (color == -1) {
-            window.decorView
-                .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         } else {
-            window.decorView.setSystemUiVisibility(0)
+            window.decorView.systemUiVisibility = 0
         }
     }
 }

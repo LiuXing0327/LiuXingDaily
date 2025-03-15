@@ -17,6 +17,7 @@ import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
+import com.liuxing.daily.ui.webdav.WebDavBackupActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.LogUtil
@@ -148,6 +149,12 @@ class SettingsActivity : AppCompatActivity() {
             val themeColorPreference = findPreference<Preference>("appearance_preference")
             themeColorPreference?.setOnPreferenceClickListener {
                 IntentUtil.startActivity(requireContext(), AppearanceSettingsActivity::class.java)
+                true
+            }
+
+            val webDavBackupPreference = findPreference<Preference>("webdav_backup_preference")
+            webDavBackupPreference?.setOnPreferenceClickListener {
+                IntentUtil.startActivity(requireContext(), WebDavBackupActivity::class.java)
                 true
             }
         }

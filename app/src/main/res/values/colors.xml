@@ -7,11 +7,12 @@
     <color name="night_showing_color">#2B2930</color>
     <color name="light_collapsed_status_bar_color">#F3EDF7</color>
     <color name="night_collapsed_status_bar_color">#211F26</color>
-    <color name="color_2">#C9B5FF</color>
-    <color name="color_3">#B994D3</color>
-    <color name="color_4">#B9E0B9</color>
-    <color name="color_5">#729BFF</color>
-    <color name="color_6">#FFD700</color>
+    <color name="color_2">@color/m3_ref_palette_primary90</color>
+    <color name="color_3">@color/md_theme_primaryContainer_red</color>
+    <color name="color_4">@color/md_theme_primaryContainer_green</color>
+    <color name="color_5">@color/md_theme_primaryContainer_blue</color>
+    <color name="color_6">@color/md_theme_primaryContainer_yellow</color>
+    <color name="color_7">@color/md_theme_primaryContainer_pink</color>
     <color name="mw_color">#FCC21B</color>
 
     <color name="md_theme_primary">#6750A4</color>

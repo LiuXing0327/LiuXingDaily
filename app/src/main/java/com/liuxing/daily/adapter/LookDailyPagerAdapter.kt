@@ -29,7 +29,8 @@ class LookDailyPagerAdapter(
             dailyEntity.moodIndex,
             dailyEntity.weatherIndex,
             dailyEntity.dailyUUID,
-            dailyEntity.dailyLabel
+            dailyEntity.dailyLabel,
+            dailyEntity.isPinned
         )
     }
 }

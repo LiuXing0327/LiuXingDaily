@@ -1,14 +1,11 @@
 package com.liuxing.daily
 
+import android.annotation.SuppressLint
 import android.app.Application
-import android.app.UiModeManager
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.res.Configuration
 import android.os.Environment
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.ThemeUtil
 
 /**
@@ -29,8 +26,15 @@ class MyApplication : Application() {
 
     private var sharedPreferences: SharedPreferences? = null
 
+    companion object {
+        @SuppressLint("StaticFieldLeak")
+        var context: Context? = null
+
+    }
+
     override fun onCreate() {
         super.onCreate()
+        context = applicationContext
         initSharePreferences()
         ThemeUtil.setThemeMode(sharedPreferences!!.getInt("theme_mode_preference", 0))
         this.getExternalFilesDir(Environment.DIRECTORY_PICTURES)

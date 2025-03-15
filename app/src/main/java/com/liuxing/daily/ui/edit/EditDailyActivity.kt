@@ -15,7 +15,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -42,6 +41,7 @@ import com.liuxing.daily.adapter.SelectDailyLabelAdapter
 import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
@@ -108,11 +108,11 @@ class EditDailyActivity : AppCompatActivity() {
         ThemeUtil.applyTheme(this)
         activityEditDailyBinding = ActivityEditDailyBinding.inflate(layoutInflater)
         setContentView(activityEditDailyBinding.root)
-/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }*/
+        }
         initView()
         initData(savedInstanceState)
         // 添加返回键回调
@@ -285,6 +285,11 @@ class EditDailyActivity : AppCompatActivity() {
      */
     private fun setDailyBackgroundColorIndex() {
         backgroundColorIndex = getDailyBackgroundColorIndex()
+        window.statusBarColor =
+            ContextCompat.getColor(
+                this@EditDailyActivity,
+                ConstUtil.backgroundColorList[backgroundColorIndex]
+            )
     }
 
     /**
@@ -512,10 +517,12 @@ class EditDailyActivity : AppCompatActivity() {
                         val dialog = materialAlertDialogBuilder.create()
                         dialog.show()
                         val colorRecycler = view.findViewById<RecyclerView>(R.id.color_recycler)
-                        colorRecycler.layoutManager = LinearLayoutManager(this@EditDailyActivity)
+                        colorRecycler.layoutManager = GridLayoutManager(this@EditDailyActivity, 3)
                         colorRecycler.adapter =
-                            ChangeDailyCardColorAdapter(ConstUtil.backgroundColorList) { selectedColor, position ->
+                            ChangeDailyCardColorAdapter(ConstUtil.backgroundColorList,backgroundColorIndex) { selectedColor, position ->
                                 backgroundColorIndex = position
+                                window.statusBarColor =
+                                    ContextCompat.getColor(this@EditDailyActivity, selectedColor)
                                 activityEditDailyBinding.main.setBackgroundColor(
                                     ContextCompat.getColor(
                                         this@EditDailyActivity,
@@ -528,6 +535,7 @@ class EditDailyActivity : AppCompatActivity() {
                                         selectedColor
                                     )
                                 )
+
                                 dialog.dismiss()
                             }
                     }
@@ -802,6 +810,9 @@ class EditDailyActivity : AppCompatActivity() {
                                 activityEditDailyBinding.lLabel?.visibility = View.GONE
                             }
                             setNegativeButton(getString(R.string.cancel), null)
+                            setNeutralButton(getString(R.string.new_label)) { _, _ ->
+                                showLabelInputDialog()
+                            }
                             val dialog = create()
                             dialog.show()
                             selectDailyLabelAdapter.setOnItemClickListener(object :
@@ -825,10 +836,56 @@ class EditDailyActivity : AppCompatActivity() {
     }
 
     /**
+     * 显示输入标签的对话框
+     */
+    private fun showLabelInputDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
+        val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
+        val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle(getString(R.string.create_label))
+            setView(view)
+            setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                val label = inputLabel.text.toString()
+                if (label.isNotEmpty()) {
+                    addDailyLabel(label)
+                }
+            }
+            setNegativeButton(getString(R.string.cancel), null)
+            val dialog = create()
+            dialog.show()
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.isEnabled = false
+            inputLabel.addTextChangedListener {
+                val inputText = it.toString()
+                val input = dailyLabelList.any { labels ->
+                    labels == inputText
+                }
+                inputLabelLayout.error = when {
+                    inputText.isEmpty() -> getString(R.string.the_label_is_empty)
+                    input -> getString(R.string.the_label_already_exists)
+                    else -> null
+                }
+                positiveButton.isEnabled = inputText.isNotEmpty() && !input
+            }
+        }
+    }
+
+    /**
+     * 创建日记标签
+     *
+     * @param label 标签
+     */
+    private fun addDailyLabel(label: String) {
+        dailyViewModel.insertDailyLabel(DailyLabelEntity(label = label))
+    }
+
+    /**
      * 获取日记标签
      */
     private fun getDailyLabels() {
         dailyViewModel.queryAllDailyLabel().observe(this) { dailyLabelList ->
+            this.dailyLabelList.clear()
             val sortedBy = dailyLabelList.sortedBy { it.label?.lowercase() }
             sortedBy.forEach {
                 it.label?.let { it1 -> this.dailyLabelList.add(it1) }

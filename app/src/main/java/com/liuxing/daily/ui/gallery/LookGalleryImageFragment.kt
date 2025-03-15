@@ -1,11 +1,8 @@
 package com.liuxing.daily.ui.gallery
 
-import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup

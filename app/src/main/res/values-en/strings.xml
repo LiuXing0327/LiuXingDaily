@@ -85,7 +85,7 @@
     <string name="by_time_newest_to_oldest">By Time (Newest to Oldest)</string>
     <string name="by_time_oldest_to_newest">By Time (Oldest to Newest)</string>
     <string name="auto_save">Auto Save</string>
-    <string name="classifications_are_displayed_by_year_month">Classifications displayed by year and month</string>
+    <string name="classifications_are_displayed_by_year_month">Classifications by year and month</string>
     <string name="ui">Interface</string>
     <string name="theme_mode">Theme Mode</string>
     <string name="follow_the_system">Follow System</string>
@@ -118,7 +118,7 @@
     <string name="add_audio">Add Audio</string>
     <string name="move_to_recycle_bin_when_deleting_a_diary">Move to Recycle Bin when deleting a diary</string>
     <string name="auto_delete_message">%1$s | "Will be automatically deleted in %2$s days</string>
-    <string name="regularly_automatically_delete_the_diaries_in_the_recycle_bin">Regularly automatically delete the diaries in the recycle bin</string>
+    <string name="regularly_automatically_delete_the_diaries_in_the_recycle_bin">Auto delete diaries in the recycle bin</string>
     <string name="close">Close</string>
     <string name="days_3">3 days</string>
     <string name="days_7">7 days</string>
@@ -126,4 +126,21 @@
     <string name="days_30">30 days</string>
     <string name="appearance">Appearance</string>
     <string name="are_you_sure_delete_label">Are you sure you want to delete the %1$s label？（The diary will not be deleted）</string>
+    <string name="new_label">NEW LABEL</string>
+    <string name="pinned">Pinned</string>
+    <string name="cancel_pinned">Cancel pinned</string>
+    <string name="webdav_backup">WebDav backup</string>
+    <string name="account_number">Account number</string>
+    <string name="password">Password</string>
+    <string name="failed_to_backup_data">Failed to backup data</string>
+    <string name="backup_success">Backup Successful</string>
+    <string name="export_success">Export Successful</string>
+    <string name="backup">backup</string>
+    <string name="restore_2">Restore</string>
+    <string name="recovery_successful">Recovery successful</string>
+    <string name="recovery_failed">Recovery failed</string>
+    <string name="encryption_no_encryption_no_input">Encryption (no encryption, no input)</string>
+    <string name="require_password_to_import">Require password to import</string>
+    <string name="import_successful">Import successful</string>
+    <string name="help">Help</string>
 </resources>

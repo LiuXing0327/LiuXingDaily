@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/dp_16">
+
+    <!-- Loading indicator with a container -->
+    <com.google.android.material.loadingindicator.LoadingIndicator
+        style="@style/Widget.Material3.LoadingIndicator.Contained"
+        android:layout_width="wrap_content"
+        app:indicatorSize="@dimen/dp_58"
+        app:containerHeight="@dimen/dp_78"
+        app:containerWidth="@dimen/dp_78"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>

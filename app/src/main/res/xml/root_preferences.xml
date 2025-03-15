@@ -33,7 +33,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
+         app:iconSpaceReserved="false"
         app:title="@string/daily">
 
         <com.liuxing.daily.view.YearMonthSwitchPreference />
@@ -54,6 +54,17 @@
             app:iconSpaceReserved="false"
             app:key="appearance_preference"
             app:title="@string/appearance"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/webdav_backup">
+
+        <Preference
+            app:key="webdav_backup_preference"
+            app:iconSpaceReserved="false"
+            app:title="@string/webdav_backup"/>
 
     </PreferenceCategory>
 

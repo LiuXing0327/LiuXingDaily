@@ -152,10 +152,12 @@ class DailyFragment : Fragment() {
                 val moveInRecyclerBin =
                     sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
                 val dailyEntity = dailyList.filter { !it.isDeleted }[position]
+                val neutralButtonText =
+                    if (dailyEntity.isPinned) getString(R.string.cancel_pinned) else getString(R.string.pinned)
                 if (moveInRecyclerBin) {
                     MaterialAlertDialogBuilder(requireContext()).apply {
                         setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                        setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        setPositiveButton(getString(R.string.sure)) { _, _ ->
                             dailyViewModel.updateDaily(
                                 DailyEntity(
                                     dailyEntity.id,
@@ -167,11 +169,32 @@ class DailyFragment : Fragment() {
                                     dailyEntity.moodIndex,
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
-                                    true
+                                    true,
+                                    dailyEntity.dailyLabel,
+                                    isPinned = dailyEntity.isPinned
                                 )
                             )
                         }
                             .setNegativeButton(getString(R.string.cancel), null)
+                            .setNeutralButton(neutralButtonText) { _, _ ->
+                                val isPinned = neutralButtonText == getString(R.string.pinned)
+                                dailyViewModel.updateDaily(
+                                    DailyEntity(
+                                        dailyEntity.id,
+                                        dailyEntity.title,
+                                        dailyEntity.content,
+                                        dailyEntity.dateTime,
+                                        dailyEntity.backgroundColorIndex,
+                                        dailyEntity.singlePassword,
+                                        dailyEntity.moodIndex,
+                                        dailyEntity.weatherIndex,
+                                        dailyEntity.dailyUUID,
+                                        false,
+                                        dailyEntity.dailyLabel,
+                                        isPinned = isPinned
+                                    )
+                                )
+                            }
                             .create()
                             .show()
                     }
@@ -236,11 +259,32 @@ class DailyFragment : Fragment() {
                                     dailyEntity.moodIndex,
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
-                                    true
+                                    true,
+                                    dailyEntity.dailyLabel,
+                                    isPinned = dailyEntity.isPinned
                                 )
                             )
                         }
-                        setNeutralButton(getString(R.string.cancel), null)
+
+                        setNeutralButton(neutralButtonText) { _, _ ->
+                            val isPinned = neutralButtonText == getString(R.string.pinned)
+                            dailyViewModel.updateDaily(
+                                DailyEntity(
+                                    dailyEntity.id,
+                                    dailyEntity.title,
+                                    dailyEntity.content,
+                                    dailyEntity.dateTime,
+                                    dailyEntity.backgroundColorIndex,
+                                    dailyEntity.singlePassword,
+                                    dailyEntity.moodIndex,
+                                    dailyEntity.weatherIndex,
+                                    dailyEntity.dailyUUID,
+                                    false,
+                                    dailyEntity.dailyLabel,
+                                    isPinned = isPinned
+                                )
+                            )
+                        }
                         create()
                         show()
                     }

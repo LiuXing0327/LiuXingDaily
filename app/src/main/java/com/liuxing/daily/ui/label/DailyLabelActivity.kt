@@ -139,7 +139,8 @@ class DailyLabelActivity : AppCompatActivity() {
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
                                     dailyEntity.isDeleted,
-                                    ""
+                                    "",
+                                    isPinned = dailyEntity.isPinned
                                 )
                                 dailyViewModel.updateDaily(newDailyEntity)
                             }
@@ -205,7 +206,8 @@ class DailyLabelActivity : AppCompatActivity() {
                                 dailyEntity.weatherIndex,
                                 dailyEntity.dailyUUID,
                                 dailyEntity.isDeleted,
-                                label
+                                label,
+                                isPinned = dailyEntity.isPinned
                             )
                             dailyViewModel.updateDaily(newDailyEntity)
                         }

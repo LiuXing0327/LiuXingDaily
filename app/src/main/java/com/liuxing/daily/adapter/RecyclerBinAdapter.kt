@@ -214,6 +214,13 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             } else {
                 holder.imageView.visibility = View.GONE
             }
+
+            holder.labelContainer.visibility =
+                if (dailyEntity.dailyLabel.isNullOrEmpty()) View.GONE else {
+                    holder.tvLabel.text = dailyEntity.dailyLabel
+                    View.VISIBLE
+                }
+
             // 将原始索引传递给点击事件处理
             holder.itemView.setOnClickListener {
                 onItemClickListener?.onItemClick(originalIndex)
@@ -239,6 +246,8 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val ivMood: ImageView = itemView.findViewById(R.id.iv_mood)
         val ivWeather: ImageView = itemView.findViewById(R.id.iv_weather)
         val imageView: ImageView = itemView.findViewById(R.id.image_view)
+        val labelContainer: MaterialCardView = itemView.findViewById(R.id.label_container)
+        val tvLabel: MaterialTextView = itemView.findViewById(R.id.tv_label)
     }
 
     fun setOnItemClickListener(listener: OnItemClickListener) {

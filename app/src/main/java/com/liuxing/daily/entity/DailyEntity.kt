@@ -49,5 +49,8 @@ data class DailyEntity(
     @Expose(deserialize = true, serialize = true) val dailyLabel: String? = null,
 
     @ColumnInfo(name = "DAILY_RECYCLER_DATE_TIME")
-    @Expose(deserialize = true, serialize = true) val dailyRecyclerDateTime: Long? = null
+    @Expose(deserialize = true, serialize = true) val dailyRecyclerDateTime: Long? = null,
+
+    @ColumnInfo(name = "IS_PINNED")
+    @Expose(deserialize = true, serialize = true) val isPinned:Boolean = false
 )
