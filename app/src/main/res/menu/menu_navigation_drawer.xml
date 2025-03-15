@@ -13,12 +13,12 @@
             android:title="@string/daily" />
         <item
             android:id="@+id/calendarQueryDailyFragment"
-            android:icon="@drawable/baseline_calendar_month_24"
+            android:icon="@drawable/outline_calendar_month_24"
             android:title="@string/calendar" />
 
         <item
             android:id="@+id/galleryFragment"
-            android:icon="@drawable/baseline_image_24"
+            android:icon="@drawable/outline_image_24"
             android:title="@string/gallery" />
     </group>
 
@@ -27,7 +27,7 @@
         android:checkableBehavior="single">
         <item
             android:id="@+id/recyclerBinFragment"
-            android:icon="@drawable/baseline_delete_24"
+            android:icon="@drawable/outline_delete_24"
             android:title="@string/recycler_bin" />
     </group>
 

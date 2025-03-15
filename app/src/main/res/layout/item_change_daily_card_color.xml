@@ -8,8 +8,21 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/color_card"
+        android:clickable="true"
+        android:foreground="?attr/selectableItemBackground"
         android:layout_width="match_parent"
         android:layout_height="@dimen/dp_50"
-        app:cardBackgroundColor="@android:color/transparent" />
+        app:cardCornerRadius="@dimen/dp_30"
+        app:cardBackgroundColor="@android:color/transparent">
+
+        <ImageView
+            android:id="@+id/ic_selected"
+            android:layout_width="@dimen/dp_30"
+            android:layout_height="@dimen/dp_30"
+            android:layout_gravity="end"
+            android:layout_margin="@dimen/dp_2"
+            android:background="@drawable/baseline_check_circle_24" />
+
+    </com.google.android.material.card.MaterialCardView>
 
 </LinearLayout>

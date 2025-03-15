@@ -55,6 +55,7 @@ import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
+import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
@@ -71,15 +72,12 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
 import java.util.Date
 import java.util.UUID
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 
 class MainActivity : AppCompatActivity() {
@@ -101,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var createLabel: MenuItem
     private var dailyLabelList: List<DailyLabelEntity> = ArrayList()
     private var currentThemeColorId: Int = 0
+    private var dialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,13 +119,13 @@ class MainActivity : AppCompatActivity() {
 
         okHttpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                handler.post {
+/*                handler.post {
                     e.printStackTrace()
                     CheckAppUpdateUtil.checkFailedOrNoVersionDialog(
                         this@MainActivity,
                         getString(R.string.failed_to_check_for_updates)
                     )
-                }
+                }*/
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -143,12 +142,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    handler.post {
+                    /*handler.post {
                         CheckAppUpdateUtil.checkFailedOrNoVersionDialog(
                             this@MainActivity,
                             getString(R.string.failed_to_check_for_updates)
                         )
-                    }
+                    }*/
                 }
             }
         })
@@ -317,7 +316,6 @@ class MainActivity : AppCompatActivity() {
      *
      * @param showing 是否显示
      */
-    @Suppress("DEPRECATION")
     private fun searchViewShowingStatusBarColor(showing: Boolean) {
         // 获取主题属性值
         val typedValue = TypedValue()
@@ -390,7 +388,6 @@ class MainActivity : AppCompatActivity() {
      * 设置搜索列表数据
      */
     private fun setSearchRecyclerViewData() {
-        loadSearchDailyData("")
         setSearchRecyclerViewItemOnClick()
         setSearchRecyclerViewItemOnLongClick()
     }
@@ -439,6 +436,10 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding.searchView.editText.setOnEditorActionListener { v, actionId, event ->
             loadSearchDailyData(v.text.toString())
             true
+        }
+
+        activityMainBinding.searchView.editText.addTextChangedListener {
+            loadSearchDailyData(it.toString())
         }
 
         // 点击搜索视图菜单搜索事件
@@ -491,6 +492,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var dailyPassword = ""
+
     /**
      * 搜索栏菜单点击事件
      */
@@ -512,82 +515,130 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.item_export_all_daily -> {
                     if (dailyList.isNotEmpty()) {
-                        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                            setType("application/zip")
-                            putExtra(Intent.EXTRA_TITLE, "daily.zip")
+                        val inflate =
+                            layoutInflater.inflate(
+                                R.layout.dialog_input_password_layout,
+                                null
+                            )
+                        val inputPasswordLayout =
+                            inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                        val inputPassword =
+                            inflate.findViewById<TextInputEditText>(R.id.input_password)
+                        inputPasswordLayout.hint =
+                            getString(R.string.encryption_no_encryption_no_input)
+                        inputPassword.setText(dailyPassword)
+                        MaterialAlertDialogBuilder(this@MainActivity).apply {
+                            setTitle(getString(R.string.locked))
+                            setView(inflate)
+                            setPositiveButton(
+                                getString(R.string.sure)
+                            ) { dialog, which ->
+                                dailyPassword = inputPassword.text.toString()
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    setType("application/zip")
+                                    putExtra(Intent.EXTRA_TITLE, "daily.zip")
+                                }
+                                exportAllDailyLauncher.launch(intent)
+                            }
+                            setNeutralButton(getString(R.string.cancel), null)
+                                .setCancelable(false)
+                                .create()
+                            show()
                         }
-                        exportAllDailyLauncher.launch(intent)
                     }
                 }
 
                 R.id.item_clear -> {
-                    val moveInRecyclerBin =
-                        sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
-                    if (moveInRecyclerBin) {
-                        MaterialAlertDialogBuilder(this).apply {
-                            setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                            setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                                dailyList.forEach { dailyEntity ->
-                                    dailyViewModel.updateDaily(
-                                        DailyEntity(
-                                            dailyEntity.id,
-                                            dailyEntity.title,
-                                            dailyEntity.content,
-                                            dailyEntity.dateTime,
-                                            dailyEntity.backgroundColorIndex,
-                                            dailyEntity.singlePassword,
-                                            dailyEntity.moodIndex,
-                                            dailyEntity.weatherIndex,
-                                            dailyEntity.dailyUUID,
-                                            true
+                    if (dailyList.isNotEmpty()) {
+                        val materialAlertDialogBuilder =
+                            MaterialAlertDialogBuilder(this@MainActivity)
+                        materialAlertDialogBuilder.setView(
+                            layoutInflater.inflate(
+                                R.layout.loading_lndicators_dialog_layout,
+                                null
+                            )
+                        )
+                        materialAlertDialogBuilder.setCancelable(true)
+                        dialog = materialAlertDialogBuilder.create()
+                        dialog!!.show()
+                        val moveInRecyclerBin =
+                            sharedPreferences!!.getBoolean(
+                                "switch_delete_to_recycler_bin_daily",
+                                true
+                            )
+                        if (moveInRecyclerBin) {
+                            MaterialAlertDialogBuilder(this).apply {
+                                setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
+                                setPositiveButton(getString(R.string.sure)) { _, _ ->
+                                    dailyList.forEach { dailyEntity ->
+                                        dailyViewModel.updateDaily(
+                                            DailyEntity(
+                                                dailyEntity.id,
+                                                dailyEntity.title,
+                                                dailyEntity.content,
+                                                dailyEntity.dateTime,
+                                                dailyEntity.backgroundColorIndex,
+                                                dailyEntity.singlePassword,
+                                                dailyEntity.moodIndex,
+                                                dailyEntity.weatherIndex,
+                                                dailyEntity.dailyUUID,
+                                                true,
+                                                dailyEntity.dailyLabel,
+                                                isPinned = dailyEntity.isPinned
+                                            )
                                         )
-                                    )
-                                }
-                            }
-                                .setNegativeButton(getString(R.string.cancel), null)
-                                .create()
-                                .show()
-                        }
-
-                    } else {
-                        MaterialAlertDialogBuilder(this).apply {
-                            setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                            setPositiveButton(getString(R.string.delete)) { _, _ ->
-                                dailyList.forEach { dailyEntity ->
-                                    dailyEntity.dailyUUID?.let {
-                                        dailyViewModel.deletePathImageByDailyUuid(
-                                            it
-                                        )
-                                        dailyViewModel.deletePathVideoByDailyUuid(it)
-                                        dailyViewModel.deletePathAudioByDailyUuid(it)
                                     }
-                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                                    dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
-                                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
-                                    dailyViewModel.deleteDaily(dailyEntity)
+                                    dialog?.dismiss()
                                 }
+                                    .setNegativeButton(getString(R.string.cancel), null)
+                                    .create()
+                                    .show()
                             }
-                            setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
-                                dailyList.forEach { dailyEntity ->
-                                    dailyViewModel.updateDaily(
-                                        DailyEntity(
-                                            dailyEntity.id,
-                                            dailyEntity.title,
-                                            dailyEntity.content,
-                                            dailyEntity.dateTime,
-                                            dailyEntity.backgroundColorIndex,
-                                            dailyEntity.singlePassword,
-                                            dailyEntity.moodIndex,
-                                            dailyEntity.weatherIndex,
-                                            dailyEntity.dailyUUID,
-                                            true
+
+                        } else {
+                            MaterialAlertDialogBuilder(this).apply {
+                                setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                                setPositiveButton(getString(R.string.delete)) { _, _ ->
+                                    dailyList.forEach { dailyEntity ->
+                                        dailyEntity.dailyUUID?.let {
+                                            dailyViewModel.deletePathImageByDailyUuid(
+                                                it
+                                            )
+                                            dailyViewModel.deletePathVideoByDailyUuid(it)
+                                            dailyViewModel.deletePathAudioByDailyUuid(it)
+                                        }
+                                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
+                                        dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
+                                        dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
+                                        dailyViewModel.deleteDaily(dailyEntity)
+                                    }
+                                    dialog?.dismiss()
+                                }
+                                setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
+                                    dailyList.forEach { dailyEntity ->
+                                        dailyViewModel.updateDaily(
+                                            DailyEntity(
+                                                dailyEntity.id,
+                                                dailyEntity.title,
+                                                dailyEntity.content,
+                                                dailyEntity.dateTime,
+                                                dailyEntity.backgroundColorIndex,
+                                                dailyEntity.singlePassword,
+                                                dailyEntity.moodIndex,
+                                                dailyEntity.weatherIndex,
+                                                dailyEntity.dailyUUID,
+                                                true,
+                                                dailyEntity.dailyLabel,
+                                                isPinned = dailyEntity.isPinned
+                                            )
                                         )
-                                    )
+                                    }
+                                    dialog?.dismiss()
                                 }
+                                setNeutralButton(getString(R.string.cancel), null)
+                                create()
+                                show()
                             }
-                            setNeutralButton(getString(R.string.cancel), null)
-                            create()
-                            show()
                         }
                     }
                 }
@@ -616,78 +667,161 @@ class MainActivity : AppCompatActivity() {
                         try {
                             val fileExtension = contentResolver.getType(uri)?.lowercase()
                             if (fileExtension == "application/zip") {
+
+                                withContext(Dispatchers.Main) {
+                                    val materialAlertDialogBuilder =
+                                        MaterialAlertDialogBuilder(this@MainActivity)
+                                    materialAlertDialogBuilder.setView(
+                                        layoutInflater.inflate(
+                                            R.layout.loading_lndicators_dialog_layout,
+                                            null
+                                        )
+                                    )
+                                    materialAlertDialogBuilder.setCancelable(true)
+                                    dialog = materialAlertDialogBuilder.create()
+                                    dialog!!.show()
+                                }
                                 importDailyZip(uri)
                             } else {
-                                withContext(Dispatchers.Main) {
-                                    MaterialAlertDialogBuilder(this@MainActivity).apply {
-                                        setMessage(getString(R.string.import_failed))
-                                        setPositiveButton(getString(R.string.sure), null)
-                                        create()
-                                        show()
-                                    }
-                                }
+                                if (dialog != null) dialog!!.dismiss()
+                                showFailedDialog()
                             }
                         } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                MaterialAlertDialogBuilder(this@MainActivity).apply {
-                                    setMessage(getString(R.string.import_failed))
-                                    setPositiveButton(getString(R.string.sure), null)
-                                    create()
-                                    show()
-                                }
-                            }
+                            if (dialog != null) dialog!!.dismiss()
+                            showFailedDialog()
                         }
                     }
                 }
             })
 
     /**
+     * 显示导入失败的对话框
+     */
+    private suspend fun showFailedDialog() {
+        withContext(Dispatchers.Main) {
+            MaterialAlertDialogBuilder(this@MainActivity).apply {
+                setMessage(getString(R.string.import_failed))
+                setPositiveButton(getString(R.string.sure), null)
+                create()
+                show()
+            }
+        }
+    }
+
+    /**
      * 导入日记
      */
-    private suspend fun importDailyZip(uri: Uri) {
-        val inputStream = contentResolver.openInputStream(uri)
-        if (inputStream == null) {
-            withContext(Dispatchers.Main) {
-                MaterialAlertDialogBuilder(this@MainActivity).apply {
-                    setMessage(getString(R.string.import_failed))
-                    setPositiveButton(getString(R.string.sure), null)
-                    create()
-                    show()
+    private suspend fun importDailyZip(uri: Uri) = withContext(Dispatchers.IO) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            if (inputStream == null) {
+                withContext(Dispatchers.Main) {
+                    showFailedDialog()
                 }
+                return@withContext
             }
-            return
+
+            val tempZipFile = File(externalCacheDir, "temp_import.zip").apply {
+                writeBytes(inputStream.readBytes())
+            }
+            inputStream.close()
+
+            val zipFile = net.lingala.zip4j.ZipFile(tempZipFile)
+            val password: String?
+
+            if (zipFile.isEncrypted) {
+                // 如果备份文件加密，提示输入密码
+                password = withContext(Dispatchers.Main) {
+                    suspendCoroutine { continuation ->
+                        val inflate =
+                            layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
+                        val inputPasswordLayout =
+                            inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+                        val inputPassword =
+                            inflate.findViewById<TextInputEditText>(R.id.input_password)
+                        inputPasswordLayout.hint =
+                            getString(R.string.encryption_no_encryption_no_input)
+                        inputPassword.setText(dailyPassword)
+
+                        MaterialAlertDialogBuilder(this@MainActivity).apply {
+                            setTitle(getString(R.string.locked))
+                            setView(inflate)
+                            setPositiveButton(getString(R.string.sure)) { _, _ ->
+                                continuation.resume(inputPassword.text.toString())
+                            }
+                            setNeutralButton(getString(R.string.cancel)) { _, _ ->
+                                continuation.resume(null) // 取消，返回 null
+                            }
+                            setCancelable(false)
+                        }.create().show()
+                    }
+                }
+
+                // 密码为空
+                if (password.isNullOrEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        dialog?.dismiss()
+                        MaterialAlertDialogBuilder(this@MainActivity).apply {
+                            setMessage(getString(R.string.require_password_to_import))
+                            setPositiveButton(getString(R.string.sure), null)
+                            show()
+                        }
+                    }
+                    tempZipFile.delete()
+                    return@withContext
+                }
+
+                zipFile.close()
+                val encryptedZipFile =
+                    net.lingala.zip4j.ZipFile(tempZipFile, password.toCharArray())
+                processZipFile(encryptedZipFile)
+            } else {
+                processZipFile(zipFile)
+            }
+
+            tempZipFile.delete()
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                dialog?.dismiss()
+                showFailedDialog()
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                dialog?.dismiss()
+                showFailedDialog()
+            }
         }
-        val zipInputStream = ZipInputStream(inputStream)
+    }
+
+    /**
+     * 处理 daily.zip
+     *
+     * @param zipFile net.lingala.zip4j.ZipFile
+     */
+    private suspend fun processZipFile(zipFile: net.lingala.zip4j.ZipFile) {
         val diaryWithMediaList = mutableListOf<DailyWithMedia>()
         val processedFileList = mutableSetOf<String>()
 
-        val imageDir = File(getExternalFilesDir(null), "Pictures")
-        val audioDir = File(getExternalFilesDir(null), "Music")
-        val videoDir = File(getExternalFilesDir(null), "Movies")
+        val imageDir = File(getExternalFilesDir(null), "Pictures").apply { mkdirs() }
+        val audioDir = File(getExternalFilesDir(null), "Music").apply { mkdirs() }
+        val videoDir = File(getExternalFilesDir(null), "Movies").apply { mkdirs() }
 
-        if (!imageDir.exists()) imageDir.mkdirs()
-        if (!audioDir.exists()) audioDir.mkdirs()
-        if (!videoDir.exists()) videoDir.mkdirs()
-
-        var zipEntry: ZipEntry?
-        while (zipInputStream.nextEntry.also { zipEntry = it } != null) {
-            val entryName = zipEntry!!.name
+        zipFile.fileHeaders.forEach { fileHeader ->
+            val entryName = fileHeader.fileName
             when {
                 entryName.endsWith(".json") -> {
-                    if (processedFileList.contains(entryName)) {
-                        zipInputStream.closeEntry()
-                        continue
-                    }
-                    val reader = InputStreamReader(zipInputStream)
+                    if (processedFileList.contains(entryName)) return@forEach
+                    val input = zipFile.getInputStream(fileHeader)
+                    val reader = InputStreamReader(input)
                     val gson = Gson()
                     val dailyWithMedia = gson.fromJson(reader, DailyWithMedia::class.java)
                     diaryWithMediaList.add(dailyWithMedia)
                     processedFileList.add(entryName)
+                    input.close()
                 }
                 entryName.startsWith("Pictures/") -> {
-                    val imageFile = File(imageDir, zipEntry!!.name.removePrefix("Pictures/"))
-                    val imageOutputStream = withContext(Dispatchers.IO) { FileOutputStream(imageFile) }
-                    zipInputStream.copyTo(imageOutputStream)
+                    val imageFile = File(imageDir, entryName.removePrefix("Pictures/"))
+                    zipFile.extractFile(fileHeader, imageDir.absolutePath, imageFile.name)
                     val imagePath = imageFile.absolutePath
                     diaryWithMediaList.forEach { dailyWithImage ->
                         dailyWithImage.imageList?.forEach { dailyImageEntity ->
@@ -698,9 +832,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 entryName.startsWith("Music/") -> {
-                    val audioFile = File(audioDir, zipEntry!!.name.removePrefix("Music/"))
-                    val audioOutputStream = withContext(Dispatchers.IO) { FileOutputStream(audioFile) }
-                    zipInputStream.copyTo(audioOutputStream)
+                    val audioFile = File(audioDir, entryName.removePrefix("Music/"))
+                    zipFile.extractFile(fileHeader, audioDir.absolutePath, audioFile.name)
                     val audioPath = audioFile.absolutePath
                     diaryWithMediaList.forEach { dailyWithMedia ->
                         dailyWithMedia.audioList?.forEach { audioEntity ->
@@ -711,9 +844,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 entryName.startsWith("Movies/") -> {
-                    val videoFile = File(videoDir, zipEntry!!.name.removePrefix("Movies/"))
-                    val videoOutputStream = withContext(Dispatchers.IO) { FileOutputStream(videoFile) }
-                    zipInputStream.copyTo(videoOutputStream)
+                    val videoFile = File(videoDir, entryName.removePrefix("Movies/"))
+                    zipFile.extractFile(fileHeader, videoDir.absolutePath, videoFile.name)
                     val videoPath = videoFile.absolutePath
                     diaryWithMediaList.forEach { dailyWithMedia ->
                         dailyWithMedia.videoList?.forEach { videoEntity ->
@@ -724,17 +856,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            withContext(Dispatchers.IO) {
-                zipInputStream.closeEntry()
-            }
-        }
-        withContext(Dispatchers.IO) {
-            zipInputStream.close()
         }
 
         diaryWithMediaList.forEach { dailyWithMedia ->
             val daily = dailyWithMedia.dailyEntity
             if (daily != null) {
+                val exists = dailyViewModel.checkDailyExists(daily.dailyUUID.toString())
+                if (exists) return@forEach // 存在，跳过
                 dailyViewModel.insertDaily(daily)
                 dailyWithMedia.imageList?.forEach { dailyImageEntity ->
                     dailyImageEntity?.imagePath?.let {
@@ -765,6 +893,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        withContext(Dispatchers.Main) {
+            dialog?.dismiss()
+            SnackbarUtil.showSnackbarShort(
+                activityMainBinding.fragmentContainerView,
+                getString(R.string.import_successful)
+            )
+        }
     }
 
 
@@ -779,7 +915,23 @@ class MainActivity : AppCompatActivity() {
                 val data = result.data ?: return
                 val url = data.data!!
                 val processedFileList = mutableSetOf<String>()
+                val processedImageFileList = mutableSetOf<String>()
+                val processedVideoFileList = mutableSetOf<String>()
+                val processedAudioFileList = mutableSetOf<String>()
+                var dialog: AlertDialog
+
                 CoroutineScope(Dispatchers.IO).launch {
+                    withContext(Dispatchers.Main) {
+                        val materialAlertDialogBuilder =
+                            MaterialAlertDialogBuilder(this@MainActivity)
+                        materialAlertDialogBuilder.setView(
+                            layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null)
+                        )
+                        materialAlertDialogBuilder.setCancelable(true)
+                        dialog = materialAlertDialogBuilder.create()
+                        dialog.show()
+                    }
+
                     val dailyWithMediaList = mutableListOf<DailyWithMedia>()
                     dailyList.forEach { dailyEntity ->
                         if (!processedFileList.contains(dailyEntity.dailyUUID)) {
@@ -798,27 +950,54 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    val zipOutputStream = ZipOutputStream(contentResolver.openOutputStream(url))
+                    val tempZipFile = File(externalCacheDir, "export_daily.zip")
+                    val password = dailyPassword
+
+                    val zipFile = if (password.isNotEmpty()) {
+                        net.lingala.zip4j.ZipFile(tempZipFile, password.toCharArray())
+                    } else {
+                        net.lingala.zip4j.ZipFile(tempZipFile)
+                    }
+
+                    val baseZipParameters = net.lingala.zip4j.model.ZipParameters().apply {
+                        if (password.isNotEmpty()) {
+                            isEncryptFiles = true
+                            encryptionMethod = net.lingala.zip4j.model.enums.EncryptionMethod.AES
+                            aesKeyStrength =
+                                net.lingala.zip4j.model.enums.AesKeyStrength.KEY_STRENGTH_256
+                        }
+                    }
+
+                    val tempDir = File(externalCacheDir, "temp_zip").apply { mkdirs() }
+
                     // 遍历每个每日条目并将其添加到 ZIP 文件中
                     dailyWithMediaList.forEach { dailyWithMedia ->
                         // 将日记导出为 JSON 文件
-                        val entry = ZipEntry("${dailyWithMedia.dailyEntity.dailyUUID}.json")
-                        zipOutputStream.putNextEntry(entry)
+                        val jsonFile = File(tempDir, "${dailyWithMedia.dailyEntity.dailyUUID}.json")
                         val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-                        val json = gson.toJson(dailyWithMedia)
-                        zipOutputStream.write(json.toByteArray())
-                        zipOutputStream.closeEntry()
+                        jsonFile.writeText(gson.toJson(dailyWithMedia))
+                        val jsonParams = net.lingala.zip4j.model.ZipParameters().apply {
+                            isEncryptFiles = baseZipParameters.isEncryptFiles
+                            encryptionMethod = baseZipParameters.encryptionMethod
+                            aesKeyStrength = baseZipParameters.aesKeyStrength
+                            fileNameInZip = "${dailyWithMedia.dailyEntity.dailyUUID}.json"
+                        }
+                        zipFile.addFile(jsonFile, jsonParams)
 
                         // 将关联图像导出到 ZIP 文件中的 Pictures 目录
                         dailyWithMedia.imageList?.forEach { dailyImageEntity ->
                             dailyImageEntity?.imagePath?.let { imagePath ->
                                 val imageFile = File(imagePath)
-                                if (imageFile.exists()) {
-                                    val imageEntry = ZipEntry("Pictures/${imageFile.name}")
-                                    zipOutputStream.putNextEntry(imageEntry)
-                                    val imageStream = FileInputStream(imageFile)
-                                    imageStream.copyTo(zipOutputStream)
-                                    zipOutputStream.closeEntry()
+                                if (imageFile.exists() && !processedImageFileList.contains(imageFile.name)) {
+                                    processedImageFileList.add(imageFile.name)
+                                    val imageParams =
+                                        net.lingala.zip4j.model.ZipParameters().apply {
+                                            isEncryptFiles = baseZipParameters.isEncryptFiles
+                                            encryptionMethod = baseZipParameters.encryptionMethod
+                                            aesKeyStrength = baseZipParameters.aesKeyStrength
+                                            fileNameInZip = "Pictures/${imageFile.name}"
+                                        }
+                                    zipFile.addFile(imageFile, imageParams)
                                 }
                             }
                         }
@@ -827,12 +1006,16 @@ class MainActivity : AppCompatActivity() {
                         dailyWithMedia.videoList?.forEach { dailyVideoEntity ->
                             dailyVideoEntity?.videoPath?.let { videoPath ->
                                 val videoFile = File(videoPath)
-                                if (videoFile.exists()) {
-                                    val videoEntry = ZipEntry("Movies/${videoFile.name}")
-                                    zipOutputStream.putNextEntry(videoEntry)
-                                    val videoStream = FileInputStream(videoFile)
-                                    videoStream.copyTo(zipOutputStream)
-                                    zipOutputStream.closeEntry()
+                                if (videoFile.exists() && !processedVideoFileList.contains(videoFile.name)) {
+                                    processedVideoFileList.add(videoFile.name)
+                                    val videoParams =
+                                        net.lingala.zip4j.model.ZipParameters().apply {
+                                            isEncryptFiles = baseZipParameters.isEncryptFiles
+                                            encryptionMethod = baseZipParameters.encryptionMethod
+                                            aesKeyStrength = baseZipParameters.aesKeyStrength
+                                            fileNameInZip = "Movies/${videoFile.name}"
+                                        }
+                                    zipFile.addFile(videoFile, videoParams)
                                 }
                             }
                         }
@@ -841,19 +1024,38 @@ class MainActivity : AppCompatActivity() {
                         dailyWithMedia.audioList?.forEach { dailyAudioEntity ->
                             dailyAudioEntity?.audioPath?.let { audioPath ->
                                 val audioFile = File(audioPath)
-                                if (audioFile.exists()) {
-                                    val audioEntry = ZipEntry("Music/${audioFile.name}")
-                                    zipOutputStream.putNextEntry(audioEntry)
-                                    val audioStream = FileInputStream(audioFile)
-                                    audioStream.copyTo(zipOutputStream)
-                                    zipOutputStream.closeEntry()
+                                if (audioFile.exists() && !processedAudioFileList.contains(audioFile.name)) {
+                                    processedAudioFileList.add(audioFile.name)
+                                    val audioParams =
+                                        net.lingala.zip4j.model.ZipParameters().apply {
+                                            isEncryptFiles = baseZipParameters.isEncryptFiles
+                                            encryptionMethod = baseZipParameters.encryptionMethod
+                                            aesKeyStrength = baseZipParameters.aesKeyStrength
+                                            fileNameInZip = "Music/${audioFile.name}"
+                                        }
+                                    zipFile.addFile(audioFile, audioParams)
                                 }
                             }
                         }
                     }
 
-                    // 关流
-                    zipOutputStream.close()
+                    tempDir.deleteRecursively()
+
+                    contentResolver.openOutputStream(url)?.use { outputStream ->
+                        tempZipFile.inputStream().use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+
+                    tempZipFile.delete()
+
+                    withContext(Dispatchers.Main) {
+                        dialog.dismiss()
+                        SnackbarUtil.showSnackbarShort(
+                            activityMainBinding.fragmentContainerView,
+                            getString(R.string.export_success)
+                        )
+                    }
                 }
             }
         }
@@ -959,7 +1161,7 @@ class MainActivity : AppCompatActivity() {
             val sortedBy = dailyLabelList.sortedBy { it.label?.lowercase() }
             gLabel.clear()
             sortedBy.forEach { dailyLabelEntity ->
-                gLabel.add(dailyLabelEntity.label).setIcon(R.drawable.baseline_label_24)
+                gLabel.add(dailyLabelEntity.label).setIcon(R.drawable.outline_label_24)
                     .setOnMenuItemClickListener { _ ->
                         val intent = Intent(this, DailyLabelActivity::class.java).apply {
                             putExtra("daily_label_id", dailyLabelEntity.id)
@@ -1000,6 +1202,7 @@ class MainActivity : AppCompatActivity() {
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 dailyList = value
+                loadSearchDailyData(activityMainBinding.searchView.text.toString())
                 var dailyTextSize = 0
                 if (isUpdating) return
                 val tempDailyList = dailyList
@@ -1018,7 +1221,9 @@ class MainActivity : AppCompatActivity() {
                                 dailyEntity.weatherIndex,
                                 UUID.randomUUID().toString(),
                                 true,
-                                dailyRecyclerDateTime = DateUtil.getCurrentDateTime()
+                                dailyEntity.dailyLabel,
+                                dailyRecyclerDateTime = DateUtil.getCurrentDateTime(),
+                                dailyEntity.isPinned
                             )
                             dailyViewModel.updateDaily(updatedEntity)
                         } else {
@@ -1087,7 +1292,10 @@ class MainActivity : AppCompatActivity() {
                             dailyEntity.moodIndex,
                             dailyEntity.weatherIndex,
                             UUID.randomUUID().toString(),
-                            false
+                            false,
+                            dailyEntity.dailyLabel,
+                            isPinned = dailyEntity.isPinned
+
                         )
                         dailyViewModel.updateDaily(updatedEntity)
                         isUpdating = false // 更新完成
@@ -1149,10 +1357,14 @@ class MainActivity : AppCompatActivity() {
                 val moveInRecyclerBin =
                     sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
                 val dailyEntity = dailyList.filter { !it.isDeleted }[position]
+                val neutralButtonText =
+                    if (dailyEntity.isPinned) getString(R.string.cancel_pinned) else getString(
+                        R.string.pinned
+                    )
                 if (moveInRecyclerBin) {
                     MaterialAlertDialogBuilder(this@MainActivity).apply {
                         setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                        setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        setPositiveButton(getString(R.string.sure)) { _, _ ->
                             dailyViewModel.updateDaily(
                                 DailyEntity(
                                     dailyEntity.id,
@@ -1164,11 +1376,35 @@ class MainActivity : AppCompatActivity() {
                                     dailyEntity.moodIndex,
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
-                                    true
+                                    true,
+                                    dailyEntity.dailyLabel,
+                                    isPinned = dailyEntity.isPinned
                                 )
                             )
                         }
                             .setNegativeButton(getString(R.string.cancel), null)
+                            .setNeutralButton(neutralButtonText) { _, _ ->
+
+                                val isPinned: Boolean =
+                                    neutralButtonText == getString(R.string.pinned)
+
+                                dailyViewModel.updateDaily(
+                                    DailyEntity(
+                                        dailyEntity.id,
+                                        dailyEntity.title,
+                                        dailyEntity.content,
+                                        dailyEntity.dateTime,
+                                        dailyEntity.backgroundColorIndex,
+                                        dailyEntity.singlePassword,
+                                        dailyEntity.moodIndex,
+                                        dailyEntity.weatherIndex,
+                                        dailyEntity.dailyUUID,
+                                        false,
+                                        dailyEntity.dailyLabel,
+                                        isPinned = isPinned
+                                    )
+                                )
+                            }
                             .create()
                             .show()
                     }
@@ -1231,7 +1467,9 @@ class MainActivity : AppCompatActivity() {
                                     dailyEntity.moodIndex,
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
-                                    true
+                                    true,
+                                    dailyEntity.dailyLabel,
+                                    isPinned = dailyEntity.isPinned
                                 )
                             )
                         }
@@ -1273,7 +1511,6 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             if (!contentExistsInDatabase) {
-                                LogUtil.d("delete", path)
                                 filesToDelete.add(path)
                             }
                         }
@@ -1294,7 +1531,6 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             if (!contentExistsInDatabase) {
-                                LogUtil.d("delete", path)
                                 filesToDelete.add(path)
                             }
                         }
@@ -1309,7 +1545,6 @@ class MainActivity : AppCompatActivity() {
                                 dailyAudios.forEach { dailyAudioEntity ->
                                     if (dailyAudioEntity.audioPath == path) {
                                         contentExistsInDatabase = true
-                                        LogUtil.d("cb", "cb")
                                         return@forEach
                                     }
                                 }

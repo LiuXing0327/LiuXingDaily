@@ -133,4 +133,15 @@ object SharedPreferencesUtil {
     fun getInt(context: Context, key: String, defValue: Int): Int {
         return getSharedPreferences(context).getInt(key, defValue)
     }
+
+    fun putString(context: Context, key: String, value: String) {
+        val editor = getEditor(context) ?: return
+        editor.putString(key, value)
+        editor.apply()
+    }
+
+
+    fun getString(content: Context, key: String, defValue: String): String {
+        return getSharedPreferences(content).getString(key, defValue).toString()
+    }
 }

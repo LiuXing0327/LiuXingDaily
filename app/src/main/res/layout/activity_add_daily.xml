@@ -25,12 +25,13 @@
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/input_title"
             android:ellipsize="end"
+            android:textSize="@dimen/sp_20"
             android:maxLines="2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
             android:hint="@string/title"
-            android:textSize="@dimen/sp_34" />
+            android:textStyle="bold" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -88,7 +89,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/dp_8"
-                android:src="@drawable/baseline_label_24" />
+                android:src="@drawable/outline_label_24" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/tv_label"
@@ -122,15 +123,6 @@
                 android:layout_height="0dp"
                 android:layout_marginTop="@dimen/dp_4">
 
-<!--                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/input_content"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@android:color/transparent"
-                    android:gravity="start"
-                    android:hint="@string/content"
-                    android:textSize="@dimen/sp_18" />-->
-
                 <com.liuxing.daily.view.DailyTextInputEdit
                     android:id="@+id/input_content"
                     android:layout_width="match_parent"
@@ -138,11 +130,12 @@
                     android:background="@android:color/transparent"
                     android:gravity="start"
                     android:hint="@string/content"
-                    android:textSize="@dimen/sp_18" />
+                    android:textSize="@dimen/sp_16" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
 
     </ScrollView>
+
 </LinearLayout>

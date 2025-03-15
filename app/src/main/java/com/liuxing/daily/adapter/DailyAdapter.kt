@@ -48,7 +48,12 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         // 过滤被回收的数据
         val filteredList = dailyList.filter { !it.isDeleted }
-        val sortedByDescending = filteredList.withIndex().sortedByDescending { it.value.dateTime }
+
+        // 分离置顶项和非置顶项
+        val pinnedItems = filteredList.filter { it.isPinned }.sortedByDescending { it.dateTime }
+        val nonPinnedItems = filteredList.filterNot { it.isPinned }
+
+        val sortedByDescending = nonPinnedItems.withIndex().sortedByDescending { it.value.dateTime }
 
         val groupedMap = when (currentSortIndex) {
             1 -> sortedByDescending.sortedBy { it.value.dateTime }
@@ -65,6 +70,16 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }.mapKeys { it.key.first }
 
         val resultList = mutableListOf<Any>()
+
+        // 把置顶项放到最前面
+        if (pinnedItems.isNotEmpty()) {
+            // 添加置顶标题
+            resultList.add(context.getString(R.string.pinned))
+            pinnedItems.forEachIndexed { _, pinnedItem ->
+                resultList.add(Pair(pinnedItem, filteredList.indexOf(pinnedItem)))  // 使用原始索引
+            }
+        }
+
         toSortedMap.forEach { (yearMonth, list) ->
             val headerBoolean =
                 sharedPreferences.getBoolean("switch_preference_header_display", true)
@@ -81,9 +96,9 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             // 根据排序方式添加 DailyEntity 及其索引
             when (currentSortIndex) {
                 1 -> resultList.addAll(list.sortedBy { it.value.dateTime }
-                    .map { Pair(it.value, it.index) })
+                    .map { Pair(it.value, filteredList.indexOf(it.value)) })  // 存储原始索引
                 else -> resultList.addAll(list.sortedByDescending { it.value.dateTime }
-                    .map { Pair(it.value, it.index) })
+                    .map { Pair(it.value, filteredList.indexOf(it.value)) })
             }
         }
 
@@ -92,7 +107,14 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if (categorizedList[position] is String) VIEW_TYPE_HEADER else VIEW_TYPE_DAILY
+        val type = categorizedList[position]
+        if (type is Pair<*, *>) {
+            val dailyEntity = (type.first as DailyEntity)
+            if (dailyEntity.isPinned) {
+                return VIEW_TYPE_DAILY
+            }
+        }
+        return if (type is String) VIEW_TYPE_HEADER else VIEW_TYPE_DAILY
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -179,6 +201,13 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 holder.imageView.visibility = View.GONE
             }
 
+            holder.labelContainer.visibility = if (dailyEntity.dailyLabel.isNullOrEmpty()) {
+                View.GONE
+            } else {
+                holder.tvLabel.text = dailyEntity.dailyLabel
+                View.VISIBLE
+            }
+
             // 将原始索引传递给点击事件处理
             holder.itemView.setOnClickListener {
                 onItemClickListener?.onItemClick(originalIndex)
@@ -204,6 +233,8 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val ivMood: ImageView = itemView.findViewById(R.id.iv_mood)
         val ivWeather: ImageView = itemView.findViewById(R.id.iv_weather)
         val imageView: ImageView = itemView.findViewById(R.id.image_view)
+        val labelContainer: MaterialCardView = itemView.findViewById(R.id.label_container)
+        val tvLabel: MaterialTextView = itemView.findViewById(R.id.tv_label)
     }
 
     fun setOnItemClickListener(listener: OnItemClickListener) {

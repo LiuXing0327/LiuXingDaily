@@ -122,4 +122,9 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
     fun deletePathAudioByDailyUuid(dailyUuid: String) = viewModelScope.launch {
         dailyRepository.deletePathAudioByDailyUuid(dailyUuid)
     }
+
+    suspend fun checkDailyExists(dailyUUID: String): Boolean {
+        return dailyRepository.getDailyByUUID(dailyUUID) != null
+    }
+
 }

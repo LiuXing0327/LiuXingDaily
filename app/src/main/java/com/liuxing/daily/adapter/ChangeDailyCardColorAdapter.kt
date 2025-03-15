@@ -1,8 +1,10 @@
 package com.liuxing.daily.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
@@ -15,6 +17,7 @@ import com.liuxing.daily.R
  */
 class ChangeDailyCardColorAdapter(
     private val colorList: List<Int>,
+    private var selectedPosition: Int,
     private val onColorSelected: (Int,Int) -> Unit
 ) :
     RecyclerView.Adapter<ChangeDailyCardColorAdapter.ViewHolder>() {
@@ -29,20 +32,30 @@ class ChangeDailyCardColorAdapter(
         return colorList.size
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val color = colorList[position]
+
         holder.colorCard.setCardBackgroundColor(
             ContextCompat.getColor(
                 holder.itemView.context,
                 color
             )
         )
-        holder.itemView.setOnClickListener {
+
+        if(position == selectedPosition){
+            holder.ivSelected.visibility = View.VISIBLE
+        }else{
+            holder.ivSelected.visibility = View.GONE
+        }
+        holder.colorCard.setOnClickListener {
+
+            selectedPosition = position
             onColorSelected(color,position)
         }
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val colorCard: MaterialCardView = itemView.findViewById(R.id.color_card)
+        val ivSelected: ImageView = itemView.findViewById(R.id.ic_selected)
     }
 }

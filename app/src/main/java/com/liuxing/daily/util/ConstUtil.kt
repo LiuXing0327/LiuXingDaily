@@ -11,6 +11,7 @@ object ConstUtil {
     // 日记列表类型
     const val VIEW_TYPE_HEADER = 0
     const val VIEW_TYPE_DAILY = 1
+    const val VIEW_TYPE_PINNED = 2
 
     // 日期时间格式
     val DATE_TIME_FORMAT =
@@ -49,7 +50,8 @@ object ConstUtil {
         R.color.color_3,
         R.color.color_4,
         R.color.color_5,
-        R.color.color_6
+        R.color.color_6,
+        R.color.color_7
     )
 
     // 媒体标签正则

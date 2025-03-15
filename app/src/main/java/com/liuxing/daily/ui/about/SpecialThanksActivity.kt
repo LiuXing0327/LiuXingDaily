@@ -15,6 +15,7 @@ import com.liuxing.daily.databinding.ActivitySpecialThanksBinding
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
 
+
 class SpecialThanksActivity : AppCompatActivity() {
 
     private lateinit var specialThanksBinding: ActivitySpecialThanksBinding
@@ -27,10 +28,10 @@ class SpecialThanksActivity : AppCompatActivity() {
         ThemeUtil.applyTheme(this)
         specialThanksBinding = ActivitySpecialThanksBinding.inflate(layoutInflater)
         setContentView(specialThanksBinding.root)
-/*                ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                    insets
+        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+                            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                            insets
                 }*/
         typedValue = TypedValue()
         theme.resolveAttribute(
@@ -162,6 +163,20 @@ class SpecialThanksActivity : AppCompatActivity() {
                 "\nCopyright 2018 David Morrissey, and licensed under the Apache License, " +
                         "Version 2.0. No attribution is necessary but it's very much appreciated. Star this project if you like it!\n",
                 "https://github.com/davemorrissey/subsampling-scale-image-view",
+                1
+            ),
+
+            SpecialThanksData(
+                "sardine.android",
+                "\nApache 2.0 License.\n",
+                "https://github.com/thegrizzlylabs/sardine-android",
+                1
+            ),
+
+            SpecialThanksData(
+                "zip4j",
+                "\nApache 2.0 License.\n",
+                "https://github.com/srikanth-lingala/zip4j",
                 1
             )
         )

@@ -36,3 +36,10 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLParameters
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
+
+# 解决 sardine-android 导致的
+# Library class android.content.res.XmlResourceParser implements program class org.xmlpull.v1.XmlPullParser 错误
+-dontwarn org.xmlpull.v1.**
+-keep class org.xmlpull.v1.** { *; }
+-dontwarn android.content.res.XmlResourceParser
+

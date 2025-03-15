@@ -47,8 +47,9 @@
                     android:background="@android:color/transparent"
                     android:ellipsize="end"
                     android:hint="@string/title"
+                    android:textStyle="bold"
                     android:maxLines="2"
-                    android:textSize="@dimen/sp_34" />
+                    android:textSize="@dimen/sp_20" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -106,7 +107,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/dp_8"
-                        android:src="@drawable/baseline_label_24" />
+                        android:src="@drawable/outline_label_24" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tv_label"
@@ -147,7 +148,7 @@
                             android:background="@android:color/transparent"
                             android:gravity="start"
                             android:hint="@string/content"
-                            android:textSize="@dimen/sp_18" />
+                            android:textSize="@dimen/sp_16" />
 
                     </com.google.android.material.textfield.TextInputLayout>
 

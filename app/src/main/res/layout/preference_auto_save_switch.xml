@@ -8,6 +8,9 @@
     <com.google.android.material.materialswitch.MaterialSwitch
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:ellipsize="marquee"
         android:checked="true"
         android:id="@+id/switch_auto_save_daily"
         android:foreground="?attr/selectableItemBackground"

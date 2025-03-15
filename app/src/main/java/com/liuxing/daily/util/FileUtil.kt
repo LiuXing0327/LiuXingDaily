@@ -1,5 +1,6 @@
 package com.liuxing.daily.util
 
+import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import java.io.File
 
 /**
@@ -33,6 +34,29 @@ class FileUtil {
     }
 
     /**
+     * 检查文件是否存在
+     *
+     * @param sardine OkHttpSardine
+     * @param url 链接
+     * @return 文件是否存在
+     */
+    fun checkFileExists(sardine: OkHttpSardine, url: String): Boolean {
+        val fileName = if (url.endsWith("/")) "醒悟/daily.zip" else "/醒悟/daily.zip"
+        return sardine.exists("${url}${fileName}")
+    }
+
+    /**
+     * 检查目录是否存在
+     *
+     * @param sardine OkHttpSardine
+     * @param url 链接
+     * @return 文件是否存在
+     */
+    fun checkDirExists(sardine: OkHttpSardine, url: String): Boolean {
+        return sardine.list(url).any { it.name == "醒悟" }
+    }
+
+    /**
      * 删除文件
      *
      * @param filePath 文件路径
@@ -42,6 +66,17 @@ class FileUtil {
         if (file.exists()) {
             file.delete()
         }
+    }
+
+    /**
+     * 删除文件
+     *
+     * @param sardine OkHttpSardine
+     * @param filePath 文件路径
+     */
+    fun deleteFile(sardine: OkHttpSardine, filePath: String) {
+        val fileName = if (filePath.endsWith("/")) "醒悟/daily.zip" else "/醒悟/daily.zip"
+        sardine.delete("${filePath}${fileName}")
     }
 
     /**

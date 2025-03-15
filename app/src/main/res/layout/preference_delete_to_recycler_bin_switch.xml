@@ -12,6 +12,9 @@
         android:id="@+id/switch_delete_to_recycler_bin_daily"
         android:foreground="?attr/selectableItemBackground"
         android:padding="@dimen/dp_16"
+        android:singleLine="true"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:ellipsize="marquee"
         android:text="@string/move_to_recycle_bin_when_deleting_a_diary"
         android:textSize="@dimen/sp_16" />
 

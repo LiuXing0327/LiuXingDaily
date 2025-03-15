@@ -1,5 +1,7 @@
 package com.liuxing.daily.util
 
+import com.liuxing.daily.MyApplication
+import com.liuxing.daily.R
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -9,7 +11,10 @@ import java.util.Locale
 object DateUtil {
 
     private val dateFormat =
-        arrayOf("yyyy/MM/dd HH:mm", "yyyy-MM-dd")
+        arrayOf(
+            if (MyApplication.context?.getString(R.string.daily) == "日记") "yyyy/MM/dd HH:mm" else "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd"
+        )
 
     // 获取当前日期
     fun getCurrentDate(): Date = Date()

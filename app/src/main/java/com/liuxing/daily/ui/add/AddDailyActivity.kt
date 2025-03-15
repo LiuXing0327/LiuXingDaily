@@ -3,8 +3,13 @@ package com.liuxing.daily.ui.add
 import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.SpannedString
+import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
@@ -37,6 +42,7 @@ import com.liuxing.daily.adapter.SelectDailyLabelAdapter
 import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
@@ -191,14 +197,26 @@ class AddDailyActivity : AppCompatActivity() {
                                 .inflate(R.layout.dialog_change_daily_card_color, null)
                         val materialAlertDialogBuilder =
                             MaterialAlertDialogBuilder(this@AddDailyActivity)
+                        materialAlertDialogBuilder.setTitle(getString(R.string.change_color))
                         materialAlertDialogBuilder.setView(view)
+                        materialAlertDialogBuilder.setPositiveButton(
+                            getString(R.string.close),
+                            null
+                        )
                         val dialog = materialAlertDialogBuilder.create()
                         dialog.show()
                         val colorRecycler = view.findViewById<RecyclerView>(R.id.color_recycler)
-                        colorRecycler.layoutManager = LinearLayoutManager(this@AddDailyActivity)
+                        colorRecycler.layoutManager = GridLayoutManager(this@AddDailyActivity, 3)
                         colorRecycler.adapter =
-                            ChangeDailyCardColorAdapter(ConstUtil.backgroundColorList) { selectedColor, position ->
+                            ChangeDailyCardColorAdapter(
+                                ConstUtil.backgroundColorList,
+                                backgroundColorIndex
+                            ) { selectedColor, position ->
                                 backgroundColorIndex = position
+                                window.statusBarColor = ContextCompat.getColor(
+                                    this@AddDailyActivity,
+                                    selectedColor
+                                )
                             activityAddDailyBinding.main.setBackgroundColor(
                                 ContextCompat.getColor(
                                     this@AddDailyActivity,
@@ -418,6 +436,9 @@ class AddDailyActivity : AppCompatActivity() {
                                 activityAddDailyBinding.lLabel?.visibility = View.GONE
                             }
                             setNegativeButton(getString(R.string.cancel), null)
+                            setNeutralButton(getString(R.string.new_label)) { _, _ ->
+                                showLabelInputDialog()
+                            }
                             val dialog = create()
                             dialog.show()
                             selectDailyLabelAdapter.setOnItemClickListener(object :
@@ -440,10 +461,56 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     /**
+     * 显示输入标签的对话框
+     */
+    private fun showLabelInputDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
+        val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
+        val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle(getString(R.string.create_label))
+            setView(view)
+            setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                val label = inputLabel.text.toString()
+                if (label.isNotEmpty()) {
+                    addDailyLabel(label)
+                }
+            }
+            setNegativeButton(getString(R.string.cancel), null)
+            val dialog = create()
+            dialog.show()
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.isEnabled = false
+            inputLabel.addTextChangedListener {
+                val inputText = it.toString()
+                val input = dailyLabelList.any { labels ->
+                    labels == inputText
+                }
+                inputLabelLayout.error = when {
+                    inputText.isEmpty() -> getString(R.string.the_label_is_empty)
+                    input -> getString(R.string.the_label_already_exists)
+                    else -> null
+                }
+                positiveButton.isEnabled = inputText.isNotEmpty() && !input
+            }
+        }
+    }
+
+    /**
+     * 创建日记标签
+     *
+     * @param label 标签
+     */
+    private fun addDailyLabel(label: String) {
+        dailyViewModel.insertDailyLabel(DailyLabelEntity(label = label))
+    }
+
+    /**
      * 设置日记标签
      */
     private fun setDailyLabel() {
         dailyViewModel.queryAllDailyLabel().observe(this) { dailyLabelList ->
+            this.dailyLabelList.clear()
             val sortedBy = dailyLabelList.sortedBy { it.label?.lowercase() }
             sortedBy.forEach {
                 it.label?.let { it1 -> this.dailyLabelList.add(it1) }

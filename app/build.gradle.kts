@@ -13,8 +13,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "2.3.3"
+        versionCode = 13
+        versionName = "2.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -75,4 +75,10 @@ dependencies {
 
     // subsampling-scale-image-view
     implementation(libs.davemorrissey.subsampling.scale.image.view)
+
+    // sardine-android
+    implementation(libs.sardine.android)
+
+    // zip4j
+    implementation(libs.zip4j)
 }

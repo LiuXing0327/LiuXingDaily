@@ -98,4 +98,9 @@ class DailyRepository(application: Application) {
 
     suspend fun queryDailyAudioByUuidToList(dailyUuid: String): List<DailyAudioEntity> =
         dailyDao.queryDailyAudioByUuidToList(dailyUuid)
+
+    suspend fun getDailyByUUID(dailyUUID: String): DailyEntity? {
+        return dailyDao.getDailyByUUID(dailyUUID)
+    }
+
 }
