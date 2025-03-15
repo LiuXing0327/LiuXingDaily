@@ -11,7 +11,7 @@
 </div>
 
 <div>
-<img src="screenshot/1.3/V1.3Screenshot_20241020_140714.png" width="30%"/>
+<img src="screenshot/2.4/V2.4Screenshot_20250315_132349.png" width="30%"/>
  <img src="screenshot/1.2/V1.2Screenshot_20241013_232055.png" width="30%"/>
  <img src="screenshot/1.3/V1.3Screenshot_20241020_140117.png" width="30%"/>
 </div>
