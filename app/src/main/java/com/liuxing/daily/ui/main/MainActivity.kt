@@ -36,6 +36,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailySearchAdapter
 import com.liuxing.daily.databinding.ActivityMainBinding
@@ -53,7 +54,6 @@ import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.TextUtil
@@ -63,6 +63,7 @@ import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
@@ -72,8 +73,8 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
-import java.io.InputStreamReader
 import java.util.Date
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -100,6 +101,13 @@ class MainActivity : AppCompatActivity() {
     private var dailyLabelList: List<DailyLabelEntity> = ArrayList()
     private var currentThemeColorId: Int = 0
     private var dialog: AlertDialog? = null
+
+    /**
+     * 是否正在导入数据
+     *
+     * 在导入日记时为true，阻止 [checkContentNotInDatabase] 执行导致的媒体文件未正确处理的问题
+     */
+    private var isImporting = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -266,6 +274,7 @@ class MainActivity : AppCompatActivity() {
         onDestinationChanged()
         setDailyData()
         getDailyLabel()
+        checkContentNotInDatabase()
     }
 
     /**
@@ -560,7 +569,6 @@ class MainActivity : AppCompatActivity() {
                         )
                         materialAlertDialogBuilder.setCancelable(true)
                         dialog = materialAlertDialogBuilder.create()
-                        dialog!!.show()
                         val moveInRecyclerBin =
                             sharedPreferences!!.getBoolean(
                                 "switch_delete_to_recycler_bin_daily",
@@ -571,6 +579,7 @@ class MainActivity : AppCompatActivity() {
                                 setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
                                 setPositiveButton(getString(R.string.sure)) { _, _ ->
                                     dailyList.forEach { dailyEntity ->
+                                        dialog!!.show()
                                         dailyViewModel.updateDaily(
                                             DailyEntity(
                                                 dailyEntity.id,
@@ -590,15 +599,19 @@ class MainActivity : AppCompatActivity() {
                                     }
                                     dialog?.dismiss()
                                 }
-                                    .setNegativeButton(getString(R.string.cancel), null)
-                                    .create()
-                                    .show()
+                                setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                                    dialog?.dismiss()
+                                }
+                                setOnDismissListener { dialog?.dismiss() }
+                                create()
+                                show()
                             }
 
                         } else {
                             MaterialAlertDialogBuilder(this).apply {
                                 setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
                                 setPositiveButton(getString(R.string.delete)) { _, _ ->
+                                    dialog!!.show()
                                     dailyList.forEach { dailyEntity ->
                                         dailyEntity.dailyUUID?.let {
                                             dailyViewModel.deletePathImageByDailyUuid(
@@ -616,6 +629,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                                 setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
                                     dailyList.forEach { dailyEntity ->
+                                        dialog!!.show()
                                         dailyViewModel.updateDaily(
                                             DailyEntity(
                                                 dailyEntity.id,
@@ -635,7 +649,10 @@ class MainActivity : AppCompatActivity() {
                                     }
                                     dialog?.dismiss()
                                 }
-                                setNeutralButton(getString(R.string.cancel), null)
+                                setNeutralButton(getString(R.string.cancel)) { _, _ ->
+                                    dialog?.dismiss()
+                                }
+                                setOnDismissListener { dialog?.dismiss() }
                                 create()
                                 show()
                             }
@@ -677,7 +694,7 @@ class MainActivity : AppCompatActivity() {
                                             null
                                         )
                                     )
-                                    materialAlertDialogBuilder.setCancelable(true)
+                                    materialAlertDialogBuilder.setCancelable(false)
                                     dialog = materialAlertDialogBuilder.create()
                                     dialog!!.show()
                                 }
@@ -712,17 +729,22 @@ class MainActivity : AppCompatActivity() {
      * 导入日记
      */
     private suspend fun importDailyZip(uri: Uri) = withContext(Dispatchers.IO) {
+        isImporting = true
         try {
             val inputStream = contentResolver.openInputStream(uri)
             if (inputStream == null) {
                 withContext(Dispatchers.Main) {
+                    isImporting = false
                     showFailedDialog()
                 }
                 return@withContext
             }
 
-            val tempZipFile = File(externalCacheDir, "temp_import.zip").apply {
-                writeBytes(inputStream.readBytes())
+            val tempZipFile = File(externalCacheDir, "temp_import.zip")
+            inputStream.use { input ->
+                FileOutputStream(tempZipFile).use { output ->
+                    input.copyTo(output)
+                }
             }
             inputStream.close()
 
@@ -783,11 +805,15 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 dialog?.dismiss()
+                File(externalCacheDir, "temp_import.zip")?.delete()
+                isImporting = false
                 showFailedDialog()
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 dialog?.dismiss()
+                File(externalCacheDir, "temp_import.zip")?.delete()
+                isImporting = false
                 showFailedDialog()
             }
         }
@@ -812,12 +838,28 @@ class MainActivity : AppCompatActivity() {
                 entryName.endsWith(".json") -> {
                     if (processedFileList.contains(entryName)) return@forEach
                     val input = zipFile.getInputStream(fileHeader)
-                    val reader = InputStreamReader(input)
-                    val gson = Gson()
-                    val dailyWithMedia = gson.fromJson(reader, DailyWithMedia::class.java)
-                    diaryWithMediaList.add(dailyWithMedia)
-                    processedFileList.add(entryName)
+                    val jsonString = input.bufferedReader().readText()
                     input.close()
+                    val gson = Gson()
+                    if (fileHeader.fileName == "Label/labels.json") {
+                        // 获取标签数据库，提取 label 字段
+                        val queryDailyLabel =
+                            dailyViewModel.queryDailyLabelToList().map { it.label }.toSet()
+                        // 反序列化
+                        val labelList: List<DailyLabelEntity> = gson.fromJson(
+                            jsonString,
+                            object : TypeToken<List<DailyLabelEntity>>() {}.type
+                        )
+                        // 过滤掉已经存在的标签，避免重复插入
+                        val newLabels = labelList.filter { it.label !in queryDailyLabel }
+                        newLabels.forEach {
+                            dailyViewModel.insertDailyLabel(it)
+                        }
+                    } else {
+                        val dailyWithMedia = gson.fromJson(jsonString, DailyWithMedia::class.java)
+                        diaryWithMediaList.add(dailyWithMedia)
+                    }
+                    processedFileList.add(entryName)
                 }
                 entryName.startsWith("Pictures/") -> {
                     val imageFile = File(imageDir, entryName.removePrefix("Pictures/"))
@@ -900,9 +942,11 @@ class MainActivity : AppCompatActivity() {
                 activityMainBinding.fragmentContainerView,
                 getString(R.string.import_successful)
             )
+
+            delay(1000)
+            isImporting = false
         }
     }
-
 
     /**
      * 导出所有日记启动器
@@ -927,7 +971,7 @@ class MainActivity : AppCompatActivity() {
                         materialAlertDialogBuilder.setView(
                             layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null)
                         )
-                        materialAlertDialogBuilder.setCancelable(true)
+                        materialAlertDialogBuilder.setCancelable(false)
                         dialog = materialAlertDialogBuilder.create()
                         dialog.show()
                     }
@@ -1039,7 +1083,18 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    tempDir.deleteRecursively()
+                    // 处理标签
+                    val queryLabelList = dailyViewModel.queryDailyLabelToList()
+                    val labelFile = File(tempDir, "labels.json")
+                    val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+                    labelFile.writeText(gson.toJson(queryLabelList))
+                    val labelParams = net.lingala.zip4j.model.ZipParameters().apply {
+                        isEncryptFiles = baseZipParameters.isEncryptFiles
+                        encryptionMethod = baseZipParameters.encryptionMethod
+                        aesKeyStrength = baseZipParameters.aesKeyStrength
+                        fileNameInZip = "Label/labels.json"
+                    }
+                    zipFile.addFile(labelFile, labelParams)
 
                     contentResolver.openOutputStream(url)?.use { outputStream ->
                         tempZipFile.inputStream().use { inputStream ->
@@ -1048,6 +1103,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     tempZipFile.delete()
+                    tempDir.deleteRecursively()
 
                     withContext(Dispatchers.Main) {
                         dialog.dismiss()
@@ -1219,7 +1275,7 @@ class MainActivity : AppCompatActivity() {
                                 dailyEntity.singlePassword,
                                 dailyEntity.moodIndex,
                                 dailyEntity.weatherIndex,
-                                UUID.randomUUID().toString(),
+                                dailyEntity.dailyUUID,
                                 true,
                                 dailyEntity.dailyLabel,
                                 dailyRecyclerDateTime = DateUtil.getCurrentDateTime(),
@@ -1305,8 +1361,6 @@ class MainActivity : AppCompatActivity() {
                 tvDailyTextCount.text = "${dailyTextSize}${getString(R.string.word)}"
             }
         })
-
-        checkContentNotInDatabase()
     }
 
     override fun onResume() {
@@ -1484,11 +1538,18 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * 检查数据库中不存在的内容,并将它删除
+     *
+     * [isImporting] 在导入时，跳过检查，避免出现媒体文件未正确处理的问题
      */
     private fun checkContentNotInDatabase() {
         val fileUtil = FileUtil()
+
         dailyViewModel.queryAllDaily().observe(this) { dailyList ->
+
+            if (isImporting) return@observe
+
             CoroutineScope(Dispatchers.IO).launch {
+
                 val filePaths =
                     fileUtil.getFilePaths(File("/storage/emulated/0/Android/data/com.liuxing.daily/files"))
                 val filesToDelete = mutableListOf<String>()
@@ -1551,7 +1612,6 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             if (!contentExistsInDatabase) {
-                                LogUtil.d("delete", path)
                                 filesToDelete.add(path)
                             }
                         }

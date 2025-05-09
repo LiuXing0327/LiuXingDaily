@@ -106,6 +106,7 @@ class AutoDeleteRecyclerBinDailyPreference(context: Context, attrs: AttributeSet
     private fun putAutoDeleteIndex(index: Int) {
         sharedPreferences.edit {
             putInt("auto_delete_recycler_bin_daily", index)
+            apply()
         }
     }
 }

@@ -15,5 +15,5 @@ data class DailyWithMedia(
     @Expose(deserialize = true, serialize = true)
     val videoList: List<DailyVideoEntity>,
     @Expose(deserialize = true, serialize = true)
-    val audioList: List<DailyAudioEntity>
+    val audioList: List<DailyAudioEntity>,
 )

@@ -6,7 +6,7 @@ import android.media.MediaMetadataRetriever
 /**
  * Author：流星
  * DateTime：2024/11/23 21:57
- * Description：ship工具类
+ * Description：视频工具类
  */
 object VideoUtil {
 

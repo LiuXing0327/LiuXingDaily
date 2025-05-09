@@ -11,6 +11,7 @@
         android:padding="@dimen/dp_8">
 
         <LinearLayout
+            android:gravity="center_vertical|center"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -21,12 +22,19 @@
                 android:layout_height="wrap_content" />
 
             <com.google.android.material.textview.MaterialTextView
+                android:textAppearance="?attr/textAppearanceListItem"
+                android:ellipsize="marquee"
                 android:id="@+id/tv_special_thanks_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textSize="@dimen/sp_18" />
         </LinearLayout>
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_marginTop="@dimen/dp_8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/tv_link"

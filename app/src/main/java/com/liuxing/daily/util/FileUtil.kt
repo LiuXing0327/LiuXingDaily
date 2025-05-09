@@ -91,7 +91,7 @@ class FileUtil {
     }
 
     /**
-     * 获取图片路径
+     * 获取文件路径
      *
      * @param file 文件路径
      * @return 路径集合

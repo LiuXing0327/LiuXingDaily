@@ -103,26 +103,23 @@
                 android:gravity="center">
 
                 <com.google.android.material.button.MaterialButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="invisible" />
-
-                <com.google.android.material.button.MaterialButton
                     android:id="@+id/bt_save"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/backup" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/bt_connect"
+                    android:text="@string/connect"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/bt_restore"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/restore_2" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="invisible" />
 
             </com.google.android.material.button.MaterialButtonGroup>
 

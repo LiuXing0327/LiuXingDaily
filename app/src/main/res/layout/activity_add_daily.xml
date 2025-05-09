@@ -118,10 +118,10 @@
             android:orientation="vertical">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:layout_weight="1"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="@dimen/dp_4">
+                android:layout_marginTop="@dimen/dp_4"
+                android:layout_weight="1">
 
                 <com.liuxing.daily.view.DailyTextInputEdit
                     android:id="@+id/input_content"

@@ -84,6 +84,7 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
     fun queryAllDailyLabel(): LiveData<List<DailyLabelEntity>> =
         dailyRepository.queryAllDailyLabel()
 
+    fun queryDailyLabelToList():List<DailyLabelEntity> = dailyRepository.queryDailyLabelToList()
 
     fun insertDailyVideoPath(dailyUUID: String, videoPathList: List<String>) =
         viewModelScope.launch {
@@ -127,4 +128,5 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         return dailyRepository.getDailyByUUID(dailyUUID) != null
     }
 
+    suspend fun queryAllDailyImageEntity(): List<DailyImageEntity> = dailyRepository.queryAllDailyImageEntity()
 }

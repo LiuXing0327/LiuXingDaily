@@ -1,69 +1,79 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
+        app:iconSpaceReserved="true"
         app:title="@string/about">
 
         <Preference
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/outline_info_preference_24"
+            app:iconSpaceReserved="true"
             app:key="about_preference"
             app:title="@string/about" />
 
         <Preference
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/outline_favorite_border_preference_24"
+            app:iconSpaceReserved="true"
             app:key="special_thanks_preference"
             app:title="@string/special_thanks" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
+        app:iconSpaceReserved="true"
         app:title="@string/update">
 
         <Preference
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/outline_update_preference_24"
+            app:iconSpaceReserved="true"
             app:key="check_update_preference"
             app:title="@string/check_update" />
 
         <Preference
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/outline_log_preference_24"
+            app:iconSpaceReserved="true"
             app:key="update_log_preference"
             app:title="@string/update_log" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-         app:iconSpaceReserved="false"
+         app:iconSpaceReserved="true"
         app:title="@string/daily">
 
-        <com.liuxing.daily.view.YearMonthSwitchPreference />
+        <com.liuxing.daily.view.YearMonthSwitchPreference
+            app:icon="@drawable/outline_swap_horiz_preference_24"/>
 
-        <com.liuxing.daily.view.AutoSaveDailySwitchPreference />
+        <com.liuxing.daily.view.AutoSaveDailySwitchPreference
+            app:icon="@drawable/outline_save_preference_24"/>
 
-        <com.liuxing.daily.view.DeleteToRecyclerBinSwitchPreference />
+        <com.liuxing.daily.view.DeleteToRecyclerBinSwitchPreference
+            app:icon="@drawable/outline_recycling_preference_24"/>
 
-        <com.liuxing.daily.view.AutoDeleteRecyclerBinDailyPreference />
+        <com.liuxing.daily.view.AutoDeleteRecyclerBinDailyPreference
+            app:icon="@drawable/outline_auto_delete_preference_24"/>
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
+        app:iconSpaceReserved="true"
         app:title="@string/appearance">
 
         <Preference
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/outline_palette_preference_24"
+            app:iconSpaceReserved="true"
             app:key="appearance_preference"
             app:title="@string/appearance"/>
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
+        app:iconSpaceReserved="true"
         app:title="@string/webdav_backup">
 
         <Preference
+            app:icon="@drawable/outline_cloud_upload_preference_24"
             app:key="webdav_backup_preference"
-            app:iconSpaceReserved="false"
+            app:iconSpaceReserved="true"
             app:title="@string/webdav_backup"/>
 
     </PreferenceCategory>

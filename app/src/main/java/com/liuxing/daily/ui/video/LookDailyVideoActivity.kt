@@ -30,6 +30,7 @@ import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.PlayerStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.core.view.isVisible
 
 class LookDailyVideoActivity : AppCompatActivity() {
 
@@ -190,7 +191,7 @@ class LookDailyVideoActivity : AppCompatActivity() {
      */
     private fun setImmersive() {
         lookDailyVideoBinding.appBarLayout?.let {
-            if (it.visibility == View.VISIBLE) {
+            if (it.isVisible) {
                 enterImmersive(it)
             } else {
                 exitImmersive(it)

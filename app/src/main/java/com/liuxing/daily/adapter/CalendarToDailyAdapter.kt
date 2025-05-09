@@ -36,7 +36,6 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
 
-
     fun setDailyList(
         context: Context,
         dailyList: List<DailyEntity>,

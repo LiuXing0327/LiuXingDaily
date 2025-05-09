@@ -63,6 +63,8 @@ class DailyRepository(application: Application) {
 
     fun queryAllDailyLabel(): LiveData<List<DailyLabelEntity>> = dailyLabelDao.queryAllDailyLabel()
 
+    fun queryDailyLabelToList():List<DailyLabelEntity> = dailyLabelDao.queryDailyLabelToList()
+
     suspend fun insertDailyVideoPath(dailyUUID: String, videoPathList: List<String>) =
         videoPathList.forEach { path ->
             val dailyVideoEntity = DailyVideoEntity(dailyUuid = dailyUUID, videoPath = path)
@@ -103,4 +105,7 @@ class DailyRepository(application: Application) {
         return dailyDao.getDailyByUUID(dailyUUID)
     }
 
+    suspend fun queryAllDailyImageEntity(): List<DailyImageEntity> {
+        return dailyDao.queryAllDailyImageEntity()
+    }
 }
