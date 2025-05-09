@@ -7,7 +7,7 @@
 <div>
 <img src="screenshot/1.1/V1.1Screenshot_20241007_211704.png" width="30%"/>
  <img src="screenshot/1.1/V1.1Screenshot_20241007_211750.png" width="30%"/>
- <img src="screenshot/2.4.1/V2.4.1Screenshot 20250509 165706.png" width="30%"/>
+ <img src="screenshot/2.4.1/V2.4.1Screenshot_20250509_172452.png" width="30%"/>
 </div>
 
 <div>
