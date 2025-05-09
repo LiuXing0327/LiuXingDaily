@@ -143,4 +143,7 @@
     <string name="require_password_to_import">Require password to import</string>
     <string name="import_successful">Import successful</string>
     <string name="help">Help</string>
+    <string name="connect">Connect</string>
+    <string name="failed_to_connect">Failed to connect</string>
+    <string name="connection_successful">Connection successful</string>
 </resources>

@@ -27,4 +27,8 @@ interface DailyLabelDao {
 
     @Query("SELECT * FROM DAILY_LABEL ORDER BY ID DESC")
     fun queryAllDailyLabel(): LiveData<List<DailyLabelEntity>>
+
+    @Query("SELECT * FROM DAILY_LABEL")
+    fun queryDailyLabelToList(): List<DailyLabelEntity>
+
 }

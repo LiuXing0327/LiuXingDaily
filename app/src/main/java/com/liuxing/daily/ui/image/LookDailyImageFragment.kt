@@ -16,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.databinding.FragmentLookDailyImageBinding
+import androidx.core.view.isVisible
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -81,7 +82,7 @@ class LookDailyImageFragment : Fragment() {
 
         lookDailyImageBinding.dailyImage.setOnClickListener {
             activityLookDailyImageBinding.appBarLayout.let {
-                if (it.visibility == View.VISIBLE) {
+                if (it.isVisible) {
                     enterImmersive(it)
                     activityLookDailyImageBinding.main.setBackgroundColor(Color.BLACK)
                 } else {

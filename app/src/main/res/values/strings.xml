@@ -146,4 +146,7 @@
     <string name="require_password_to_import">需要密码才能导入</string>
     <string name="import_successful">导入成功</string>
     <string name="help">帮助</string>
+    <string name="connect">连接</string>
+    <string name="failed_to_connect">连接失败</string>
+    <string name="connection_successful">连接成功</string>
 </resources>

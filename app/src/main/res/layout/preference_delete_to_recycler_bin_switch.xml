@@ -5,17 +5,34 @@
     android:foreground="@null"
     android:orientation="vertical">
 
+    <LinearLayout
+        android:id="@+id/switch_delete_to_recycler_bin_daily_preference"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+        android:paddingLeft="?android:attr/listPreferredItemPaddingLeft"
+        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+        android:paddingRight="?android:attr/listPreferredItemPaddingRight">
+
+        <include layout="@layout/image_frame" />
+
     <com.google.android.material.materialswitch.MaterialSwitch
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:checked="true"
+        android:focusable="false"
+        android:clickable="false"
         android:id="@+id/switch_delete_to_recycler_bin_daily"
-        android:foreground="?attr/selectableItemBackground"
-        android:padding="@dimen/dp_16"
-        android:singleLine="true"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:singleLine="false"
         android:textAppearance="?attr/textAppearanceListItem"
         android:ellipsize="marquee"
-        android:text="@string/move_to_recycle_bin_when_deleting_a_diary"
-        android:textSize="@dimen/sp_16" />
+        android:text="@string/move_to_recycle_bin_when_deleting_a_diary" />
+
+    </LinearLayout>
 
 </LinearLayout>

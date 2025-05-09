@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.databinding.FragmentLookGalleryImageBinding
+import androidx.core.view.isVisible
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -82,7 +83,7 @@ class LookGalleryImageFragment : Fragment() {
 
         lookGalleryImageBinding.galleryImage.setOnClickListener {
             activityLookGalleryImageBinding.appBarLayout.let {
-                if (it.visibility == View.VISIBLE) {
+                if (it.isVisible) {
                     enterImmersive(it)
                     activityLookGalleryImageBinding.main.setBackgroundColor(Color.BLACK)
                 } else {

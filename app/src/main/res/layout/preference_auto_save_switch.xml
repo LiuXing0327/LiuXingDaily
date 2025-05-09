@@ -5,17 +5,35 @@
     android:foreground="@null"
     android:orientation="vertical">
 
-    <com.google.android.material.materialswitch.MaterialSwitch
+    <LinearLayout
+        android:id="@+id/switch_auto_save_daily_preference"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+        android:paddingLeft="?android:attr/listPreferredItemPaddingLeft"
+        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+        android:paddingRight="?android:attr/listPreferredItemPaddingRight">
+
+        <include layout="@layout/image_frame" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:singleLine="true"
         android:textAppearance="?attr/textAppearanceListItem"
         android:ellipsize="marquee"
         android:checked="true"
+        android:clickable="false"
+        android:focusable="false"
+        android:layout_weight="1"
         android:id="@+id/switch_auto_save_daily"
-        android:foreground="?attr/selectableItemBackground"
-        android:padding="@dimen/dp_16"
-        android:text="@string/auto_save"
-        android:textSize="@dimen/sp_16" />
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:singleLine="false"
+        android:text="@string/auto_save" />
+
+    </LinearLayout>
 
 </LinearLayout>

@@ -330,7 +330,8 @@ class LookDailyPagerFragment : Fragment() {
         fun <T> setDailyList(
             dailyList: List<T>,
             getPath: (T) -> String?,
-            tagGenerator: (String) -> String
+            tagGenerator: (String) -> String,
+            deleteAction: (String) -> Unit
         ): MutableSet<String> {
             val pathSet = mutableSetOf<String>()
             val currentContent = content ?: ""
@@ -350,7 +351,7 @@ class LookDailyPagerFragment : Fragment() {
                         updatedContent.append(tag)
                     }
                 } else {
-                    dailyViewModel.deleteSelectPathImage(path)
+                    deleteAction(path)
                 }
             }
 
@@ -414,7 +415,8 @@ class LookDailyPagerFragment : Fragment() {
                 this.videoList = setDailyList(
                     videoList,
                     getPath = { it.videoPath },
-                    tagGenerator = { path -> "<video src=\"$path\"/>" }
+                    tagGenerator = { path -> "<video src=\"$path\"/>" },
+                    deleteAction = { path -> dailyViewModel.deleteSelectPathVideo(path) }
                 )
 
                 dailyTextView.setImagePathList(
@@ -430,7 +432,8 @@ class LookDailyPagerFragment : Fragment() {
                 this.imageList = setDailyList(
                     imageList,
                     getPath = { it.imagePath },
-                    tagGenerator = { path -> "<img src=\"$path\"/>" }
+                    tagGenerator = { path -> "<img src=\"$path\"/>" },
+                    deleteAction = { path -> dailyViewModel.deleteSelectPathImage(path) }
                 )
 
                 dailyTextView.setImagePathList(
@@ -446,7 +449,9 @@ class LookDailyPagerFragment : Fragment() {
                 this.audioList = setDailyList(
                     audioList,
                     getPath = { it.audioPath },
-                    tagGenerator = { path -> "<audio src=\"$path\"/>" })
+                    tagGenerator = { path -> "<audio src=\"$path\"/>" },
+                    deleteAction = { path -> dailyViewModel.deleteSelectPathAudio(path) }
+                )
 
                 dailyTextView.setImagePathList(
                     content!!,

@@ -13,6 +13,7 @@ import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ImageSpan
 import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
@@ -247,12 +248,12 @@ class DailyTextInputEdit : TextInputEditText {
                     this.imagePathList.add(it)
 
                     // 检查文本中是否已经插入该图片占位符，避免重复插入
-                    if (!editable.contains(createImageSpannable(it))) {
+                    val sequence = createImageSpannable(it)
+                    if (!editable.contains(sequence)) {
                         if (!isImageAddedThisTime) {
                             if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
                                 editable.insert(selectionStart, "\n\n")
                             }
-                            val sequence = createImageSpannable(it)
                             editable.insert(selectionStart, sequence)
                             val newLength = editable.length
                             if (selectionStart + sequence.length <= newLength) {
@@ -348,6 +349,7 @@ class DailyTextInputEdit : TextInputEditText {
      * @return 字符
      */
     private fun createImageSpannable(imagePath: String): CharSequence {
+        Log.d("TAG", "createImageSpannable: ")
         val imgTag = "<img src=\"$imagePath\"/>"
         val bitmap = createImageThumbnail(imagePath) ?: return imgTag
         val originalWidth = bitmap.width
@@ -457,12 +459,12 @@ class DailyTextInputEdit : TextInputEditText {
             path?.let {
                 if (!this.audioPathList.contains(it) && FileUtil().checkFileExists(it)) {
                     this.audioPathList.add(it)
-                    if (!editable.contains(createAudioSpannable(it))) {
+                    val sequence = createAudioSpannable(it)
+                    if (!editable.contains(sequence)) {
                         // 确保格式一致性
                         if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
                             editable.insert(selectionStart, "\n\n")
                         }
-                        val sequence = createAudioSpannable(it)
                         if (selectionStart + sequence.length in 0..currentLength) {
                             editable.insert(selectionStart, sequence)
                         } else {
@@ -496,11 +498,11 @@ class DailyTextInputEdit : TextInputEditText {
             path?.let {
                 if (!this.videoPathList.contains(it) && FileUtil().checkFileExists(it)) {
                     this.videoPathList.add(it)
-                    if (!editable.contains(createVideoSpannable(it))) {
+                    val sequence = createVideoSpannable(it)
+                    if (!editable.contains(sequence)) {
                         if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
                             editable.insert(selectionStart, "\n\n")
                         }
-                        val sequence = createVideoSpannable(it)
                         if (selectionStart + sequence.length in 0..currentLength) {
                             editable.insert(selectionStart, sequence)
                         } else {

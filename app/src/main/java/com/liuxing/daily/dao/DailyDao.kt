@@ -83,4 +83,6 @@ interface DailyDao {
     @Query("SELECT * FROM DAILY_INFO WHERE DAILY_UUID = :dailyUUID LIMIT 1")
     suspend fun getDailyByUUID(dailyUUID: String): DailyEntity?
 
+    @Query("SELECT * FROM DAILY_IMAGE")
+    suspend fun queryAllDailyImageEntity(): List<DailyImageEntity>
 }

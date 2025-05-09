@@ -2,6 +2,7 @@ package com.liuxing.daily.ui.updatelog
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
@@ -12,6 +13,7 @@ import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.data.VersionLogData
 import com.liuxing.daily.databinding.ActivityUpdateLogBinding
+import com.liuxing.daily.markdown.MarkdownParser
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
 import java.io.BufferedReader
@@ -127,7 +129,7 @@ class UpdateLogActivity : AppCompatActivity() {
                 }
 
                 line.startsWith("-") -> {
-                    currentVersionLog.add(line.trim())
+                    currentVersionLog.add(line.replace("-", "- ").trim())
                 }
             }
         }
@@ -147,13 +149,15 @@ class UpdateLogActivity : AppCompatActivity() {
             versionLog.reverse()
         }
         versionLog.forEach { versionLogData ->
-            sb.append("${versionLogData.version}(${versionLogData.date})\n")
+            // 把 V 替换为 # V
+            val version = versionLogData.version.replaceFirstChar { "# V" }
+            sb.append("${version}(${versionLogData.date})\n")
             versionLogData.versionList.forEach {
                 sb.append("$it\n")
             }
             sb.append("\n")
         }
-        activityUpdateLogBinding.tvUpdateLog.text = sb.toString()
+        activityUpdateLogBinding.tvUpdateLog.text = MarkdownParser.parseMarkdown((sb.toString()))
     }
 
     /**

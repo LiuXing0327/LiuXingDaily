@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import com.liuxing.daily.markdown.MarkdownParser
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -53,8 +54,9 @@ object CheckAppUpdateUtil {
                     try {
                         if (latestVersionCode > currentVersionCode) {
                             val updateDialog = MaterialAlertDialogBuilder(context)
+                            updateDialog.setIcon(R.drawable.baseline_new_releases_24)
                             updateDialog.setTitle(context.getString(R.string.new_version) + "：$latestVersionName")
-                            updateDialog.setMessage(releaseNotes)
+                            updateDialog.setMessage(MarkdownParser.parseMarkdown(releaseNotes.replace("-","- ")))
                             updateDialog.setPositiveButton(
                                 context.getString(R.string.sure),
                                 DialogInterface.OnClickListener { dialog, which ->

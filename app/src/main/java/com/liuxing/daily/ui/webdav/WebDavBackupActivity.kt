@@ -1,15 +1,9 @@
 package com.liuxing.daily.ui.webdav
 
-import android.graphics.Typeface
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableStringBuilder
-import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.EditText
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -19,10 +13,13 @@ import androidx.lifecycle.Observer
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityWebDavBackupBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
+import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -36,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStreamReader
 
 
@@ -82,6 +80,7 @@ class WebDavBackupActivity : AppCompatActivity() {
         initSardine()
         initViewModel()
         setDailyData()
+        testWebDavConnect()
         backupDataToWebDav()
         restoreDataFromWebDav()
     }
@@ -146,7 +145,9 @@ class WebDavBackupActivity : AppCompatActivity() {
         dailyViewModel = DailyViewModel(this.application)
     }
 
-
+    /**
+     * 设置日记数据
+     */
     private fun setDailyData() {
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
@@ -154,6 +155,77 @@ class WebDavBackupActivity : AppCompatActivity() {
             }
         })
     }
+
+    /**
+     * 测试连接
+     */
+    private fun testWebDavConnect() {
+        webDavBackupBinding.btConnect.setOnClickListener {
+            if (webDavBackupBinding.inputUrl.text.isNullOrEmpty() ||
+                webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() ||
+                webDavBackupBinding.inputPassword.text.isNullOrEmpty()
+            ) {
+                MaterialAlertDialogUtil.showPositiveDialog(
+                    this@WebDavBackupActivity,
+                    getString(R.string.failed_to_connect),
+                    getString(R.string.sure),
+                    null
+                )
+                return@setOnClickListener
+            }
+
+            SharedPreferencesUtil.putString(
+                this,
+                WEB_DAV_URL_KEY,
+                webDavBackupBinding.inputUrl.text.toString()
+            )
+            SharedPreferencesUtil.putString(
+                this,
+                WEB_DAV_USER_NAME,
+                webDavBackupBinding.inputAccountNumber.text.toString()
+            )
+            SharedPreferencesUtil.putString(
+                this,
+                WEB_DAV_PASS_WORD,
+                webDavBackupBinding.inputPassword.text.toString()
+            )
+            SharedPreferencesUtil.putString(
+                this,
+                WEB_DAV_ENCRYPT_PASS_WORD,
+                webDavBackupBinding.inputEncrypt.text.toString()
+            )
+
+            // 初始化 Sardine
+            getWebDavAccountNumber()
+            initSardine()
+
+            // 测试连接
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val testUrl = "${url}${if (url.endsWith("/")) "" else "/"}"
+                    sardine.list(testUrl)
+                    withContext(Dispatchers.Main) {
+                        MaterialAlertDialogUtil.showPositiveDialog(
+                            this@WebDavBackupActivity,
+                            getString(R.string.connection_successful),
+                            getString(R.string.sure),
+                            null
+                        )
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        MaterialAlertDialogUtil.showPositiveDialog(
+                            this@WebDavBackupActivity,
+                            getString(R.string.failed_to_connect),
+                            getString(R.string.sure),
+                            null
+                        )
+                    }
+                }
+            }
+        }
+    }
+
 
     /**
      * 备份数据到 WebDav
@@ -213,7 +285,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                                         null
                                     )
                                 )
-                                materialAlertDialogBuilder.setCancelable(true)
+                                materialAlertDialogBuilder.setCancelable(false)
                                 dialog = materialAlertDialogBuilder.create()
                                 dialog!!.show()
                             }
@@ -346,6 +418,19 @@ class WebDavBackupActivity : AppCompatActivity() {
                                 }
                             }
 
+                            // 处理标签
+                            val queryLabelList = dailyViewModel.queryDailyLabelToList()
+                            val labelFile = File(tempDir, "labels.json")
+                            val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+                            labelFile.writeText(gson.toJson(queryLabelList))
+                            val labelParams = net.lingala.zip4j.model.ZipParameters().apply {
+                                isEncryptFiles = baseZipParameters.isEncryptFiles
+                                encryptionMethod = baseZipParameters.encryptionMethod
+                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                                fileNameInZip = "Label/labels.json"
+                            }
+                            zipFile.addFile(labelFile, labelParams)
+
                             tempDir.deleteRecursively()
 
                             val fileName =
@@ -413,6 +498,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                 )
 
                 if (!isSardineInit) {
+                    getWebDavAccountNumber()
                     initSardine()
                 }
 
@@ -433,7 +519,6 @@ class WebDavBackupActivity : AppCompatActivity() {
     private suspend fun importDailyZipFromWebDav(url: String, password: String? = null) {
         try {
             val inputStream = sardine.get(url)
-
             if (inputStream == null) {
                 withContext(Dispatchers.Main) {
                     MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
@@ -452,13 +537,16 @@ class WebDavBackupActivity : AppCompatActivity() {
                 materialAlertDialogBuilder.setView(
                     layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null)
                 )
-                materialAlertDialogBuilder.setCancelable(true)
+                materialAlertDialogBuilder.setCancelable(false)
                 dialog = materialAlertDialogBuilder.create()
                 dialog!!.show()
             }
 
-            val tempZipFile = File(externalCacheDir, "temp_daily.zip").apply {
-                writeBytes(inputStream.readBytes())
+            val tempZipFile = File(externalCacheDir, "temp_daily.zip")
+            inputStream.use { input ->
+                FileOutputStream(tempZipFile).use { output ->
+                    input.copyTo(output)
+                }
             }
 
             val zipFile = if (!password.isNullOrEmpty()) {
@@ -481,12 +569,28 @@ class WebDavBackupActivity : AppCompatActivity() {
                     entryName.endsWith(".json") -> {
                         if (processedFileList.contains(entryName)) return@forEach
                         val input = zipFile.getInputStream(fileHeader)
-                        val reader = InputStreamReader(input)
-                        val gson = Gson()
-                        val dailyWithMedia = gson.fromJson(reader, DailyWithMedia::class.java)
-                        diaryWithMediaList.add(dailyWithMedia)
-                        processedFileList.add(entryName)
+                        val jsonString = input.bufferedReader().readText()
                         input.close()
+                        val gson = Gson()
+                        if (fileHeader.fileName == "Label/labels.json") {
+                            // 获取标签数据库，提取 label 字段
+                            val queryDailyLabel =
+                                dailyViewModel.queryDailyLabelToList().map { it.label }.toSet()
+                            // 反序列化
+                            val labelList: List<DailyLabelEntity> = gson.fromJson(
+                                jsonString,
+                                object : TypeToken<List<DailyLabelEntity>>() {}.type
+                            )
+                            // 过滤掉已经存在的标签，避免重复插入
+                            val newLabels = labelList.filter { it.label !in queryDailyLabel }
+                            newLabels.forEach {
+                                dailyViewModel.insertDailyLabel(it)
+                            }
+                        } else {
+                            val dailyWithMedia = gson.fromJson(jsonString, DailyWithMedia::class.java)
+                            diaryWithMediaList.add(dailyWithMedia)
+                        }
+                        processedFileList.add(entryName)
                     }
 
                     entryName.startsWith("Pictures/") -> {
@@ -570,7 +674,6 @@ class WebDavBackupActivity : AppCompatActivity() {
                     }
                 }
             }
-
             withContext(Dispatchers.Main) {
                 dialog?.dismiss()
                 SnackbarUtil.showSnackbarShort(
@@ -580,10 +683,7 @@ class WebDavBackupActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                val tempZipFile = File(externalCacheDir, "temp_daily.zip")
-                if (tempZipFile.exists()) {
-                    tempZipFile.deleteRecursively()
-                }
+                File(externalCacheDir, "temp_daily.zip")?.delete()
                 dialog?.dismiss()
                 MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
                     setMessage(getString(R.string.recovery_failed))
