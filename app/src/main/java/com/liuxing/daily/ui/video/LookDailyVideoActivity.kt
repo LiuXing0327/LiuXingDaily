@@ -241,6 +241,8 @@ class LookDailyVideoActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
+
+        WindowUtil.followPatternSetColor(window,this)
     }
 
     /**

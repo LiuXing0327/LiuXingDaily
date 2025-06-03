@@ -34,7 +34,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStreamReader
 
 
 private const val WEB_DAV_URL_KEY = "web_dav_url_key"
@@ -165,7 +164,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                 webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() ||
                 webDavBackupBinding.inputPassword.text.isNullOrEmpty()
             ) {
-                MaterialAlertDialogUtil.showPositiveDialog(
+                MaterialAlertDialogUtil.showDialog(
                     this@WebDavBackupActivity,
                     getString(R.string.failed_to_connect),
                     getString(R.string.sure),
@@ -205,7 +204,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                     val testUrl = "${url}${if (url.endsWith("/")) "" else "/"}"
                     sardine.list(testUrl)
                     withContext(Dispatchers.Main) {
-                        MaterialAlertDialogUtil.showPositiveDialog(
+                        MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
                             getString(R.string.connection_successful),
                             getString(R.string.sure),
@@ -214,7 +213,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        MaterialAlertDialogUtil.showPositiveDialog(
+                        MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
                             getString(R.string.failed_to_connect),
                             getString(R.string.sure),

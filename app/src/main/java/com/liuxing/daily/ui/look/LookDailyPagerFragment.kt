@@ -1,13 +1,16 @@
 package com.liuxing.daily.ui.look
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.util.Linkify
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.fragment.app.Fragment
+import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
 import com.liuxing.daily.entity.DailyEntity
@@ -63,6 +66,7 @@ class LookDailyPagerFragment : Fragment() {
     private var audioList: MutableSet<String> = mutableSetOf()
     private var dailyLabel: String? = null
     private var isPinned: Boolean = false
+    var sharedPreferences: SharedPreferences? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,6 +160,7 @@ class LookDailyPagerFragment : Fragment() {
      */
     private fun initData() {
         initViewModel()
+        initSharedPreferences()
         setTitleVisibility()
         setDailyContent()
         setDailyBackgroundColor()
@@ -171,6 +176,13 @@ class LookDailyPagerFragment : Fragment() {
      */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(requireActivity().application)
+    }
+
+    /**
+     * 初始化 [sharedPreferences]
+     */
+    private fun initSharedPreferences(){
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
     }
 
     /**
@@ -261,6 +273,12 @@ class LookDailyPagerFragment : Fragment() {
             }
         }
         binding.tvLabel.text = dailyLabel
+
+        Linkify.addLinks(dailyTextView, Linkify.WEB_URLS)
+
+        val textLineSpacingValue =
+            sharedPreferences?.getFloat("text_line_spacing_preference", 0F)
+        dailyTextView.setLineSpacing(textLineSpacingValue!!, 1F)
     }
 
     private fun removeUselessTags(

@@ -48,6 +48,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -141,6 +142,10 @@ class EditDailyActivity : AppCompatActivity() {
                 deleteAudioList.add(audioPath)
             }
         })
+
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val textLineSpacingValue = sharedPreferences.getFloat("text_line_spacing_preference", 0F)
+        dailyTextInputEdit.setLineSpacing(textLineSpacingValue, 1F)
     }
 
     /**

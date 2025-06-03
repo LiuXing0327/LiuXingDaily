@@ -125,7 +125,7 @@
     <string name="days_14">14 days</string>
     <string name="days_30">30 days</string>
     <string name="appearance">Appearance</string>
-    <string name="are_you_sure_delete_label">Are you sure you want to delete the %1$s label？（The diary will not be deleted）</string>
+    <string name="are_you_sure_delete_label">Are you sure you want to delete the "%1$s" label？（The diary will not be deleted）</string>
     <string name="new_label">NEW LABEL</string>
     <string name="pinned">Pinned</string>
     <string name="cancel_pinned">Cancel pinned</string>
@@ -146,4 +146,7 @@
     <string name="connect">Connect</string>
     <string name="failed_to_connect">Failed to connect</string>
     <string name="connection_successful">Connection successful</string>
+    <string name="line_spacing_description">First line\nSecond line\nThird line</string>
+    <string name="text_line_spacing">Text line spacing</string>
+    <string name="on_this_day">On this day</string>
 </resources>

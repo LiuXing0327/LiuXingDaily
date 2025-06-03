@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
@@ -20,6 +19,11 @@
             android:id="@+id/galleryFragment"
             android:icon="@drawable/outline_image_24"
             android:title="@string/gallery" />
+
+        <item
+            android:id="@+id/onThisDayFragment"
+            android:icon="@drawable/outline_today_24"
+            android:title="@string/on_this_day"/>
     </group>
 
     <group

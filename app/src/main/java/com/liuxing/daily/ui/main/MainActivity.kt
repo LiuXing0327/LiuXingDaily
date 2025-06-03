@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -54,6 +55,7 @@ import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.TextUtil
@@ -61,6 +63,7 @@ import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
 import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -108,6 +111,8 @@ class MainActivity : AppCompatActivity() {
      * 在导入日记时为true，阻止 [checkContentNotInDatabase] 执行导致的媒体文件未正确处理的问题
      */
     private var isImporting = false
+
+    private lateinit var mainViewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -288,7 +293,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.dailyFragment,
                 R.id.calendarQueryDailyFragment,
                 R.id.galleryFragment,
-                R.id.recyclerBinFragment
+                R.id.recyclerBinFragment,
+                R.id.onThisDayFragment
             )
                 .setOpenableLayout(activityMainBinding.main).build()
     }
@@ -378,7 +384,11 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding.floatingActionButton.setOnClickListener {
             IntentUtil.startActivity(
                 this,
-                AddDailyActivity::class.java
+                AddDailyActivity::class.java,
+                mapOf(
+                    "isDailyFragment" to isDailyFragment,
+                    "selectedYearMonthDay" to mainViewModel.selectedYearMonthDay.value
+                )
             )
         }
     }
@@ -465,6 +475,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
     }
 
     /**
@@ -558,6 +569,91 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.item_clear -> {
+                    if (isRecyclerBinFragment) {
+                        val deletedDailyList = dailyList.filter { it.isDeleted }
+                        if (deletedDailyList.isNotEmpty())
+                            MaterialAlertDialogUtil.showDialog(
+                                this,
+                                getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
+                                getString(R.string.sure),
+                                {
+                                    if (deletedDailyList.isEmpty()) return@showDialog
+                                    deletedDailyList.forEach { dailyEntity ->
+                                        val fileUtil = FileUtil()
+                                        dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
+                                            .observe(this) { dailyImageList ->
+                                                val existingImagePaths =
+                                                    dailyImageList.map { it.imagePath }.toSet()
+                                                if (existingImagePaths.isNotEmpty()) {
+                                                    val list = existingImagePaths.toList()
+                                                    list.forEach {
+                                                        if (fileUtil.checkFileExists(it!!)) {
+                                                            fileUtil.deleteFile(it)
+                                                        }
+                                                    }
+                                                }
+                                                dailyViewModel.deletePathImageByDailyUuid(
+                                                    dailyEntity.dailyUUID.toString()
+                                                )
+                                            }
+                                        dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
+                                            .observe(this) { dailyVideoList ->
+                                                val existingVideoPaths =
+                                                    dailyVideoList.map { it.videoPath }.toSet()
+                                                if (existingVideoPaths.isNotEmpty()) {
+                                                    val list = existingVideoPaths.toList()
+                                                    list.forEach {
+                                                        if (fileUtil.checkFileExists(it!!)) {
+                                                            fileUtil.deleteFile(it)
+                                                        }
+                                                    }
+                                                }
+                                                dailyViewModel.deletePathVideoByDailyUuid(
+                                                    dailyEntity.dailyUUID.toString()
+                                                )
+                                            }
+                                        dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
+                                            .observe(this) { dailyAudioList ->
+                                                val existingAudioPaths =
+                                                    dailyAudioList.map { it.audioPath }.toSet()
+                                                if (existingAudioPaths.isNotEmpty()) {
+                                                    val list = existingAudioPaths.toList()
+                                                    list.forEach {
+                                                        if (fileUtil.checkFileExists(it!!)) {
+                                                            fileUtil.deleteFile(it)
+                                                        }
+                                                    }
+                                                }
+                                                dailyViewModel.deletePathAudioByDailyUuid(
+                                                    dailyEntity.dailyUUID.toString()
+                                                )
+                                            }
+                                        dailyViewModel.deleteDaily(dailyEntity)
+                                    }
+                                }, getString(R.string.restore),
+                                {
+                                    deletedDailyList.forEach { dailyEntity ->
+                                        dailyViewModel.updateDaily(
+                                            DailyEntity(
+                                                dailyEntity.id,
+                                                dailyEntity.title,
+                                                dailyEntity.content,
+                                                dailyEntity.dateTime,
+                                                dailyEntity.backgroundColorIndex,
+                                                dailyEntity.singlePassword,
+                                                dailyEntity.moodIndex,
+                                                dailyEntity.weatherIndex,
+                                                dailyEntity.dailyUUID,
+                                                false,
+                                                dailyEntity.dailyLabel,
+                                                dailyRecyclerDateTime = null,
+                                                dailyEntity.isPinned
+                                            )
+                                        )
+                                    }
+                                }, getString(R.string.cancel)
+                            )
+                    } else
                     if (dailyList.isNotEmpty()) {
                         val materialAlertDialogBuilder =
                             MaterialAlertDialogBuilder(this@MainActivity)
@@ -1130,12 +1226,30 @@ class MainActivity : AppCompatActivity() {
     private fun onDestinationChanged() {
         navController.addOnDestinationChangedListener { _, fragment, _ ->
             activityMainBinding.floatingActionButton.visibility =
-                if (fragment.id == R.id.dailyFragment) {
-                    isDailyFragment = true
-                    View.VISIBLE
-                } else {
-                    isDailyFragment = false
-                    View.GONE
+                when (fragment.id) {
+                    R.id.dailyFragment -> {
+                        isDailyFragment = true
+                        isRecyclerBinFragment = false
+                        View.VISIBLE
+                    }
+
+                    R.id.calendarQueryDailyFragment -> {
+                        isDailyFragment = false
+                        isRecyclerBinFragment = false
+                        View.VISIBLE
+                    }
+
+                    R.id.recyclerBinFragment -> {
+                        isDailyFragment = false
+                        isRecyclerBinFragment = true
+                        View.GONE
+                    }
+
+                    else -> {
+                        isDailyFragment = false
+                        isRecyclerBinFragment = false
+                        View.GONE
+                    }
                 }
         }
     }
@@ -1377,6 +1491,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private var isDailyFragment: Boolean = true
+        private var isRecyclerBinFragment: Boolean = false
     }
 
     /**

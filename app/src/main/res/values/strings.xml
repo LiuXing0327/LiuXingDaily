@@ -95,8 +95,8 @@
     <string name="Sort_by_by_date">排序方式-按日期</string>
     <string name="from_new_to_old">从新到旧</string>
     <string name="from_old_to_new">从旧到新</string>
-    <string name="chinese_simplified">简体中文</string>
-    <string name="english">English</string>
+    <string name="chinese_simplified" translatable="false">简体中文</string>
+    <string name="english" translatable="false">English</string>
     <string name="language">语言</string>
     <string name="sad">难过</string>
     <string name="agitated">激动</string>
@@ -128,7 +128,7 @@
     <string name="days_14">14天</string>
     <string name="days_30">30天</string>
     <string name="appearance">外观</string>
-    <string name="are_you_sure_delete_label">确定删除%1$s标签吗？（不会删除日记）</string>
+    <string name="are_you_sure_delete_label">确定删除“%1$s”标签吗？（不会删除日记）</string>
     <string name="new_label">新建</string>
     <string name="pinned">置顶</string>
     <string name="cancel_pinned">取消置顶</string>
@@ -149,4 +149,7 @@
     <string name="connect">连接</string>
     <string name="failed_to_connect">连接失败</string>
     <string name="connection_successful">连接成功</string>
+    <string name="line_spacing_description">第一行\n第二行\n第三行</string>
+    <string name="text_line_spacing">文本行间距</string>
+    <string name="on_this_day">那年今日</string>
 </resources>

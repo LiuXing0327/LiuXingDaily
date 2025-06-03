@@ -3,13 +3,9 @@ package com.liuxing.daily.ui.add
 import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.text.SpannableStringBuilder
-import android.text.SpannedString
-import android.text.style.StyleSpan
-import android.text.style.TypefaceSpan
+import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
@@ -28,6 +24,7 @@ import androidx.core.content.edit
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -49,6 +46,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -57,6 +55,7 @@ import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.view.DailyTextInputEdit
 import com.liuxing.daily.viewmodel.DailyViewModel
+import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -89,6 +88,7 @@ class AddDailyActivity : AppCompatActivity() {
     private lateinit var dailyTextInputEdit: DailyTextInputEdit
     private var dailyLabelList = mutableListOf<String>()
     private var dailyLabel: String = ""
+    private lateinit var mainViewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -125,6 +125,10 @@ class AddDailyActivity : AppCompatActivity() {
                 }
             }
         })
+
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val textLineSpacingValue = sharedPreferences.getFloat("text_line_spacing_preference", 0F)
+        dailyTextInputEdit.setLineSpacing(textLineSpacingValue,1F)
     }
 
     /**
@@ -587,6 +591,7 @@ class AddDailyActivity : AppCompatActivity() {
      */
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
+        mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
     }
 
     /**
@@ -626,8 +631,14 @@ class AddDailyActivity : AppCompatActivity() {
      * 设置日期时间
      */
     private fun setDateTime() {
+        val isDailyFragment = intent.getBooleanExtra("isDailyFragment", true)
+        val selectedYearMonthDay = intent.getStringExtra("selectedYearMonthDay")
         activityAddDailyBinding.tvDateTime.text =
-            DateUtil.getDateString(0, DateUtil.getCurrentDate())
+            if (isDailyFragment || selectedYearMonthDay.isNullOrEmpty()) DateUtil.getDateString(
+                0,
+                DateUtil.getCurrentDate()
+            )
+            else "$selectedYearMonthDay ${DateUtil.getDateString(2, DateUtil.getCurrentDate())}"
     }
 
     /**
