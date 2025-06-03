@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
 import androidx.preference.PreferenceManager
+import com.google.android.material.color.DynamicColors
 import com.liuxing.daily.util.ThemeUtil
 
 /**
@@ -36,6 +37,7 @@ class MyApplication : Application() {
         super.onCreate()
         context = applicationContext
         initSharePreferences()
+       // DynamicColors.applyToActivitiesIfAvailable(this)
         ThemeUtil.setThemeMode(sharedPreferences!!.getInt("theme_mode_preference", 0))
         this.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     }

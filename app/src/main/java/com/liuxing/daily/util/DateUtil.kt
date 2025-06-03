@@ -13,7 +13,8 @@ object DateUtil {
     private val dateFormat =
         arrayOf(
             if (MyApplication.context?.getString(R.string.daily) == "日记") "yyyy/MM/dd HH:mm" else "yyyy-MM-dd HH:mm",
-            "yyyy-MM-dd"
+            "yyyy-MM-dd",
+            "HH:mm"
         )
 
     // 获取当前日期

@@ -36,5 +36,14 @@
         android:id="@+id/galleryFragment"
         android:name="com.liuxing.daily.ui.gallery.GalleryFragment"
         android:label="fragment_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        tools:layout="@layout/fragment_gallery">
+        <action
+            android:id="@+id/action_galleryFragment_to_onThisDayFragment"
+            app:destination="@id/onThisDayFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/onThisDayFragment"
+        android:name="com.liuxing.daily.ui.onthisday.OnThisDayFragment"
+        android:label="fragment_on_this_day"
+        tools:layout="@layout/fragment_on_this_day" />
 </navigation>

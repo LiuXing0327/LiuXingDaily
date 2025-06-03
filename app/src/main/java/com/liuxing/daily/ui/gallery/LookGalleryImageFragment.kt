@@ -8,11 +8,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.databinding.FragmentLookGalleryImageBinding
-import androidx.core.view.isVisible
+import com.liuxing.daily.util.WindowUtil
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -130,5 +131,7 @@ class LookGalleryImageFragment : Fragment() {
             @Suppress("DEPRECATION")
             requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
+
+        WindowUtil.followPatternSetColor(requireActivity().window, requireContext())
     }
 }

@@ -1,22 +1,19 @@
 package com.liuxing.daily.ui.image
 
-import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import com.bumptech.glide.Glide
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.databinding.FragmentLookDailyImageBinding
-import androidx.core.view.isVisible
+import com.liuxing.daily.util.WindowUtil
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -129,5 +126,7 @@ class LookDailyImageFragment : Fragment() {
             @Suppress("DEPRECATION")
             requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
+
+        WindowUtil.followPatternSetColor(requireActivity().window, requireContext())
     }
 }

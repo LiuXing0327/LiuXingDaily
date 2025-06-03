@@ -52,6 +52,11 @@
         <com.liuxing.daily.view.AutoDeleteRecyclerBinDailyPreference
             app:icon="@drawable/outline_auto_delete_preference_24"/>
 
+        <Preference
+            app:key="text_line_spacing_preference"
+            app:icon="@drawable/outline_vertical_distribute_24"
+            app:title="@string/text_line_spacing" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

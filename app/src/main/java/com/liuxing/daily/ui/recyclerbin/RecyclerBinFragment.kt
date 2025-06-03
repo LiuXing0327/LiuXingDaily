@@ -15,7 +15,6 @@ import com.liuxing.daily.databinding.FragmentRecyclerBinBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.util.FileUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 // TODO: Rename parameter arguments, choose names that match

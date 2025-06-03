@@ -11,23 +11,37 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 object MaterialAlertDialogUtil {
 
     /**
-     * 显示带有 PositiveButton 的对话框
+     * 显示对话框
      *
      * @param context 上下文
      * @param message 消息
-     * @param positiveText 按钮文本
+     * @param positiveText [onPositive]文本
      * @param onPositive setPositiveButton的回调函数
+     * @param negativeText [onNegative]文本
+     * @param onNegative setNegativeButton的回调函数
+     * @param neutralText [onNeutral]文本
+     * @param onNeutral setNeutralButton的回调函数
      */
-    fun showPositiveDialog(
+    fun showDialog(
         context: Context,
         message: String,
-        positiveText: String,
-        onPositive: (() -> Unit)?
+        positiveText: String = "",
+        onPositive: (() -> Unit)? = null,
+        negativeText: String = "",
+        onNegative: (() -> Unit)? = null,
+        neutralText: String = "",
+        onNeutral: (() -> Unit)? = null
     ) {
         MaterialAlertDialogBuilder(context).apply {
             setMessage(message)
             setPositiveButton(positiveText) { _, _ ->
                 onPositive?.invoke()
+            }
+            setNegativeButton(negativeText) { _, _ ->
+                onNegative?.invoke()
+            }
+            setNeutralButton(neutralText) { _, _ ->
+                onNeutral?.invoke()
             }
             create()
             show()

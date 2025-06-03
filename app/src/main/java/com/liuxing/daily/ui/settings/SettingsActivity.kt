@@ -1,6 +1,6 @@
 package com.liuxing.daily.ui.settings
 
-import android.content.DialogInterface
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.MenuItem
@@ -11,6 +11,8 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.slider.Slider
+import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
 import com.liuxing.daily.ui.about.AboutActivity
@@ -20,7 +22,6 @@ import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.ui.webdav.WebDavBackupActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
@@ -111,41 +112,6 @@ class SettingsActivity : AppCompatActivity() {
                 true
             }
 
-            val themeModePreference = findPreference<Preference>("theme_mode_preference")
-            val themeModeIndex = sharedPreferences.getInt("theme_mode_preference", 0)
-            val themeModeList = listOf(
-                R.string.follow_the_system,
-                R.string.light_mode,
-                R.string.night_node
-            )
-            themeModePreference?.setSummary(
-                themeModeList[themeModeIndex]
-            )
-            themeModePreference?.setOnPreferenceClickListener {
-                MaterialAlertDialogBuilder(requireContext()).apply {
-                    setTitle(getString(R.string.theme_mode))
-                    setSingleChoiceItems(
-                        R.array.theme_mode_entries,
-                        themeModeIndex,
-                        DialogInterface.OnClickListener { dialog, which ->
-                            LogUtil.d("themeModeIndex",which.toString())
-                            if (which != themeModeIndex) {
-                                sharedPreferences.edit {
-                                    putInt("theme_mode_preference", which)
-                                    ThemeUtil.setThemeMode(which)
-                                    requireActivity().recreate()
-                                    apply()
-                                }
-                            }
-                            dialog.dismiss()
-                        })
-                    setPositiveButton(getString(R.string.cancel), null)
-                    create()
-                    show()
-                }
-                true
-            }
-
             val themeColorPreference = findPreference<Preference>("appearance_preference")
             themeColorPreference?.setOnPreferenceClickListener {
                 IntentUtil.startActivity(requireContext(), AppearanceSettingsActivity::class.java)
@@ -157,6 +123,52 @@ class SettingsActivity : AppCompatActivity() {
                 IntentUtil.startActivity(requireContext(), WebDavBackupActivity::class.java)
                 true
             }
+
+            val textLineSpacingPreference =
+                findPreference<Preference>("text_line_spacing_preference")
+            val textLineSpacingValue =
+                textLineSpacingValue(sharedPreferences)
+            textLineSpacingPreference?.summary = "$textLineSpacingValue"
+            textLineSpacingPreference?.setOnPreferenceClickListener {
+                MaterialAlertDialogBuilder(requireContext()).apply {
+                    val updateTextLineSpacingLayout =
+                        layoutInflater.inflate(R.layout.update_text_line_spacing_layout, null)
+                    val tvText =
+                        updateTextLineSpacingLayout.findViewById<MaterialTextView>(R.id.tv_text)
+                    val slider = updateTextLineSpacingLayout.findViewById<Slider>(R.id.slider)
+                    val newLineSpacingValue =
+                        textLineSpacingValue(sharedPreferences)
+                    tvText.setLineSpacing(newLineSpacingValue, 1F)
+                    slider.value = newLineSpacingValue
+                    var newValue = 0F
+                    slider.addOnChangeListener { _, value, fromUser ->
+                        if (fromUser) {
+                            tvText.setLineSpacing(value, 1F)
+                            newValue = value
+                        }
+                    }
+                    setTitle(getString(R.string.text_line_spacing))
+                    setView(updateTextLineSpacingLayout)
+                    setNeutralButton(getString(R.string.cancel), null)
+                    setPositiveButton(getString(R.string.sure)) { _, _ ->
+                        sharedPreferences.edit {
+                            putFloat("text_line_spacing_preference", newValue)
+                            apply()
+                        }
+                        textLineSpacingPreference.summary =
+                            "${textLineSpacingValue(sharedPreferences)}"
+                    }
+                    create()
+                    show()
+                }
+                true
+            }
+        }
+
+        private fun textLineSpacingValue(sharedPreferences: SharedPreferences): Float {
+            val textLineSpacingValue =
+                sharedPreferences.getFloat("text_line_spacing_preference", 0F)
+            return textLineSpacingValue
         }
     }
 }

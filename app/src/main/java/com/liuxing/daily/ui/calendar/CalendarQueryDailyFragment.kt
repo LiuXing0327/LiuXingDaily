@@ -21,6 +21,7 @@ import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import com.liuxing.daily.viewmodel.MainViewModel
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
@@ -41,6 +42,8 @@ class CalendarQueryDailyFragment : Fragment() {
     private var dailyList: List<DailyEntity> = ArrayList()
     private lateinit var calendarToDailyAdapter: CalendarToDailyAdapter
     private lateinit var dailyViewModel: DailyViewModel
+    private lateinit var mainViewModel: MainViewModel
+    private var yearMonthDay: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,7 +100,8 @@ class CalendarQueryDailyFragment : Fragment() {
      * 初始化视图模型
      */
     private fun initViewModel() {
-        dailyViewModel = ViewModelProvider(this)[DailyViewModel::class.java]
+        dailyViewModel = ViewModelProvider(requireActivity())[DailyViewModel::class.java]
+        mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
     }
 
     /**
@@ -133,10 +137,12 @@ class CalendarQueryDailyFragment : Fragment() {
                     calendarToDailyAdapter.setDailyList(
                         requireContext(),
                         dailyList,
-                        DateUtil.getDateString(
-                            0,
-                            Date(fragmentCalendarQueryDailyBinding.calendarView.date)
-                        ).substring(0, 10), dailyViewModel, viewLifecycleOwner
+                        yearMonthDay.ifEmpty {
+                            DateUtil.getDateString(
+                                0,
+                                Date(fragmentCalendarQueryDailyBinding.calendarView.date)
+                            ).substring(0, 10)
+                        }, dailyViewModel, viewLifecycleOwner
                     )
 
                 }
@@ -148,7 +154,12 @@ class CalendarQueryDailyFragment : Fragment() {
      */
     private fun followCalendarChangeDaily() {
         fragmentCalendarQueryDailyBinding.calendarView.setOnDateChangeListener { view, year, month, dayOfMonth ->
-            val yearMonthDay = String.format("%04d/%02d/%02d", year, month + 1, dayOfMonth)
+            val dateFormat =
+                if (getString(R.string.daily) == "日记") "%04d/%02d/%02d" else "%04d-%02d-%02d"
+            yearMonthDay = String.format(dateFormat, year, month + 1, dayOfMonth)
+
+            mainViewModel.setYearMonthDay(yearMonthDay)
+
             calendarToDailyAdapter.setDailyList(
                 requireContext(),
                 dailyList,
