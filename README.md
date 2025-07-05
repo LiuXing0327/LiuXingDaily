@@ -5,7 +5,7 @@
 
 ## Screenshot
 <div>
-<img src="screenshot/1.1/V1.1Screenshot_20241007_211704.png" width="30%"/>
+<img src="screenshot/2.6/V2.6Screenshot_20250705_102436.png" width="30%"/>
  <img src="screenshot/1.1/V1.1Screenshot_20241007_211750.png" width="30%"/>
  <img src="screenshot/2.4.1/V2.4.1Screenshot_20250509_172452.png" width="30%"/>
 </div>
@@ -23,9 +23,8 @@
 </div>
 
 <div>
- <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (1).png" width="30%"/>
- <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (2).png" width="30%"/>
- <img src="screenshot/2.6/V2.6Screenshot_20250705_102436.png" width="30%"/>
+ <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (1).png" width="45%"/>
+ <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (2).png" width="45%"/>
 </div>
 
 ## License
