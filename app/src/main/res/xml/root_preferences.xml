@@ -49,6 +49,9 @@
         <com.liuxing.daily.view.DeleteToRecyclerBinSwitchPreference
             app:icon="@drawable/outline_recycling_preference_24"/>
 
+        <com.liuxing.daily.view.TurnOffDailyImageDisplaySwitchPreference
+            app:icon="@drawable/outline_hide_image_24"/>
+
         <com.liuxing.daily.view.AutoDeleteRecyclerBinDailyPreference
             app:icon="@drawable/outline_auto_delete_preference_24"/>
 
@@ -56,6 +59,11 @@
             app:key="text_line_spacing_preference"
             app:icon="@drawable/outline_vertical_distribute_24"
             app:title="@string/text_line_spacing" />
+
+        <Preference
+            app:key="text_font_size_preference"
+            app:icon="@drawable/outline_text_increase_24"
+            app:title="@string/text_font_size"/>
 
     </PreferenceCategory>
 
@@ -69,6 +77,12 @@
             app:key="appearance_preference"
             app:title="@string/appearance"/>
 
+        <Preference
+            app:key="background_image_preference"
+            app:icon="@drawable/outline_image_24"
+            app:title="@string/wallpaper"/>
+
+
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -80,6 +94,18 @@
             app:key="webdav_backup_preference"
             app:iconSpaceReserved="true"
             app:title="@string/webdav_backup"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="true"
+        app:title="@string/safe">
+
+        <Preference
+            app:key="app_lock_preference"
+            app:icon="@drawable/outline_lock_24"
+            app:iconSpaceReserved="true"
+            app:title="@string/app_lock" />
 
     </PreferenceCategory>
 

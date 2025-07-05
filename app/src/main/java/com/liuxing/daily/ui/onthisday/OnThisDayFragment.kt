@@ -7,11 +7,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.liuxing.daily.adapter.OnThisDayAdapter
 import com.liuxing.daily.databinding.FragmentOnThisDayBinding
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
@@ -136,5 +138,25 @@ class OnThisDayFragment : Fragment() {
             }
 
         })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val sharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val headerYearMonth = sharedPreferences.getBoolean(
+            "switch_preference_header_display",
+            true
+        )
+        val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
+        val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY,0.15F)
+        val imageDisplay =
+            sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
+        if (headerYearMonth != onThisDayAdapter.headerYearMonth
+            || textSize != onThisDayAdapter.textSize || alpha != onThisDayAdapter.alpha
+            || imageDisplay != onThisDayAdapter.imageDisplay
+        ) {
+            loadDailyData()
+        }
     }
 }

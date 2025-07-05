@@ -3,6 +3,7 @@ package com.liuxing.daily.ui.main
 import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -48,6 +49,7 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
 import com.liuxing.daily.ui.label.DailyLabelActivity
+import com.liuxing.daily.ui.lock.UnlockActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
@@ -55,6 +57,7 @@ import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -172,6 +175,12 @@ class MainActivity : AppCompatActivity() {
         insertAutoDaily()
         initView()
         initData()
+        val appPassword = sharedPreferences?.getString("app_password", "")
+        val lock = intent.getBooleanExtra("lock", true)
+        if (!appPassword.isNullOrEmpty() && lock) {
+            IntentUtil.startActivity(this, UnlockActivity::class.java)
+            finish()
+        }
     }
 
     /**
@@ -1483,10 +1492,19 @@ class MainActivity : AppCompatActivity() {
             "switch_preference_header_display",
             true
         )
+        val textFontSize = sharedPreferences!!.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
         if (dailySearchAdapter.headerYearMonth != headerYearMonth
+            || dailySearchAdapter.textSize != textFontSize
         ) {
             loadSearchDailyData("")
         }
+
+        if (File(ConstUtil.WALLPAPER_PATH).exists()) {
+            val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+            activityMainBinding.wallpaper.setImageBitmap(bitmap)
+        }
+        val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+        activityMainBinding.wallpaper.alpha = wallpaperAlpha
     }
 
     companion object {
@@ -1679,7 +1697,7 @@ class MainActivity : AppCompatActivity() {
                                 val dailyImages =
                                     dailyViewModel.queryDailyImageByUuidToList(it.dailyUUID!!)
                                 dailyImages.forEach { dailyImageEntity ->
-                                    if (dailyImageEntity.imagePath == path) {
+                                    if (dailyImageEntity.imagePath == path || path == ConstUtil.WALLPAPER_PATH) {
                                         contentExistsInDatabase = true
                                         return@forEach
                                     }

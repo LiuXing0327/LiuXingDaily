@@ -2,6 +2,7 @@ package com.liuxing.daily.adapter
 
 import android.app.Activity
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.text.SpannableString
 import android.text.SpannedString
@@ -43,6 +44,8 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
     private var searchQuery = ""
+    private lateinit var sharedPreferences:SharedPreferences
+    var textSize = 16F
 
     fun setDailyList(
         context: Context,
@@ -51,7 +54,7 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         dailyViewModel: DailyViewModel,
         viewLifecycleOwner: LifecycleOwner
     ) {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
 
         this.dailyViewModel = dailyViewModel
@@ -175,6 +178,9 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             } else {
                 View.VISIBLE
             }
+            textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY,16F)
+            holder.tvTitle.textSize = textSize + 4
+            holder.tvContent.textSize = textSize
             if (dailyEntity.singlePassword.isNullOrEmpty()) {
                 holder.tvTitle.text = dailyEntity.title
                 holder.tvContent.text = replaceTag(dailyEntity.content!!)

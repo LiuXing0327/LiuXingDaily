@@ -18,6 +18,7 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -178,7 +179,13 @@ class CalendarQueryDailyFragment : Fragment() {
             "switch_preference_header_display",
             true
         )
-        if (calendarToDailyAdapter.headerYearMonth != headerYearMonth
+        val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
+        val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY,0.15F)
+        val imageDisplay =
+            sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
+        if (calendarToDailyAdapter.headerYearMonth != headerYearMonth || calendarToDailyAdapter.textSize != textSize
+            || alpha != calendarToDailyAdapter.alpha
+            || imageDisplay != calendarToDailyAdapter.imageDisplay
         ) {
             loadDailyData()
         }

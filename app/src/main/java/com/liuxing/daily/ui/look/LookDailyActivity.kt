@@ -3,6 +3,7 @@ package com.liuxing.daily.ui.look
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -22,6 +23,7 @@ import com.liuxing.daily.adapter.LookDailyPagerAdapter
 import com.liuxing.daily.databinding.ActivityLookDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.ui.edit.EditDailyActivity
+import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.HashUtil
@@ -30,6 +32,7 @@ import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import java.io.File
 import java.util.Date
 
 
@@ -462,6 +465,16 @@ class LookDailyActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         currentIndex = lookDailyBinding.viewPagerDaily.currentItem
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (File(ConstUtil.WALLPAPER_PATH).exists()) {
+            val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+            lookDailyBinding.wallpaper.setImageBitmap(bitmap)
+        }
+        val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+        lookDailyBinding.wallpaper.alpha = wallpaperAlpha
     }
 
     /**

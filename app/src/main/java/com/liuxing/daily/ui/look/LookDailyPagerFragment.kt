@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
@@ -200,6 +201,9 @@ class LookDailyPagerFragment : Fragment() {
      * 设置日记内容
      */
     private fun setDailyContent() {
+        val textSize = sharedPreferences!!.getFloat("text_font_size_preference", 16F)
+        binding.tvTitle.textSize = textSize + 4
+        dailyTextView.textSize = textSize
         if (!singlePassword.isNullOrEmpty()) {
             binding.tvTitle.text = "***"
             dailyTextView.text = "***"
@@ -302,13 +306,44 @@ class LookDailyPagerFragment : Fragment() {
      * 设置日记背景颜色
      */
     private fun setDailyBackgroundColor() {
+        val alpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         val cardBackgroundColor = when (backgroundColorIndex) {
-            1 -> ContextCompat.getColor(requireContext(), R.color.color_2)
-            2 -> ContextCompat.getColor(requireContext(), R.color.color_3)
-            3 -> ContextCompat.getColor(requireContext(), R.color.color_4)
-            4 -> ContextCompat.getColor(requireContext(), R.color.color_5)
-            5 -> ContextCompat.getColor(requireContext(), R.color.color_6)
-            6 -> ContextCompat.getColor(requireContext(), R.color.color_7)
+            1 -> ColorUtils.setAlphaComponent(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_2
+                ), (alpha * 255).toInt()
+            )
+            2 -> ColorUtils.setAlphaComponent(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_3
+                ), (alpha * 255).toInt()
+            )
+            3 -> ColorUtils.setAlphaComponent(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_4
+                ), (alpha * 255).toInt()
+            )
+            4 -> ColorUtils.setAlphaComponent(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_5
+                ), (alpha * 255).toInt()
+            )
+            5 -> ColorUtils.setAlphaComponent(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_6
+                ), (alpha * 255).toInt()
+            )
+            6 -> ColorUtils.setAlphaComponent(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_7
+                ), (alpha * 255).toInt()
+            )
             else -> android.R.color.transparent
         }
         binding.cardView.setCardBackgroundColor(cardBackgroundColor)

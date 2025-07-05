@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
 import androidx.preference.PreferenceManager
-import com.google.android.material.color.DynamicColors
 import com.liuxing.daily.util.ThemeUtil
 
 /**

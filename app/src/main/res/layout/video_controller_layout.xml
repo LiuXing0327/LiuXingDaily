@@ -10,26 +10,27 @@
         android:layout_gravity="bottom"
         app:cardCornerRadius="@dimen/dp_20"
         android:layout_margin="16dp"
+        app:cardBackgroundColor="?attr/colorOnSurface"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorSurface"
             android:clipToPadding="false"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="8dp">
 
-            <ImageButton
-                android:id="@+id/control_iv_bt"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/control_bt"
+                style="?attr/materialIconButtonFilledStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:src="@drawable/baseline_pause_24"
-                app:backgroundTint="?attr/colorSurface"
-                app:iconTint="?attr/colorOnSurface" />
+                android:gravity="center"
+                app:iconGravity="textStart"
+                app:icon="@drawable/baseline_pause_24"/>
 
             <com.google.android.material.slider.Slider
                 android:id="@+id/slider"

@@ -1,11 +1,13 @@
 package com.liuxing.daily.adapter
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.LifecycleOwner
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
@@ -33,6 +35,10 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private lateinit var viewLifecycleOwner: LifecycleOwner
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
+    private lateinit var sharedPreferences: SharedPreferences
+    var textSize = 16F
+    var alpha = 0.15f
+    var imageDisplay = false
 
     fun setDailyList(
         context: Context,
@@ -40,7 +46,7 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         dailyViewModel: DailyViewModel,
         viewLifecycleOwner: LifecycleOwner
     ) {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
 
         this.dailyViewModel = dailyViewModel
@@ -144,6 +150,9 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             } else {
                 View.VISIBLE
             }
+            textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
+            holder.tvTitle.textSize = textSize + 4
+            holder.tvContent.textSize = textSize
             if (dailyEntity.singlePassword == "" || dailyEntity.singlePassword == null) {
                 holder.tvTitle.text = dailyEntity.title
                 holder.tvContent.text = TextUtil.replaceTag(dailyEntity.content!!)
@@ -178,7 +187,9 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     )
                     View.VISIBLE
                 }
-            if (dailyEntity.dailyUUID != null) {
+            imageDisplay =
+                sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
+            if (dailyEntity.dailyUUID != null && !imageDisplay) {
                 val queryDailyImageByUuid =
                     dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
                 queryDailyImageByUuid.observe(
@@ -253,10 +264,16 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
      */
     private fun setBackgroundColor(dailyEntity: DailyEntity, holder: DailyViewHolder) {
         val backgroundColorIndex = dailyEntity.backgroundColorIndex
+        val baseColor = ContextCompat.getColor(
+            holder.cardView.context,
+            ConstUtil.backgroundColorList[backgroundColorIndex!!]
+        )
+        val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+        this.alpha = alpha
         holder.cardView.setCardBackgroundColor(
-            ContextCompat.getColor(
-                holder.cardView.context,
-                ConstUtil.backgroundColorList[backgroundColorIndex!!]
+            if (backgroundColorIndex == 0) baseColor else ColorUtils.setAlphaComponent(
+                baseColor,
+                (alpha * 255).toInt()
             )
         )
     }

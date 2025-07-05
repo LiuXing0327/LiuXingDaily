@@ -106,7 +106,7 @@ class LookDailyVideoActivity : AppCompatActivity() {
                 }
             }
 
-            playerStatus.observe(this@LookDailyVideoActivity) {
+/*            playerStatus.observe(this@LookDailyVideoActivity) {
                 when (it) {
                     PlayerStatus.Paused -> lookDailyVideoBinding.videoController.controlIvBt.setImageDrawable(
                         ContextCompat.getDrawable(
@@ -120,6 +120,19 @@ class LookDailyVideoActivity : AppCompatActivity() {
                             this@LookDailyVideoActivity,
                             R.drawable.baseline_pause_24
                         )
+                    )
+                }
+            }*/
+            playerStatus.observe(this@LookDailyVideoActivity) {
+                when (it) {
+                    PlayerStatus.Paused -> lookDailyVideoBinding.videoController.controlBt.icon =  ContextCompat.getDrawable(
+                        this@LookDailyVideoActivity,
+                        R.drawable.baseline_play_arrow_24
+                    )
+
+                    else -> lookDailyVideoBinding.videoController.controlBt.icon =  ContextCompat.getDrawable(
+                        this@LookDailyVideoActivity,
+                        R.drawable.baseline_pause_24
                     )
                 }
             }
@@ -299,7 +312,7 @@ class LookDailyVideoActivity : AppCompatActivity() {
      * 控制视频
      */
     private fun controllerVideo() {
-        lookDailyVideoBinding.videoController.controlIvBt.setOnClickListener {
+        lookDailyVideoBinding.videoController.controlBt.setOnClickListener {
             dailyVideoPlayerModel.togglePlayerStatus()
             updatePlayerProgress()
         }

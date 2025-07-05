@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.liuxing.daily"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 15
-        versionName = "2.5"
+        versionCode = 16
+        versionName = "2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +38,9 @@ android {
     }
     viewBinding {
         enable = true
+    }
+    buildFeatures {
+        viewBinding = true
     }
 }
 

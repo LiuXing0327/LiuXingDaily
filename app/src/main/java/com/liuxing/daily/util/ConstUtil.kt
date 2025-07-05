@@ -58,4 +58,15 @@ object ConstUtil {
     val imageRegex = Regex("<img\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
     val videoRegex = Regex("<video\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
     val audioRegex = Regex("<audio\\s+src=\"(.*?)\"\\s*/?>", RegexOption.IGNORE_CASE)
+
+    // 字体大小键
+    const val TEXT_SIZE_KEY = "text_font_size_preference"
+
+    // 壁纸路径
+    const val WALLPAPER_PATH = "/storage/emulated/0/Android/data/com.liuxing.daily/files/Wallpaper/wallpaper.jpg"
+    // 壁纸透明度键
+    const val WALLPAPER_ALPHA_KEY = "background_image_alpha"
+
+    // 日记列表图片显示键
+    const val DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY = "switch_preference_image_display"
 }
