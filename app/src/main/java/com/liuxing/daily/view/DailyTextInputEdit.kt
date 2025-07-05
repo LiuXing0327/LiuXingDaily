@@ -35,6 +35,8 @@ class DailyTextInputEdit : TextInputEditText {
     private val placeholder = "&"
     private val context: Context
     private var isImageInserted = false
+    private var isVideoInserted = false
+    private var isAudioInserted = false
     private var imagePathList: MutableSet<String> = mutableSetOf()
     private var formattedText: String = ""
     private var imageInsertionListener: ImageInsertionListener? = null
@@ -240,7 +242,6 @@ class DailyTextInputEdit : TextInputEditText {
      */
     fun insertImages(imagePathList: List<String?>) {
         val editable = text ?: return
-        var isImageAddedThisTime = false
 
         imagePathList.forEach { path ->
             path?.let {
@@ -250,7 +251,6 @@ class DailyTextInputEdit : TextInputEditText {
                     // 检查文本中是否已经插入该图片占位符，避免重复插入
                     val sequence = createImageSpannable(it)
                     if (!editable.contains(sequence)) {
-                        if (!isImageAddedThisTime) {
                             if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
                                 editable.insert(selectionStart, "\n\n")
                             }
@@ -261,15 +261,14 @@ class DailyTextInputEdit : TextInputEditText {
                             } else {
                                 editable.append("\n")
                             }
-
-                            isImageInserted = true
-                            isImageAddedThisTime = true
-                            setSelection(editable.length)
-                            imageInsertionListener?.onImageInserted()
-                        }
+                        isImageInserted = true
                     }
                 }
             }
+        }
+        if(isImageInserted) {
+            setSelection(editable.length)
+            imageInsertionListener?.onImageInserted()
         }
     }
 
@@ -288,6 +287,8 @@ class DailyTextInputEdit : TextInputEditText {
 
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
             isImageInserted = false
+            isVideoInserted = false
+            isAudioInserted = false
             if (s.length < previousText!!.length) {
                 val deletedString = previousText!!.substring(start, start + before)
                 val removeImagePathList = imagePathList.filter { deletedString.contains(it) }
@@ -309,7 +310,7 @@ class DailyTextInputEdit : TextInputEditText {
         }
 
         override fun afterTextChanged(s: Editable) {
-            if (isImageInserted) return
+            if (isImageInserted || isVideoInserted || isAudioInserted) return
             invalidate()
             requestLayout()
             updateFormattedText(s)
@@ -349,7 +350,6 @@ class DailyTextInputEdit : TextInputEditText {
      * @return 字符
      */
     private fun createImageSpannable(imagePath: String): CharSequence {
-        Log.d("TAG", "createImageSpannable: ")
         val imgTag = "<img src=\"$imagePath\"/>"
         val bitmap = createImageThumbnail(imagePath) ?: return imgTag
         val originalWidth = bitmap.width
@@ -476,11 +476,14 @@ class DailyTextInputEdit : TextInputEditText {
                         } else {
                             editable.append("\n")
                         }
-                        setSelection(text.toString().length)
-                        audioInsertionListener?.onAudioInserted()
+                        isAudioInserted = true
                     }
                 }
             }
+        }
+        if(isAudioInserted){
+            setSelection(text.toString().length)
+            audioInsertionListener?.onAudioInserted()
         }
     }
 
@@ -514,11 +517,14 @@ class DailyTextInputEdit : TextInputEditText {
                         } else {
                             editable.append("\n")
                         }
-                        setSelection(text.toString().length)
-                        videoInsertionListener?.onVideoInserted()
+                        isVideoInserted = true
                     }
                 }
             }
+        }
+        if(isVideoInserted){
+            setSelection(text.toString().length)
+            videoInsertionListener?.onVideoInserted()
         }
     }
 

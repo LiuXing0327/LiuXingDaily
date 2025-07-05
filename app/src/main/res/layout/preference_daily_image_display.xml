@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="@null"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/turn_off_daily_image_display_preference"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+        android:paddingLeft="?android:attr/listPreferredItemPaddingLeft"
+        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+        android:paddingRight="?android:attr/listPreferredItemPaddingRight">
+
+        <include layout="@layout/image_frame" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:ellipsize="marquee"
+        android:checked="true"
+        android:clickable="false"
+        android:focusable="false"
+        android:layout_weight="1"
+        android:id="@+id/switch_daily_image_display"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:singleLine="false"
+        android:text="@string/turn_off_the_journal_list_image_display" />
+
+    </LinearLayout>
+
+</LinearLayout>

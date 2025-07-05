@@ -149,4 +149,12 @@
     <string name="line_spacing_description">First line\nSecond line\nThird line</string>
     <string name="text_line_spacing">Text line spacing</string>
     <string name="on_this_day">On this day</string>
+    <string name="safe">Safe</string>
+    <string name="app_lock">App lock</string>
+    <string name="enabled">Enabled</string>
+    <string name="text_font_size">Text font size</string>
+    <string name="background">Background</string>
+    <string name="wallpaper">Wallpaper</string>
+    <string name="turn_off_the_journal_list_image_display">Turn off the journal list image display</string>
+    <string name="for_a_better_experience_do_you_want_to_turn_off_the_diary_list_image_display">For a better experience, do you want to turn off the diary list image display?</string>
 </resources>

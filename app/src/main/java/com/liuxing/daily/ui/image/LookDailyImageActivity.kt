@@ -4,14 +4,21 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.view.Window
+import android.view.WindowInsets
 import android.view.WindowManager
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.fragment.app.FragmentContainerView
 import androidx.viewpager2.widget.ViewPager2
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.LookImageAdapter
@@ -116,6 +123,7 @@ class LookDailyImageActivity : AppCompatActivity() {
             }
         }
     }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_look_image, menu)
         return super.onCreateOptionsMenu(menu)

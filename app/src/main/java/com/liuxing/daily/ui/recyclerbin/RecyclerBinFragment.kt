@@ -14,6 +14,7 @@ import com.liuxing.daily.adapter.RecyclerBinAdapter
 import com.liuxing.daily.databinding.FragmentRecyclerBinBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
@@ -211,12 +212,15 @@ class RecyclerBinFragment : Fragment() {
             "switch_preference_header_display",
             true
         )
-        if (headerYearMonth != recyclerBinAdapter.headerYearMonth
-        ) {
-            setRecyclerDaily()
-        }
+        val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
+        val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         val autoDeleteIndex = sharedPreferences.getInt("auto_delete_recycler_bin_daily", 7)
-        if(autoDeleteIndex != recyclerBinAdapter.autoDeleteDays){
+        val imageDisplay =
+            sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
+        if (headerYearMonth != recyclerBinAdapter.headerYearMonth || textSize != recyclerBinAdapter.textSize
+            || alpha != recyclerBinAdapter.alpha || autoDeleteIndex != recyclerBinAdapter.autoDeleteDays
+            || imageDisplay != recyclerBinAdapter.imageDisplay
+        ) {
             setRecyclerDaily()
         }
     }
