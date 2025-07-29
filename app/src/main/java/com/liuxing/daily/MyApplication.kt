@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
+import android.util.Log
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.util.ThemeUtil
 

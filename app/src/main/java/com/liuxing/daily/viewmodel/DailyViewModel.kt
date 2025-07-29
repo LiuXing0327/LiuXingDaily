@@ -10,6 +10,7 @@ import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyVideoEntity
 import com.liuxing.daily.repository.DailyRepository
+import com.liuxing.daily.util.FileUtil
 import kotlinx.coroutines.launch
 
 class DailyViewModel(application: Application) : AndroidViewModel(application) {
@@ -129,4 +130,17 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun queryAllDailyImageEntity(): List<DailyImageEntity> = dailyRepository.queryAllDailyImageEntity()
+
+    suspend fun getImagePathForUuids(uuids: List<String>): Map<String, String> {
+        val result = mutableMapOf<String, String>()
+        uuids.forEach { uuid ->
+            val images = dailyRepository.queryDailyImageByUuidToList(uuid)
+            val image = images.firstOrNull()
+            if (image != null && FileUtil().checkFileExists(image.imagePath!!)) {
+                result[uuid] = image.imagePath!!
+            }
+        }
+
+        return result
+    }
 }

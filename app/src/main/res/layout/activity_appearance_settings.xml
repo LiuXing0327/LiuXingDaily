@@ -26,12 +26,10 @@
         android:layout_margin="@dimen/dp_8"
         app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior">
 
-        <LinearLayout
+        <com.google.android.material.overflow.OverflowLinearLayout
             android:gravity="center"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:orientation="horizontal">
+            android:layout_height="wrap_content">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/floating_toolbar_button_light"
@@ -39,7 +37,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="true"
-                android:contentDescription="@string/about"
+                android:contentDescription="@string/light_mode"
                 app:icon="@drawable/outline_light_mode_24" />
 
             <com.google.android.material.button.MaterialButton
@@ -48,7 +46,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="true"
-                android:contentDescription="@string/about"
+                android:contentDescription="@string/night_node"
                 app:icon="@drawable/outline_mode_night_24" />
 
             <com.google.android.material.button.MaterialButton
@@ -57,11 +55,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="true"
-                android:contentDescription="@string/about"
+                android:contentDescription="@string/follow_the_system"
                 app:icon="@drawable/outline_phone_android_24" />
 
-        </LinearLayout>
-
+        </com.google.android.material.overflow.OverflowLinearLayout>
     </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
 
     <androidx.recyclerview.widget.RecyclerView

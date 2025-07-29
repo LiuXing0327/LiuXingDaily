@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.draw.DrawImageActivity">
+
+    <com.liuxing.daily.view.DrawView
+        android:id="@+id/draw_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_gravity="center|bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
+            android:visibility="gone"
+            android:id="@+id/floatingToolbarLayout2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="10dp"
+            app:layout_constraintBottom_toTopOf="@+id/floatingToolbarLayout">
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/stroke_width_slider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="1"
+                android:valueTo="50"
+                android:stepSize="1"
+                android:value="10" />
+        </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
+
+        <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
+            android:id="@+id/floatingToolbarLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:layout_marginBottom="10dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <com.google.android.material.overflow.OverflowLinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_back"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/back"
+                    app:icon="@drawable/outline_keyboard_backspace_24"
+                    app:layout_overflowIcon="@drawable/outline_keyboard_backspace_24"
+                    app:layout_overflowText="@string/back" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_color"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/color"
+                    app:icon="@drawable/outline_format_color_fill_24"
+                    app:layout_overflowIcon="@drawable/outline_format_color_fill_24"
+                    app:layout_overflowText="@string/color" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_width"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/width"
+                    app:icon="@drawable/outline_brush_24"
+                    app:layout_overflowIcon="@drawable/outline_brush_24"
+                    app:layout_overflowText="@string/width" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_eraser"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/eraser"
+                    app:icon="@drawable/ink_eraser_24"
+                    app:layout_overflowIcon="@drawable/ink_eraser_24"
+                    app:layout_overflowText="@string/eraser" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_palette"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/background"
+                    app:icon="@drawable/outline_palette_preference_color_primary_24"
+                    app:layout_overflowIcon="@drawable/outline_palette_preference_color_primary_24"
+                    app:layout_overflowText="@string/background" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_undo"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/undo"
+                    app:icon="@drawable/baseline_undo_24"
+                    app:layout_overflowIcon="@drawable/baseline_undo_24"
+                    app:layout_overflowText="@string/undo" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_redo"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/redo"
+                    app:icon="@drawable/baseline_redo_24"
+                    app:layout_overflowIcon="@drawable/baseline_redo_24"
+                    app:layout_overflowText="@string/redo" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/floating_toolbar_button_save"
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:contentDescription="@string/save"
+                    app:icon="@drawable/baseline_done_color_primary_24"
+                    app:layout_overflowIcon="@drawable/baseline_done_color_primary_24"
+                    app:layout_overflowText="@string/save" />
+
+            </com.google.android.material.overflow.OverflowLinearLayout>
+
+        </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>

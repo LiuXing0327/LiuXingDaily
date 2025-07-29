@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -13,10 +14,14 @@ import com.liuxing.daily.R
 import com.liuxing.daily.adapter.RecyclerBinAdapter
 import com.liuxing.daily.databinding.FragmentRecyclerBinBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
+import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.launch
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -28,7 +33,7 @@ private const val ARG_PARAM2 = "param2"
  * Use the [RecyclerBinFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class RecyclerBinFragment : Fragment() {
+class RecyclerBinFragment : Fragment(), DailyLikeFragment {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
@@ -36,6 +41,7 @@ class RecyclerBinFragment : Fragment() {
     private lateinit var recyclerBinAdapter: RecyclerBinAdapter
     private lateinit var dailyViewModel: DailyViewModel
     private var dailyList: List<DailyEntity> = arrayListOf()
+    private lateinit var mainActivity: MainActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +91,7 @@ class RecyclerBinFragment : Fragment() {
     private fun initData() {
         initViewModel()
         initRecyclerBinView()
+        initMainActivity()
     }
 
     /**
@@ -92,6 +99,10 @@ class RecyclerBinFragment : Fragment() {
      */
     private fun initViewModel() {
         dailyViewModel = ViewModelProvider(this)[DailyViewModel::class.java]
+    }
+
+    private fun initMainActivity() {
+        mainActivity = (requireActivity() as MainActivity)
     }
 
     /**
@@ -104,6 +115,21 @@ class RecyclerBinFragment : Fragment() {
         recyclerBinBinding.recyclerBinView.adapter = recyclerBinAdapter
         setRecyclerDaily()
         setRecyclerBinOnItemClick()
+        recyclerBinAdapter.setOnItemSelectedStateChangedListener(object :
+            OnItemSelectedStateChangedListener {
+            override fun onSelectionChanged(position: Int) {
+                val selectedItemsCount = recyclerBinAdapter.getSelectedItemsCount()
+                if (selectedItemsCount > 0 && recyclerBinAdapter.selectMode) {
+                    mainActivity.expandContextualToolbar()
+                    mainActivity.setUpContextualToolbarTitle("$selectedItemsCount")
+                    mainActivity.setUpContextualToolbarPinnedVisibility()
+                } else {
+                    recyclerBinAdapter.selectMode = false
+                    mainActivity.collapseContextualToolbar()
+                }
+            }
+
+        })
     }
 
     /**
@@ -111,13 +137,16 @@ class RecyclerBinFragment : Fragment() {
      */
     private fun setRecyclerDaily() {
         dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { recyclerBinDailyList ->
-            dailyList = recyclerBinDailyList
-            recyclerBinAdapter.setDailyList(
-                requireContext(),
-                recyclerBinDailyList,
-                dailyViewModel,
-                viewLifecycleOwner
-            )
+            lifecycleScope.launch {
+                dailyList = recyclerBinDailyList
+                val uuids = dailyList.mapNotNull { it.dailyUUID }
+                val imageMap = dailyViewModel.getImagePathForUuids(uuids)
+                recyclerBinAdapter.setDailyList(
+                    requireContext(),
+                    recyclerBinDailyList,
+                    imageMap
+                )
+            }
         }
     }
 
@@ -224,4 +253,12 @@ class RecyclerBinFragment : Fragment() {
             setRecyclerDaily()
         }
     }
+
+    fun getAdapter(): RecyclerBinAdapter = recyclerBinAdapter
+    override fun getDailyList(): List<DailyEntity> = dailyList
+    override fun getSelectedItems(): List<String> = recyclerBinAdapter.getSelectedItems()
+    override fun clearSection() = recyclerBinAdapter.clearSection()
+    override fun selectAllItems() = recyclerBinAdapter.selectAllItems()
+    override fun getSelectMode(): Boolean = recyclerBinAdapter.selectMode
+    override fun isPinnedDisplay(): Boolean = false
 }

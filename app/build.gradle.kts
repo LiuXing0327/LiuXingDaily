@@ -12,9 +12,9 @@ android {
     defaultConfig {
         applicationId = "com.liuxing.daily"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 16
-        versionName = "2.6"
+        targetSdk = 36
+        versionCode = 17
+        versionName = "2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -84,4 +84,7 @@ dependencies {
 
     // zip4j
     implementation(libs.zip4j)
+
+    // ColorPickerView
+    implementation(libs.colorpickerview)
 }

@@ -1,20 +1,12 @@
 package com.liuxing.daily.adapter
 
-import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.Color
-import android.text.SpannableString
-import android.text.SpannedString
-import android.text.style.ForegroundColorSpan
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -22,7 +14,6 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
-import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.util.ConstUtil
@@ -30,17 +21,14 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.TextUtil.replaceTag
-import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
 
 class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
     var headerYearMonth: Boolean = true
-    private lateinit var dailyViewModel: DailyViewModel
-    private lateinit var viewLifecycleOwner: LifecycleOwner
+    private var imageMap: Map<String, String> = emptyMap()
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
     private var searchQuery = ""
@@ -51,14 +39,12 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         context: Context,
         dailyList: List<DailyEntity>,
         searchQuery: String,
-        dailyViewModel: DailyViewModel,
-        viewLifecycleOwner: LifecycleOwner
+        imageMap: Map<String, String>
     ) {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
 
-        this.dailyViewModel = dailyViewModel
-        this.viewLifecycleOwner = viewLifecycleOwner
+        this.imageMap = imageMap
         this.searchQuery = searchQuery
 
         // 过滤被回收的数据
@@ -214,36 +200,13 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     View.VISIBLE
                 }
             setBackgroundColor(dailyEntity, holder)
-            if(dailyEntity.dailyUUID != null){
-                val queryDailyImageByUuid =
-                    dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
-                queryDailyImageByUuid.observe(
-                    viewLifecycleOwner,
-                    object : Observer<List<DailyImageEntity>> {
-                        override fun onChanged(value: List<DailyImageEntity>) {
-                            when {
-                                value.isNotEmpty() -> {
-                                    when {
-                                        FileUtil().checkFileExists(value.first().imagePath!!) -> {
-                                            Glide.with(holder.imageView.context)
-                                                .load(value.first().imagePath)
-                                                .into(holder.imageView)
-                                            holder.imageView.visibility = View.VISIBLE
-                                        }
-                                        else -> {
-                                            dailyViewModel.deleteSelectPathImage(value.first().imagePath!!)
-                                            holder.imageView.visibility = View.GONE
-                                        }
-                                    }
-                                }
-                                else -> {
-                                    holder.imageView.visibility = View.GONE
-                                }
-                            }
-                        }
-
-                    })
-            }else{
+            val imagePath = imageMap[dailyEntity.dailyUUID]
+            if (!imagePath.isNullOrEmpty() && FileUtil().checkFileExists(imagePath)) {
+                Glide.with(holder.imageView.context)
+                    .load(imagePath)
+                    .into(holder.imageView)
+                holder.imageView.visibility = View.VISIBLE
+            } else {
                 holder.imageView.visibility = View.GONE
             }
 

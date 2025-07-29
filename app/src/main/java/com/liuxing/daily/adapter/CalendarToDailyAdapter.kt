@@ -8,8 +8,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -17,7 +15,6 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
-import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.util.ConstUtil
@@ -26,15 +23,14 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.TextUtil
-import com.liuxing.daily.viewmodel.DailyViewModel
+import java.io.File
 import java.util.Date
 
 class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
     var headerYearMonth: Boolean = true
-    private lateinit var dailyViewModel: DailyViewModel
-    private lateinit var viewLifecycleOwner: LifecycleOwner
+    private var imageMap: Map<String, String> = emptyMap()
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
     private lateinit var sharedPreferences:SharedPreferences
@@ -46,14 +42,12 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         context: Context,
         dailyList: List<DailyEntity>,
         dateString: String,
-        dailyViewModel: DailyViewModel,
-        viewLifecycleOwner: LifecycleOwner
+        imageMap: Map<String, String>
     ) {
          sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
 
-        this.dailyViewModel = dailyViewModel
-        this.viewLifecycleOwner = viewLifecycleOwner
+        this.imageMap = imageMap
 
         // 过滤被回收的数据
         val filteredList = dailyList.filter { !it.isDeleted }
@@ -171,32 +165,12 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 }
             imageDisplay =
                 sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
-            if (dailyEntity.dailyUUID != null && !imageDisplay) {
-                dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
-                    .observe(viewLifecycleOwner, object : Observer<List<DailyImageEntity>> {
-                        override fun onChanged(value: List<DailyImageEntity>) {
-                            when {
-                                value.isNotEmpty() -> {
-                                    when {
-                                        FileUtil().checkFileExists(value.first().imagePath!!) -> {
-                                            Glide.with(holder.imageView.context)
-                                                .load(value.first().imagePath)
-                                                .into(holder.imageView)
-                                            holder.imageView.visibility = View.VISIBLE
-                                        }
-                                        else -> {
-                                            dailyViewModel.deleteSelectPathImage(value.first().imagePath!!)
-                                            holder.imageView.visibility = View.GONE
-                                        }
-                                    }
-                                }
-                                else -> {
-                                    holder.imageView.visibility = View.GONE
-                                }
-                            }
-                        }
-
-                    })
+            val imagePath = imageMap[dailyEntity.dailyUUID]
+            if (!imageDisplay && !imagePath.isNullOrEmpty() && FileUtil().checkFileExists(imagePath)) {
+                Glide.with(holder.imageView.context)
+                    .load(imagePath)
+                    .into(holder.imageView)
+                holder.imageView.visibility = View.VISIBLE
             } else {
                 holder.imageView.visibility = View.GONE
             }
@@ -259,8 +233,10 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         )
         val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         this.alpha = alpha
+        val wallPagerExists = File(ConstUtil.WALLPAPER_PATH).exists()
+
         holder.cardView.setCardBackgroundColor(
-            if (backgroundColorIndex == 0) baseColor else ColorUtils.setAlphaComponent(
+            if (backgroundColorIndex == 0 || !wallPagerExists) baseColor else ColorUtils.setAlphaComponent(
                 baseColor,
                 (alpha * 255).toInt()
             )

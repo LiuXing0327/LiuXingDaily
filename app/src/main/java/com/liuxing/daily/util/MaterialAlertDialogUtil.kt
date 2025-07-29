@@ -1,6 +1,7 @@
 package com.liuxing.daily.util
 
 import android.content.Context
+import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -31,7 +32,7 @@ object MaterialAlertDialogUtil {
         onNegative: (() -> Unit)? = null,
         neutralText: String = "",
         onNeutral: (() -> Unit)? = null
-    ) {
+    ): AlertDialog {
         MaterialAlertDialogBuilder(context).apply {
             setMessage(message)
             setPositiveButton(positiveText) { _, _ ->
@@ -43,8 +44,9 @@ object MaterialAlertDialogUtil {
             setNeutralButton(neutralText) { _, _ ->
                 onNeutral?.invoke()
             }
-            create()
-            show()
+            val dialog = create()
+            dialog.show()
+            return dialog
         }
     }
 }

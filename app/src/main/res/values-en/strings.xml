@@ -157,4 +157,13 @@
     <string name="wallpaper">Wallpaper</string>
     <string name="turn_off_the_journal_list_image_display">Turn off the journal list image display</string>
     <string name="for_a_better_experience_do_you_want_to_turn_off_the_diary_list_image_display">For a better experience, do you want to turn off the diary list image display?</string>
+    <string name="color">Color</string>
+    <string name="drawing">Drawing</string>
+    <string name="back">Back</string>
+    <string name="eraser">Eraser</string>
+    <string name="width">Width</string>
+    <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
+    <string name="select_all">Select all</string>
+    <string name="confirm_pinned_journal_message">Are you sure you want to %1$s this journal entry?</string>
 </resources>

@@ -27,6 +27,7 @@ import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
@@ -253,6 +254,7 @@ class LookDailyPagerFragment : Fragment() {
                 }
             }
             dailyTextView.text = content
+
             binding.ivMood.visibility = moodIndex.let {
                 if (it == 0 || it == null) View.GONE else {
                     binding.ivMood.setImageDrawable(
@@ -307,43 +309,92 @@ class LookDailyPagerFragment : Fragment() {
      */
     private fun setDailyBackgroundColor() {
         val alpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+        val wallPagerExists = File(ConstUtil.WALLPAPER_PATH).exists()
         val cardBackgroundColor = when (backgroundColorIndex) {
-            1 -> ColorUtils.setAlphaComponent(
+            1 -> if (!wallPagerExists) {
                 ContextCompat.getColor(
                     requireContext(),
                     R.color.color_2
-                ), (alpha * 255).toInt()
-            )
-            2 -> ColorUtils.setAlphaComponent(
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_2
+                    ), (alpha * 255).toInt()
+                )
+            }
+
+            2 -> if (!wallPagerExists) {
                 ContextCompat.getColor(
                     requireContext(),
                     R.color.color_3
-                ), (alpha * 255).toInt()
-            )
-            3 -> ColorUtils.setAlphaComponent(
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_3
+                    ), (alpha * 255).toInt()
+                )
+            }
+
+            3 ->if (!wallPagerExists) {
                 ContextCompat.getColor(
                     requireContext(),
                     R.color.color_4
-                ), (alpha * 255).toInt()
-            )
-            4 -> ColorUtils.setAlphaComponent(
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_4
+                    ), (alpha * 255).toInt()
+                )
+            }
+
+            4 -> if (!wallPagerExists) {
                 ContextCompat.getColor(
                     requireContext(),
                     R.color.color_5
-                ), (alpha * 255).toInt()
-            )
-            5 -> ColorUtils.setAlphaComponent(
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_5
+                    ), (alpha * 255).toInt()
+                )
+            }
+
+            5 -> if (!wallPagerExists) {
                 ContextCompat.getColor(
                     requireContext(),
                     R.color.color_6
-                ), (alpha * 255).toInt()
-            )
-            6 -> ColorUtils.setAlphaComponent(
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_6
+                    ), (alpha * 255).toInt()
+                )
+            }
+
+            6 -> if (!wallPagerExists) {
                 ContextCompat.getColor(
                     requireContext(),
                     R.color.color_7
-                ), (alpha * 255).toInt()
-            )
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_7
+                    ), (alpha * 255).toInt()
+                )
+            }
+
             else -> android.R.color.transparent
         }
         binding.cardView.setCardBackgroundColor(cardBackgroundColor)
