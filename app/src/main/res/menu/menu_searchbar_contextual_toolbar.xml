@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/item_pinned"
+        android:icon="@drawable/baseline_toolbar_push_pin_24"
+        android:title="@string/pinned"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/item_delete"
+        android:icon="@drawable/baseline_toolbar_delete_24"
+        android:title="@string/delete"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/item_select_all"
+        android:icon="@drawable/baseline_toolbar_done_24"
+        android:title="@string/select_all"
+        app:showAsAction="ifRoom" />
+</menu>

@@ -4,23 +4,19 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.util.TypedValue
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityUnlockBinding
 import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.HashUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
+import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
-import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class UnlockActivity : AppCompatActivity() {
 
@@ -30,14 +26,15 @@ class UnlockActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        //enableEdgeToEdge()
+        ThemeUtil.applyTheme(this)
         unlockBinding = ActivityUnlockBinding.inflate(layoutInflater)
         setContentView(unlockBinding.root)
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                     insets
-                }*/
+        }
         initData()
     }
 

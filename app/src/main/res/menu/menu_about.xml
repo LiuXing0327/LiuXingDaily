@@ -4,5 +4,5 @@
 
     <item
         android:id="@+id/item_update_log"
-        android:title="更新日志" />
+        android:title="@string/update_log" />
 </menu>

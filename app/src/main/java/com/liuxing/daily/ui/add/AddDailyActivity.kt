@@ -5,6 +5,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
@@ -40,6 +41,7 @@ import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
@@ -87,6 +89,7 @@ class AddDailyActivity : AppCompatActivity() {
     private var dailyLabelList = mutableListOf<String>()
     private var dailyLabel: String = ""
     private lateinit var mainViewModel: MainViewModel
+    private var drawImageName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -125,8 +128,13 @@ class AddDailyActivity : AppCompatActivity() {
         })
 
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+
         val textLineSpacingValue = sharedPreferences.getFloat("text_line_spacing_preference", 0F)
         dailyTextInputEdit.setLineSpacing(textLineSpacingValue,1F)
+
+        val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
+        activityAddDailyBinding.inputTitle.textSize = textSize + 4
+        dailyTextInputEdit.textSize = textSize
     }
 
     /**
@@ -454,12 +462,25 @@ class AddDailyActivity : AppCompatActivity() {
                             })
                         }
                     }
+
+                    R.id.item_drawing -> {
+                        val intent = Intent(this@AddDailyActivity, DrawImageActivity::class.java)
+                        addDrawImageLauncher.launch(intent)
+                    }
                 }
 
                 return true
             }
         })
     }
+
+    private val addDrawImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                drawImageName =
+                    result.data?.getStringExtra("draw_image_name") ?: ""
+            }
+        }
 
     /**
      * 显示输入标签的对话框
@@ -779,6 +800,7 @@ class AddDailyActivity : AppCompatActivity() {
                     val data = result.data ?: return
                     tempImageList.clear()
                     tempVideoList.clear()
+                    tempAudioList.clear()
                     data.clipData?.let { clipData ->
                         for (i in 0 until clipData.itemCount) {
                             val uri = clipData.getItemAt(i).uri
@@ -925,5 +947,20 @@ class AddDailyActivity : AppCompatActivity() {
                 View.GONE
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (drawImageName.isEmpty()) return
+        tempImageList.clear()
+        val imageDir = "${getExternalFilesDir(Environment.DIRECTORY_PICTURES)}/$drawImageName"
+        imageList.add(imageDir)
+        tempImageList.add(imageDir)
+        if (tempImageList.isNotEmpty()) {
+            dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+            dailyTextInputEdit.insertImages(tempImageList.toList())
+        }
+        drawImageName = ""
+        tempImageList.clear()
     }
 }

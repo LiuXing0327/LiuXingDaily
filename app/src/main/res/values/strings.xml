@@ -163,4 +163,13 @@
     <string name="wallpaper">壁纸</string>
     <string name="turn_off_the_journal_list_image_display">关闭日记列表图像显示</string>
     <string name="for_a_better_experience_do_you_want_to_turn_off_the_diary_list_image_display">为了更好的体验，是否关闭日记列表图片显示？</string>
+    <string name="color">颜色</string>
+    <string name="drawing">绘图</string>
+    <string name="back">后退</string>
+    <string name="eraser">橡皮擦</string>
+    <string name="width">宽度</string>
+    <string name="undo">撤销</string>
+    <string name="redo">重做</string>
+    <string name="select_all">全选</string>
+    <string name="confirm_pinned_journal_message">确定这篇日记%1$s吗？</string>
 </resources>

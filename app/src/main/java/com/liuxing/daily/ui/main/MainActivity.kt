@@ -14,6 +14,7 @@ import android.view.MenuItem
 import android.view.SubMenu
 import android.view.View
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -22,9 +23,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -45,6 +50,7 @@ import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
+import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
@@ -57,7 +63,6 @@ import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -107,6 +112,7 @@ class MainActivity : AppCompatActivity() {
     private var dailyLabelList: List<DailyLabelEntity> = ArrayList()
     private var currentThemeColorId: Int = 0
     private var dialog: AlertDialog? = null
+    private lateinit var navHostFragment: NavHostFragment
 
     /**
      * 是否正在导入数据
@@ -123,11 +129,11 @@ class MainActivity : AppCompatActivity() {
         ThemeUtil.applyTheme(this)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding.root)
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
                     insets
-                }*/
+        }*/
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
@@ -289,6 +295,7 @@ class MainActivity : AppCompatActivity() {
         setDailyData()
         getDailyLabel()
         checkContentNotInDatabase()
+        setUpContextualToolbar()
     }
 
     /**
@@ -312,7 +319,7 @@ class MainActivity : AppCompatActivity() {
      * 初始化导航控制器
      */
     private fun initNavController() {
-        val navHostFragment =
+        navHostFragment =
             supportFragmentManager.findFragmentById(R.id.fragmentContainerView) as NavHostFragment
         navController = navHostFragment.navController
     }
@@ -341,6 +348,7 @@ class MainActivity : AppCompatActivity() {
      * @param showing 是否显示
      */
     private fun searchViewShowingStatusBarColor(showing: Boolean) {
+
         // 获取主题属性值
         val typedValue = TypedValue()
         theme.resolveAttribute(
@@ -349,7 +357,9 @@ class MainActivity : AppCompatActivity() {
         WindowUtil.followPatternSetColor(window, this)
         when {
             showing -> {
+                WindowCompat.getInsetsController(window,activityMainBinding.searchView).setAppearanceLightStatusBars(true)
                 window.statusBarColor = typedValue.data
+
             }
 
             else -> {
@@ -374,9 +384,12 @@ class MainActivity : AppCompatActivity() {
     private val onBackPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
                 when {
                     isOpenSearchView() -> activityMainBinding.searchView.hide()
                     activityMainBinding.main.isOpen -> activityMainBinding.main.close()
+
+                    (currentFragment as DailyLikeFragment).getSelectMode() -> hideContextualToolbar()
 
                     isDailyFragment -> finish()
                     !isDailyFragment -> navController.navigate(R.id.dailyFragment)
@@ -424,13 +437,13 @@ class MainActivity : AppCompatActivity() {
      * 加载搜索日记的数据
      */
     private fun loadSearchDailyData(searchQuery: String) {
-        dailySearchAdapter.setDailyList(
-            this@MainActivity,
-            dailyList,
-            searchQuery,
-            dailyViewModel,
-            this
-        )
+        lifecycleScope.launch {
+            val uuids = dailyList.mapNotNull { it.dailyUUID }
+            val imageMap = dailyViewModel.getImagePathForUuids(uuids)
+            dailySearchAdapter.setDailyList(
+                this@MainActivity, dailyList, searchQuery, imageMap
+            )
+        }
     }
 
     /**
@@ -1541,6 +1554,9 @@ class MainActivity : AppCompatActivity() {
     private fun setSearchRecyclerViewItemOnLongClick() {
         dailySearchAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
             override fun onItemLongOnClick(position: Int) {
+                activityMainBinding.searchBar.expand(
+                    activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
+                )
                 val moveInRecyclerBin =
                     sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
                 val dailyEntity = dailyList.filter { !it.isDeleted }[position]
@@ -1767,5 +1783,198 @@ class MainActivity : AppCompatActivity() {
         if (themeColorId == currentThemeColorId) return
         ThemeUtil.applyTheme(this)
         recreate()
+    }
+
+    fun expandContextualToolbar() {
+        searchViewShowingStatusBarColor(true)
+        activityMainBinding.searchBar.expand(
+            activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
+        )
+    }
+
+    fun collapseContextualToolbar(): Boolean = activityMainBinding.searchBar.collapse(
+        activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
+    )
+
+    private fun hideContextualToolbar() {
+        if (collapseContextualToolbar()) {
+            searchViewShowingStatusBarColor(false)
+            val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+            if (currentFragment is DailyLikeFragment) {
+                currentFragment.clearSection()
+            }
+        }
+    }
+
+    private fun setUpContextualToolbar() {
+        activityMainBinding.contextualToolbar.setNavigationOnClickListener {
+            hideContextualToolbar()
+        }
+        activityMainBinding.contextualToolbar.inflateMenu(R.menu.menu_searchbar_contextual_toolbar)
+
+        activityMainBinding.contextualToolbar.setOnMenuItemClickListener { menuItem ->
+            val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+            if (currentFragment is DailyLikeFragment) {
+                val selectedUUIDs = currentFragment.getSelectedItems()
+                val dailyList = currentFragment.getDailyList()
+                val tempDailyList = dailyList.filter { it.dailyUUID in selectedUUIDs }
+
+                when (menuItem.itemId) {
+                    R.id.item_select_all -> currentFragment.selectAllItems()
+
+                    R.id.item_delete -> {
+                        val moveInRecyclerBin = sharedPreferences!!
+                            .getBoolean("switch_delete_to_recycler_bin_daily", true)
+
+                        val isDeleted = tempDailyList.any { it.isDeleted }
+                        if (isDeleted) {
+                            dialog = MaterialAlertDialogUtil.showDialog(
+                                this,
+                                getString(R.string.do_you_want_to_delete_or_restore_the_daily),
+                                getString(R.string.delete), {
+                                    deleteSelected(tempDailyList)
+                                    hideContextualToolbar()
+                                },
+                                getString(R.string.restore), {
+                                    recyclerSelected(tempDailyList)
+                                    hideContextualToolbar()
+                                }, getString(R.string.cancel)
+                            )
+                        } else {
+                            if (moveInRecyclerBin) {
+                                dialog = MaterialAlertDialogUtil.showDialog(
+                                    this,
+                                    getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
+                                    getString(R.string.sure),
+                                    {
+                                        recyclerSelected(tempDailyList)
+                                        hideContextualToolbar()
+                                    },
+                                    getString(R.string.delete), {
+                                        deleteSelected(tempDailyList)
+                                        hideContextualToolbar()
+                                    },
+                                    getString(R.string.cancel)
+                                )
+                            } else {
+                                dialog = MaterialAlertDialogUtil.showDialog(
+                                    this,
+                                    getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
+                                    getString(R.string.sure),
+                                    {
+                                        deleteSelected(tempDailyList)
+                                        hideContextualToolbar()
+                                    },
+                                    getString(R.string.recycler_bin), {
+                                        recyclerSelected(tempDailyList)
+                                        hideContextualToolbar()
+                                    },
+                                    getString(R.string.cancel)
+                                )
+                            }
+                        }
+                    }
+
+                    R.id.item_pinned -> {
+                        if (tempDailyList.isNotEmpty()) {
+                            val isPinned = tempDailyList.first().isPinned
+                            val pinnedButtonText = if (isPinned)
+                                getString(R.string.cancel_pinned)
+                            else
+                                getString(R.string.pinned)
+
+                            dialog = MaterialAlertDialogUtil.showDialog(
+                                this,
+                                getString(
+                                    R.string.confirm_pinned_journal_message,
+                                    pinnedButtonText
+                                ),
+                                pinnedButtonText,
+                                {
+                                    tempDailyList.forEach { entity ->
+                                        dailyViewModel.updateDaily(
+                                            entity.copy(isPinned = !isPinned)
+                                        )
+                                    }
+                                    hideContextualToolbar()
+                                },
+                                getString(R.string.cancel)
+                            )
+                        }
+                    }
+                }
+            }
+            true
+        }
+    }
+
+    private fun recyclerSelected(selectedList: List<DailyEntity>) {
+        selectedList.forEach { dailyEntity ->
+            dailyViewModel.updateDaily(
+                dailyEntity.copy(isDeleted = !dailyEntity.isDeleted)
+            )
+        }
+    }
+
+    private fun deleteSelected(selectedList: List<DailyEntity>) {
+        selectedList.forEach { dailyEntity ->
+            if (dailyEntity.dailyUUID.isNullOrEmpty()) return
+
+            val fileUtil = FileUtil()
+
+            dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
+                .observe(this) { images ->
+                    images.mapNotNull { it.imagePath }.forEach { path ->
+                        if (fileUtil.checkFileExists(path)) {
+                            fileUtil.deleteFile(path)
+                        }
+                    }
+                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID)
+                }
+
+            dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID).observe(this) { videos ->
+                videos.mapNotNull { it.videoPath }.forEach { path ->
+                    if (fileUtil.checkFileExists(path)) {
+                        fileUtil.deleteFile(path)
+                    }
+                }
+                dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID)
+            }
+
+            dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
+                .observe(this) { audios ->
+                    audios.mapNotNull { it.audioPath }.forEach { path ->
+                        if (fileUtil.checkFileExists(path)) {
+                            fileUtil.deleteFile(path)
+                        }
+                    }
+                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID)
+                }
+
+            dailyViewModel.deleteDaily(dailyEntity)
+        }
+    }
+
+    fun setUpContextualToolbarTitle(title: String) {
+        activityMainBinding.contextualToolbar.title = title
+    }
+
+    fun setUpContextualToolbarPinnedVisibility() {
+        val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+        if (currentFragment is DailyLikeFragment) {
+            val selectedUUIDs = currentFragment.getSelectedItems()
+            val dailyList = currentFragment.getDailyList()
+
+            val tempDailyList = dailyList.filter { it.dailyUUID in selectedUUIDs }
+
+            val onlyPinned = tempDailyList.all { it.isPinned }
+            val onlyUnpinned = tempDailyList.all { !it.isPinned }
+            val showItem =
+                if (currentFragment.isPinnedDisplay()) tempDailyList.isNotEmpty() &&
+                        (onlyPinned || onlyUnpinned) else false
+
+            activityMainBinding.contextualToolbar.menu.findItem(R.id.item_pinned)?.isVisible =
+                showItem
+        }
     }
 }

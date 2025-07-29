@@ -8,4 +8,9 @@
         <item name="android:background">@color/black_overlay</item>
         <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>
     </style>
+
+    <style name="Widget.Theme.流星日记.Toolbar.WithCloseButton" parent="Widget.MaterialComponents.Toolbar">
+        <item name="navigationContentDescription">@string/close</item>
+        <item name="navigationIcon">@drawable/baseline_toolbar_close_24</item>
+    </style>
 </resources>

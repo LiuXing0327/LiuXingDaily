@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -23,6 +24,7 @@ import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
@@ -133,18 +135,22 @@ class CalendarQueryDailyFragment : Fragment() {
         dailyViewModel.queryAllDaily()
             .observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
                 override fun onChanged(value: List<DailyEntity>) {
-                    dailyList = value
+                    lifecycleScope.launch {
+                        dailyList = value
+                        val uuids = value.mapNotNull { it.dailyUUID }
+                        val imageMap = dailyViewModel.getImagePathForUuids(uuids)
 
-                    calendarToDailyAdapter.setDailyList(
-                        requireContext(),
-                        dailyList,
-                        yearMonthDay.ifEmpty {
-                            DateUtil.getDateString(
-                                0,
-                                Date(fragmentCalendarQueryDailyBinding.calendarView.date)
-                            ).substring(0, 10)
-                        }, dailyViewModel, viewLifecycleOwner
-                    )
+                        calendarToDailyAdapter.setDailyList(
+                            requireContext(),
+                            dailyList,
+                            yearMonthDay.ifEmpty {
+                                DateUtil.getDateString(
+                                    0,
+                                    Date(fragmentCalendarQueryDailyBinding.calendarView.date)
+                                ).substring(0, 10)
+                            }, imageMap
+                        )
+                    }
 
                 }
             })
@@ -160,14 +166,16 @@ class CalendarQueryDailyFragment : Fragment() {
             yearMonthDay = String.format(dateFormat, year, month + 1, dayOfMonth)
 
             mainViewModel.setYearMonthDay(yearMonthDay)
-
-            calendarToDailyAdapter.setDailyList(
-                requireContext(),
-                dailyList,
-                yearMonthDay,
-                dailyViewModel,
-                viewLifecycleOwner
-            )
+            lifecycleScope.launch {
+                val uuids = dailyList.mapNotNull { it.dailyUUID }
+                val imageMap = dailyViewModel.getImagePathForUuids(uuids)
+                calendarToDailyAdapter.setDailyList(
+                    requireContext(),
+                    dailyList,
+                    yearMonthDay,
+                    imageMap
+                )
+            }
         }
     }
 

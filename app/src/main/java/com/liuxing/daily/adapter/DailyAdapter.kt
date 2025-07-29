@@ -1,14 +1,15 @@
 package com.liuxing.daily.adapter
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import androidx.lifecycle.LifecycleOwner
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -18,39 +19,40 @@ import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.TextUtil
-import com.liuxing.daily.viewmodel.DailyViewModel
+import java.io.File
 import java.util.Date
 
 class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categorizedList: List<Any> = ArrayList()
     var headerYearMonth: Boolean = true
-    private lateinit var dailyViewModel: DailyViewModel
-    private lateinit var viewLifecycleOwner: LifecycleOwner
+    private var imageMap: Map<String, String> = emptyMap()
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
     private lateinit var sharedPreferences: SharedPreferences
     var textSize = 16F
     var alpha = 0.15f
     var imageDisplay = false
+    private var onItemSelectedStateChangedListener: OnItemSelectedStateChangedListener? = null
+    private val selectItems = mutableSetOf<String>()
+    var selectMode = false
 
     fun setDailyList(
         context: Context,
         dailyList: List<DailyEntity>,
-        dailyViewModel: DailyViewModel,
-        viewLifecycleOwner: LifecycleOwner
+        imageMap: Map<String, String>
     ) {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
 
-        this.dailyViewModel = dailyViewModel
-        this.viewLifecycleOwner = viewLifecycleOwner
+        this.imageMap = imageMap
 
         // 过滤被回收的数据
         val filteredList = dailyList.filter { !it.isDeleted }
@@ -189,25 +191,12 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 }
             imageDisplay =
                 sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
-            if (dailyEntity.dailyUUID != null && !imageDisplay) {
-                val queryDailyImageByUuid =
-                    dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID)
-                queryDailyImageByUuid.observe(
-                    viewLifecycleOwner
-                ) { value ->
-                    if (value.isNotEmpty() && FileUtil().checkFileExists(value.first().imagePath!!)) {
-                        Glide.with(holder.imageView.context)
-                            .load(value.first().imagePath)
-                            .into(holder.imageView)
-                        holder.imageView.visibility = View.VISIBLE
-
-                    } else {
-                        dailyViewModel.deleteSelectPathImage(
-                            value.firstOrNull()?.imagePath ?: ""
-                        )
-                        holder.imageView.visibility = View.GONE
-                    }
-                }
+            val imagePath = imageMap[dailyEntity.dailyUUID]
+            if (!imageDisplay && !imagePath.isNullOrEmpty() && FileUtil().checkFileExists(imagePath)) {
+                Glide.with(holder.imageView.context)
+                    .load(imagePath)
+                    .into(holder.imageView)
+                holder.imageView.visibility = View.VISIBLE
             } else {
                 holder.imageView.visibility = View.GONE
             }
@@ -219,11 +208,24 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 View.VISIBLE
             }
 
+            holder.cardView.isChecked = selectMode && selectItems.contains(dailyEntity.dailyUUID)
+
             // 将原始索引传递给点击事件处理
             holder.itemView.setOnClickListener {
-                onItemClickListener?.onItemClick(originalIndex)
+                if (selectMode) {
+                    toggleSelection(dailyEntity.dailyUUID!!)
+                    notifyItemChanged(position)
+                } else {
+                    onItemClickListener?.onItemClick(originalIndex)
+                }
             }
             holder.itemView.setOnLongClickListener {
+                if (!selectMode) {
+                    selectMode = true
+                    toggleSelection(dailyEntity.dailyUUID!!)
+                    notifyItemChanged(position)
+                }
+
                 onItemLongClickListener?.onItemLongOnClick(originalIndex)
                 true
             }
@@ -256,6 +258,48 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         onItemLongClickListener = listener
     }
 
+    fun setOnItemSelectedStateChangedListener(listener: OnItemSelectedStateChangedListener) {
+        onItemSelectedStateChangedListener = listener
+    }
+
+    private fun toggleSelection(uuid: String) {
+        if (selectItems.contains(uuid)) {
+            selectItems.remove(uuid)
+        } else {
+            selectItems.add(uuid)
+        }
+        onItemSelectedStateChangedListener?.onSelectionChanged(selectItems.size)
+    }
+
+    fun getSelectedItemsCount(): Int = selectItems.size
+
+    fun getSelectedItems(): List<String> = selectItems.toList()
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun clearSection() {
+        selectItems.clear()
+        selectMode = false
+        notifyDataSetChanged()
+        onItemSelectedStateChangedListener?.onSelectionChanged(0)
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun selectAllItems() {
+        if (!selectMode) return
+
+        selectItems.clear()
+        categorizedList.forEachIndexed { _, item ->
+            if (item is Pair<*, *>) {
+                val uuid = (item.first as? DailyEntity)?.dailyUUID
+                if (uuid != null) {
+                    selectItems.add(uuid)
+                }
+            }
+        }
+        notifyDataSetChanged()
+        onItemSelectedStateChangedListener?.onSelectionChanged(selectItems.size)
+    }
+
     /**
      * 设置背景颜色
      *
@@ -270,8 +314,10 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         )
         val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         this.alpha = alpha
+        val wallPagerExists = File(ConstUtil.WALLPAPER_PATH).exists()
+
         holder.cardView.setCardBackgroundColor(
-            if (backgroundColorIndex == 0) baseColor else ColorUtils.setAlphaComponent(
+            if (backgroundColorIndex == 0 || !wallPagerExists) baseColor else ColorUtils.setAlphaComponent(
                 baseColor,
                 (alpha * 255).toInt()
             )

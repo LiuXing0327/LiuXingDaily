@@ -9,5 +9,6 @@
         <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
         <item name="popupMenuStyle">@drawable/custom_popup_background</item>
+        <item name="toolbarWithCloseButtonStyle">@style/Widget.Theme.流星日记.Toolbar.WithCloseButton</item>
     </style>
 </resources>

@@ -7,15 +7,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.liuxing.daily.adapter.OnThisDayAdapter
 import com.liuxing.daily.databinding.FragmentOnThisDayBinding
+import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.launch
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -34,6 +37,7 @@ class OnThisDayFragment : Fragment() {
     private lateinit var onThisDayBinding: FragmentOnThisDayBinding
     private lateinit var onThisDayAdapter: OnThisDayAdapter
     private lateinit var dailyViewModel: DailyViewModel
+    private lateinit var dailyList: List<DailyEntity>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,13 +119,17 @@ class OnThisDayFragment : Fragment() {
      */
     private fun loadDailyData() {
         dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { dailyList ->
-            onThisDayAdapter.setDailyList(
-                requireContext(),
-                dailyList,
-                DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
-                dailyViewModel,
-                viewLifecycleOwner
-            )
+            this.dailyList = dailyList
+            lifecycleScope.launch {
+                val uuids = dailyList.mapNotNull { it.dailyUUID }
+                val imageMap = dailyViewModel.getImagePathForUuids(uuids)
+                onThisDayAdapter.setDailyList(
+                    requireContext(),
+                    dailyList,
+                    DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
+                    imageMap
+                )
+            }
         }
     }
 
@@ -159,4 +167,5 @@ class OnThisDayFragment : Fragment() {
             loadDailyData()
         }
     }
+
 }

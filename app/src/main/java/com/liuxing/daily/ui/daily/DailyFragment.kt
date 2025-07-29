@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -17,12 +18,16 @@ import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailyAdapter
 import com.liuxing.daily.databinding.FragmentDailyBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.launch
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -35,7 +40,7 @@ private const val ARG_PARAM2 = "param2"
  * Use the [DailyFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class DailyFragment : Fragment() {
+class DailyFragment : Fragment(),DailyLikeFragment {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
@@ -46,6 +51,7 @@ class DailyFragment : Fragment() {
     private lateinit var dailyAdapter: DailyAdapter
     private var dailyList: List<DailyEntity> = ArrayList()
     private var sharedPreferences: SharedPreferences? = null
+    private lateinit var mainActivity: MainActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,7 +99,12 @@ class DailyFragment : Fragment() {
     private fun initData() {
         initViewModel()
         initSharePreferences()
+        initMainActivity()
         initRecyclerView()
+    }
+
+    private fun initMainActivity() {
+        mainActivity = (requireActivity() as MainActivity)
     }
 
     /**
@@ -105,6 +116,21 @@ class DailyFragment : Fragment() {
         dailyAdapter = DailyAdapter()
         fragmentDailyBinding.recyclerView.adapter = dailyAdapter
         setRecyclerViewData()
+        dailyAdapter.setOnItemSelectedStateChangedListener(object :
+            OnItemSelectedStateChangedListener {
+            override fun onSelectionChanged(position: Int) {
+                val selectedItemsCount = dailyAdapter.getSelectedItemsCount()
+                if (selectedItemsCount > 0 && dailyAdapter.selectMode) {
+                    mainActivity.expandContextualToolbar()
+                    mainActivity.setUpContextualToolbarTitle("$selectedItemsCount")
+                    mainActivity.setUpContextualToolbarPinnedVisibility()
+                } else {
+                    dailyAdapter.selectMode = false
+                    mainActivity.collapseContextualToolbar()
+                }
+            }
+
+        })
     }
 
     /**
@@ -113,7 +139,7 @@ class DailyFragment : Fragment() {
     private fun setRecyclerViewData() {
         loadDailyData()
         setRecyclerViewItemOnClick()
-        setRecyclerViewItemOnLongClick()
+        // setRecyclerViewItemOnLongClick()
     }
 
     /**
@@ -123,8 +149,12 @@ class DailyFragment : Fragment() {
         queryAllDaily = dailyViewModel.queryAllDaily()
         queryAllDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
-                dailyAdapter.setDailyList(requireContext(), value,dailyViewModel,viewLifecycleOwner)
-                dailyList = value
+                lifecycleScope.launch {
+                    val uuids = value.mapNotNull { it.dailyUUID }
+                    val imageMap = dailyViewModel.getImagePathForUuids(uuids)
+                    dailyAdapter.setDailyList(requireContext(), value, imageMap)
+                    dailyList = value
+                }
             }
         })
     }
@@ -327,4 +357,12 @@ class DailyFragment : Fragment() {
             loadDailyData()
         }
     }
+
+    fun getAdapter(): DailyAdapter = dailyAdapter
+    override fun getDailyList(): List<DailyEntity> = dailyList
+    override fun getSelectedItems(): List<String> = dailyAdapter.getSelectedItems()
+    override fun clearSection() = dailyAdapter.clearSection()
+    override fun selectAllItems() = dailyAdapter.selectAllItems()
+    override fun getSelectMode(): Boolean = dailyAdapter.selectMode
+    override fun isPinnedDisplay(): Boolean = true
 }

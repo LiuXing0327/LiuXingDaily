@@ -36,6 +36,21 @@
 
             </com.google.android.material.appbar.AppBarLayout>
 
+            <FrameLayout
+                android:id="@+id/contextual_toolbar_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:elevation="5dp"
+                android:visibility="gone">
+
+                <com.google.android.material.appbar.MaterialToolbar
+                    android:id="@+id/contextual_toolbar"
+                    android:background="?attr/searchViewShowingColor"
+                    style="?attr/toolbarWithCloseButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </FrameLayout>
+
             <com.google.android.material.search.SearchView
                 android:id="@+id/search_view"
                 android:layout_width="match_parent"

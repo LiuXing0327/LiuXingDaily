@@ -6,6 +6,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.TypedValue
@@ -43,12 +44,12 @@ import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -102,6 +103,7 @@ class EditDailyActivity : AppCompatActivity() {
     private val tempAudioList = mutableSetOf<String>()
     private val tempAudioList2 = mutableSetOf<String>()
     private val deleteAudioList = mutableSetOf<String>()
+    private var drawImageName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,8 +146,13 @@ class EditDailyActivity : AppCompatActivity() {
         })
 
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+
         val textLineSpacingValue = sharedPreferences.getFloat("text_line_spacing_preference", 0F)
         dailyTextInputEdit.setLineSpacing(textLineSpacingValue, 1F)
+
+        val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
+        activityEditDailyBinding.inputTitle.textSize = textSize + 4
+        dailyTextInputEdit.textSize = textSize
     }
 
     /**
@@ -832,6 +839,11 @@ class EditDailyActivity : AppCompatActivity() {
                             })
                         }
                     }
+
+                    R.id.item_drawing -> {
+                        val intent = Intent(this@EditDailyActivity, DrawImageActivity::class.java)
+                        addDrawImageLauncher.launch(intent)
+                    }
                 }
 
                 return true
@@ -839,6 +851,13 @@ class EditDailyActivity : AppCompatActivity() {
 
         })
     }
+
+    private val addDrawImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                drawImageName = result.data?.getStringExtra("draw_image_name") ?: ""
+            }
+        }
 
     /**
      * 显示输入标签的对话框
@@ -1370,5 +1389,20 @@ class EditDailyActivity : AppCompatActivity() {
         } else {
             View.GONE
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (drawImageName.isEmpty()) return
+        tempImageList.clear()
+        val imageDir = "${getExternalFilesDir(Environment.DIRECTORY_PICTURES)}/$drawImageName"
+        imageList.add(imageDir)
+        tempImageList.add(imageDir)
+        if (tempImageList.isNotEmpty()) {
+            dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+            dailyTextInputEdit.insertImages(tempImageList.toList())
+        }
+        drawImageName = ""
+        tempImageList.clear()
     }
 }
