@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
@@ -9,9 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 
 /**
- * Author：流星
- * DateTime：2024/10/4 下午9:00
- * Description：根据垂直滚动来收缩或扩展按钮。
+ * 根据垂直滚动来收缩或扩展按钮。
  */
 open class ExtendedFloatingActionButton @JvmOverloads constructor(
     context: Context,

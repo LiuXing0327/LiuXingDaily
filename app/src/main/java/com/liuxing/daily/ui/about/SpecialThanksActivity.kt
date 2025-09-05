@@ -1,45 +1,35 @@
 package com.liuxing.daily.ui.about
 
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.MenuItem
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.SpecialThanksAdapter
 import com.liuxing.daily.data.SpecialThanksData
 import com.liuxing.daily.databinding.ActivitySpecialThanksBinding
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 
 
 class SpecialThanksActivity : AppCompatActivity() {
 
     private lateinit var specialThanksBinding: ActivitySpecialThanksBinding
     private lateinit var specialThanksAdapter: SpecialThanksAdapter
-    private lateinit var typedValue: TypedValue
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         specialThanksBinding = ActivitySpecialThanksBinding.inflate(layoutInflater)
         setContentView(specialThanksBinding.root)
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
                             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                             insets
-                }*/
-        typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window,this)
-        window.statusBarColor =
-            ContextCompat.getColor(this@SpecialThanksActivity, android.R.color.transparent)
+        }
         initData()
     }
 
@@ -75,7 +65,6 @@ class SpecialThanksActivity : AppCompatActivity() {
         specialThanksAdapter = SpecialThanksAdapter()
         specialThanksBinding.recyclerView.adapter = specialThanksAdapter
         setRecyclerData()
-        setScrollStatusColor()
     }
 
     /**
@@ -200,30 +189,6 @@ class SpecialThanksActivity : AppCompatActivity() {
             )
         )
         specialThanksAdapter.setSpecialThanksList(specialThanksDataList.toList())
-    }
-
-    /**
-     * 设置滚动后的颜色
-     */
-    private fun setScrollStatusColor() {
-        specialThanksBinding.recyclerView.addOnScrollListener(object : OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-            }
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (!recyclerView.canScrollVertically(-1)) {
-                    window.statusBarColor =
-                        ContextCompat.getColor(
-                            this@SpecialThanksActivity,
-                            android.R.color.transparent
-                        )
-                } else {
-                    window.statusBarColor = typedValue.data
-                }
-            }
-        })
     }
 
 }

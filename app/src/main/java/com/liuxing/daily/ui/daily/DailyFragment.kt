@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailyAdapter
@@ -22,12 +23,16 @@ import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
+import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.main.MainActivity
+import com.liuxing.daily.util.BitmapUtil
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -124,12 +129,28 @@ class DailyFragment : Fragment(),DailyLikeFragment {
                     mainActivity.expandContextualToolbar()
                     mainActivity.setUpContextualToolbarTitle("$selectedItemsCount")
                     mainActivity.setUpContextualToolbarPinnedVisibility()
+                    mainActivity.enableOnBack(true)
                 } else {
                     dailyAdapter.selectMode = false
                     mainActivity.collapseContextualToolbar()
+                    mainActivity.enableLightStatusBarWithAppBar()
+                    mainActivity.enableOnBack(false)
                 }
             }
 
+        })
+
+        fragmentDailyBinding.recyclerView.addOnScrollListener(object :
+            RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(-1) && dailyList.isNotEmpty() && SystemBarController.isLightStatusBarEnabled) {
+                    val bitmap = mainActivity.getBitmap()
+                    bitmap?.let {
+                        mainActivity.setLightStausBarsFromBitmap(it)
+                    }
+                }
+            }
         })
     }
 
@@ -139,7 +160,6 @@ class DailyFragment : Fragment(),DailyLikeFragment {
     private fun setRecyclerViewData() {
         loadDailyData()
         setRecyclerViewItemOnClick()
-        // setRecyclerViewItemOnLongClick()
     }
 
     /**
@@ -150,10 +170,16 @@ class DailyFragment : Fragment(),DailyLikeFragment {
         queryAllDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 lifecycleScope.launch {
-                    val uuids = value.mapNotNull { it.dailyUUID }
-                    val imageMap = dailyViewModel.getImagePathForUuids(uuids)
-                    dailyAdapter.setDailyList(requireContext(), value, imageMap)
-                    dailyList = value
+                    val uuids = withContext(Dispatchers.Default) {
+                        value.mapNotNull { it.dailyUUID }
+                    }
+                    val imageMap = withContext(Dispatchers.IO) {
+                        dailyViewModel.getImagePathForUuids(uuids)
+                    }
+                    withContext(Dispatchers.Main) {
+                        dailyAdapter.setDailyList(requireContext(), value, imageMap)
+                        dailyList = value
+                    }
                 }
             }
         })
@@ -171,156 +197,6 @@ class DailyFragment : Fragment(),DailyLikeFragment {
                 requireActivity().startActivity(intent)
             }
 
-        })
-    }
-
-    /**
-     * 设置列表长按事件
-     */
-    private fun setRecyclerViewItemOnLongClick(){
-        dailyAdapter.setOnItemLongClickListener(object : OnItemLongClickListener{
-            override fun onItemLongOnClick(position: Int) {
-                val moveInRecyclerBin =
-                    sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
-                val dailyEntity = dailyList.filter { !it.isDeleted }[position]
-                val neutralButtonText =
-                    if (dailyEntity.isPinned) getString(R.string.cancel_pinned) else getString(R.string.pinned)
-                if (moveInRecyclerBin) {
-                    MaterialAlertDialogBuilder(requireContext()).apply {
-                        setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                        setPositiveButton(getString(R.string.sure)) { _, _ ->
-                            dailyViewModel.updateDaily(
-                                DailyEntity(
-                                    dailyEntity.id,
-                                    dailyEntity.title,
-                                    dailyEntity.content,
-                                    dailyEntity.dateTime,
-                                    dailyEntity.backgroundColorIndex,
-                                    dailyEntity.singlePassword,
-                                    dailyEntity.moodIndex,
-                                    dailyEntity.weatherIndex,
-                                    dailyEntity.dailyUUID,
-                                    true,
-                                    dailyEntity.dailyLabel,
-                                    isPinned = dailyEntity.isPinned
-                                )
-                            )
-                        }
-                            .setNegativeButton(getString(R.string.cancel), null)
-                            .setNeutralButton(neutralButtonText) { _, _ ->
-                                val isPinned = neutralButtonText == getString(R.string.pinned)
-                                dailyViewModel.updateDaily(
-                                    DailyEntity(
-                                        dailyEntity.id,
-                                        dailyEntity.title,
-                                        dailyEntity.content,
-                                        dailyEntity.dateTime,
-                                        dailyEntity.backgroundColorIndex,
-                                        dailyEntity.singlePassword,
-                                        dailyEntity.moodIndex,
-                                        dailyEntity.weatherIndex,
-                                        dailyEntity.dailyUUID,
-                                        false,
-                                        dailyEntity.dailyLabel,
-                                        isPinned = isPinned
-                                    )
-                                )
-                            }
-                            .create()
-                            .show()
-                    }
-
-                } else {
-                    MaterialAlertDialogBuilder(requireContext()).apply {
-                        setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                        setPositiveButton(getString(R.string.delete)) { _, _ ->
-                            val fileUtil = FileUtil()
-                            dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
-                                .observe(viewLifecycleOwner) { dailyImageList ->
-                                    val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
-                                    if (existingImagePaths.isNotEmpty()) {
-                                        val list = existingImagePaths.toList()
-                                        list.forEach {
-                                            if (fileUtil.checkFileExists(it!!)) {
-                                                fileUtil.deleteFile(it)
-                                            }
-                                        }
-                                    }
-                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                                }
-                            dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
-                                .observe(viewLifecycleOwner) { dailyVideoList ->
-                                    val existingVideoPaths =
-                                        dailyVideoList.map { it.videoPath }.toSet()
-                                    if (existingVideoPaths.isNotEmpty()) {
-                                        val list = existingVideoPaths.toList()
-                                        list.forEach {
-                                            if (fileUtil.checkFileExists(it!!)) {
-                                                fileUtil.deleteFile(it)
-                                            }
-                                        }
-                                    }
-                                    dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
-                                }
-                            dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
-                                .observe(viewLifecycleOwner) { dailyAudioList ->
-                                    val existingAudioPaths =
-                                        dailyAudioList.map { it.audioPath }.toSet()
-                                    if (existingAudioPaths.isNotEmpty()) {
-                                        val list = existingAudioPaths.toList()
-                                        list.forEach {
-                                            if (fileUtil.checkFileExists(it!!)) {
-                                                fileUtil.deleteFile(it)
-                                            }
-                                        }
-                                    }
-                                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
-                                }
-                                    dailyViewModel.deleteDaily(dailyEntity)
-                                }
-                        setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
-                            dailyViewModel.updateDaily(
-                                DailyEntity(
-                                    dailyEntity.id,
-                                    dailyEntity.title,
-                                    dailyEntity.content,
-                                    dailyEntity.dateTime,
-                                    dailyEntity.backgroundColorIndex,
-                                    dailyEntity.singlePassword,
-                                    dailyEntity.moodIndex,
-                                    dailyEntity.weatherIndex,
-                                    dailyEntity.dailyUUID,
-                                    true,
-                                    dailyEntity.dailyLabel,
-                                    isPinned = dailyEntity.isPinned
-                                )
-                            )
-                        }
-
-                        setNeutralButton(neutralButtonText) { _, _ ->
-                            val isPinned = neutralButtonText == getString(R.string.pinned)
-                            dailyViewModel.updateDaily(
-                                DailyEntity(
-                                    dailyEntity.id,
-                                    dailyEntity.title,
-                                    dailyEntity.content,
-                                    dailyEntity.dateTime,
-                                    dailyEntity.backgroundColorIndex,
-                                    dailyEntity.singlePassword,
-                                    dailyEntity.moodIndex,
-                                    dailyEntity.weatherIndex,
-                                    dailyEntity.dailyUUID,
-                                    false,
-                                    dailyEntity.dailyLabel,
-                                    isPinned = isPinned
-                                )
-                            )
-                        }
-                        create()
-                        show()
-                    }
-                }
-            }
         })
     }
 

@@ -11,6 +11,8 @@ import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyVideoEntity
 import com.liuxing.daily.repository.DailyRepository
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.LogUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class DailyViewModel(application: Application) : AndroidViewModel(application) {
@@ -57,7 +59,7 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         dailyRepository.deleteSelectPathImage(imagePath)
     }
 
-    fun deletePathImageByDailyUuid(dailyUuid: String) = viewModelScope.launch {
+    fun deletePathImageByDailyUuid(dailyUuid: String) = viewModelScope.launch(Dispatchers.IO) {
         dailyRepository.deletePathImageByDailyUuid(dailyUuid)
     }
 
@@ -99,7 +101,7 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         dailyRepository.deleteSelectVideoPath(videoPath)
     }
 
-    fun deletePathVideoByDailyUuid(videoPath: String) = viewModelScope.launch {
+    fun deletePathVideoByDailyUuid(videoPath: String) = viewModelScope.launch(Dispatchers.IO) {
         dailyRepository.deletePathVideoByDailyUuid(videoPath)
     }
 
@@ -121,7 +123,7 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         dailyRepository.deleteSelectAudioPath(audioPath)
     }
 
-    fun deletePathAudioByDailyUuid(dailyUuid: String) = viewModelScope.launch {
+    fun deletePathAudioByDailyUuid(dailyUuid: String) = viewModelScope.launch(Dispatchers.IO) {
         dailyRepository.deletePathAudioByDailyUuid(dailyUuid)
     }
 
@@ -142,5 +144,37 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         return result
+    }
+
+    fun toggleIsDelete(uuids: List<String>) {
+        viewModelScope.launch {
+            dailyRepository.toggleIsDelete(uuids)
+        }
+    }
+
+    fun deleteSelected(selectedList: List<DailyEntity>) {
+        val fileUtil = FileUtil()
+        viewModelScope.launch(Dispatchers.IO) {
+            selectedList.forEach { dailyEntity ->
+                val uuid = dailyEntity.dailyUUID ?: return@forEach
+                queryDailyImageByUuidToList(uuid).mapNotNull { it.imagePath }
+                    .forEach { path ->
+                        if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
+                    }
+                deletePathImageByDailyUuid(uuid)
+
+                queryDailyVideoByUuidToList(uuid).mapNotNull { it.videoPath }
+                    .forEach { path ->
+                        if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
+                    }
+                deletePathVideoByDailyUuid(uuid)
+
+                queryDailyAudioByUuidToList(uuid).mapNotNull { it.audioPath }.forEach { path ->
+                    if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
+                }
+
+                deleteDaily(dailyEntity)
+            }
+        }
     }
 }

@@ -16,6 +16,12 @@
             app:key="special_thanks_preference"
             app:title="@string/special_thanks" />
 
+        <Preference
+            app:icon="@drawable/outline_privacy_tip_24"
+            app:iconSpaceReserved="true"
+            app:key="user_agreement_and_privacy_policy_preference"
+            app:title="@string/user_agreement_and_privacy_Policy"/>
+
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -106,7 +112,6 @@
             app:icon="@drawable/outline_lock_24"
             app:iconSpaceReserved="true"
             app:title="@string/app_lock" />
-
     </PreferenceCategory>
 
 </PreferenceScreen>

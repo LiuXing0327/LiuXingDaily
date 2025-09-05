@@ -172,4 +172,15 @@
     <string name="redo">重做</string>
     <string name="select_all">全选</string>
     <string name="confirm_pinned_journal_message">确定这篇日记%1$s吗？</string>
+    <string name="color_label_transparent">透明</string>
+    <string name="color_label_purple">紫色</string>
+    <string name="color_label_red">红色</string>
+    <string name="color_label_green">绿色</string>
+    <string name="color_label_blue">蓝色</string>
+    <string name="color_label_yellow">黄色</string>
+    <string name="color_label_pink">粉色</string>
+    <string name="slider_alpha_description">图片透明度调节滑块，当前 %1$d%%</string>
+    <string name="enter_your_password">输入您的密码</string>
+    <string name="image">图片</string>
+    <string name="user_agreement_and_privacy_Policy">用户协议与隐私政策</string>
 </resources>

@@ -22,7 +22,7 @@
 # Please add these rules to your existing keep rules in order to suppress warnings.
 # This is generated automatically by the Android Gradle plugin.
 #  设置混淆的压缩比率 0 ~ 7
--optimizationpasses 7
+# -optimizationpasses 5
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute 流星
 # 把代码以及所使用到的各种第三方库代码统统移动到同一个包下

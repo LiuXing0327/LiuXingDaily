@@ -1,18 +1,19 @@
 package com.liuxing.daily.ui.gallery
 
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.databinding.FragmentLookGalleryImageBinding
+import com.liuxing.daily.extension.slide
+import com.liuxing.daily.ui.immersive.ImmersiveActivity
 import com.liuxing.daily.util.WindowUtil
 
 // TODO: Rename parameter arguments, choose names that match
@@ -101,20 +102,11 @@ class LookGalleryImageFragment : Fragment() {
      * @param appBarLayout AppBarLayout
      */
     private fun enterImmersive(appBarLayout: AppBarLayout) {
-        appBarLayout.visibility = View.GONE
-        requireActivity().isImmersive = true
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            requireActivity().window.insetsController?.apply {
-                hide(WindowInsets.Type.systemBars())
-                systemBarsBehavior =
-                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            requireActivity().window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    )
-        }
+        appBarLayout.slide(false)
+        Handler(Looper.getMainLooper()).postDelayed({
+            appBarLayout.visibility = View.GONE
+        }, 300)
+        (requireActivity() as ImmersiveActivity).enterImmersive()
     }
 
     /**
@@ -124,14 +116,10 @@ class LookGalleryImageFragment : Fragment() {
      */
     private fun exitImmersive(appBarLayout: AppBarLayout) {
         appBarLayout.visibility = View.VISIBLE
-        requireActivity().isImmersive = false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            requireActivity().window.insetsController?.show(WindowInsets.Type.systemBars())
-        } else {
-            @Suppress("DEPRECATION")
-            requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-        }
-
-        WindowUtil.followPatternSetColor(requireActivity().window, requireContext())
+        appBarLayout.slide(true)
+        val window = requireActivity().window
+        (requireActivity() as ImmersiveActivity).exitImmersive()
+        WindowUtil.followPatternSetColor(window, requireContext())
     }
+
 }

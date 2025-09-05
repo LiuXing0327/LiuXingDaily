@@ -1,13 +1,13 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
-/**
- * Author：流星
- * DateTime：2024/11/2 12:58
- * Description：图片工具类
- */
+
 object ImageUtil {
 
     /**

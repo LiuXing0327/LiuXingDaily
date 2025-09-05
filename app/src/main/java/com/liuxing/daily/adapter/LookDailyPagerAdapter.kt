@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import androidx.fragment.app.Fragment
@@ -7,9 +11,7 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.ui.look.LookDailyPagerFragment
 
 /**
- * Author：流星
- * DateTime：2024/10/5 下午7:38
- * Description：看日记适配器
+ * 看日记适配器
  */
 class LookDailyPagerAdapter(
     fragmentActivity: FragmentActivity,

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
@@ -13,12 +17,14 @@ import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.ImageSpan
 import android.util.AttributeSet
-import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
 import com.liuxing.daily.R
 import com.liuxing.daily.util.FileUtil
@@ -26,9 +32,7 @@ import com.liuxing.daily.util.ImageUtil.createImageThumbnail
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
- * Author：流星
- * DateTime：2024/10/29 8:14
- * Description：写日记编辑
+ * 写日记编辑
  */
 class DailyTextInputEdit : TextInputEditText {
 
@@ -44,6 +48,7 @@ class DailyTextInputEdit : TextInputEditText {
     private val imageMap: MutableMap<String, String> = mutableMapOf()
     private var oldImageList: List<String> = listOf()
     private var oldVideoList: List<String> = listOf()
+    private var oldAudioList: List<String> = listOf()
     private var audioInsertionListener: AudioInsertionListener? = null
     private var videoInsertionListener: VideoInsertionListener? = null
     private var audioPathList: MutableSet<String> = mutableSetOf()
@@ -101,6 +106,18 @@ class DailyTextInputEdit : TextInputEditText {
      */
     fun getOldVideoList(): List<String> {
         return oldVideoList
+    }
+
+    fun setOldAudioList(oldAudioList: List<String>) {
+        this.oldAudioList = oldAudioList
+        val missingAudios = oldAudioList.filterNot { audioPathList.contains(it) }
+        if (missingAudios.isNotEmpty()) {
+            insertAudio(missingAudios)
+        }
+    }
+
+    fun getOldAudioList(): List<String> {
+        return oldAudioList
     }
 
     /**
@@ -359,7 +376,7 @@ class DailyTextInputEdit : TextInputEditText {
         val newWidth = maxWidth
         val newHeight = (originalHeight * toWidth).toInt()
         val ss = SpannableString(imgTag)
-        val drawable = BitmapDrawable(resources, bitmap).apply {
+        val drawable = bitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
@@ -534,52 +551,67 @@ class DailyTextInputEdit : TextInputEditText {
      * @param audioPath 音频路径
      * @return CharSequence 返回带有音频的SpannableString
      */
-    private fun createAudioSpannable(audioPath: String): CharSequence {
+    private fun createAudioSpannable(audioPath: String): SpannableString {
         val audioTag = "<audio src=\"$audioPath\"/>"
-        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_24)
-        val maxWidth = resources.displayMetrics.widthPixels - 40
+        val iconDrawable =
+            ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_circle_fille_24)
+                ?: return SpannableString("")
+        val screenWidth = resources.displayMetrics.widthPixels
+        val paddingHorizontal = 0 // 左右基础间距
+        // TextInputEditText 固定 paddingEnd，自动适配 dp
+        val textInputPaddingEnd = paddingEnd
+        val extraRightPadding = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics
+        ).toInt()
+        val rightPadding = textInputPaddingEnd + extraRightPadding
+        val maxWidth = screenWidth - paddingHorizontal
         val borderHeightDp = 40
         val borderHeightPx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             borderHeightDp.toFloat(),
             resources.displayMetrics
         ).toInt()
-        iconDrawable?.let {
-            val iconHeightDp = 24
-            val iconHeightPx = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                iconHeightDp.toFloat(),
-                resources.displayMetrics
-            ).toInt()
-            val originalWidth = it.intrinsicWidth
-            val originalHeight = it.intrinsicHeight
-            val scaleFactor = iconHeightPx.toFloat() / originalHeight.toFloat()
-            val iconWidthPx = (originalWidth * scaleFactor).toInt()
-            it.setBounds(0, 0, iconWidthPx, iconHeightPx)
-            val bitmapWithBorder =
-                Bitmap.createBitmap(maxWidth, borderHeightPx, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmapWithBorder)
-            val borderPaint = Paint().apply {
-                color = Color.BLACK
-                style = Paint.Style.STROKE
-                strokeWidth = 4f
-            }
-            canvas.drawRect(0f, 0f, maxWidth.toFloat(), borderHeightPx.toFloat(), borderPaint)
-            val centerX = (maxWidth - iconWidthPx) / 2f
-            val centerY = (borderHeightPx - iconHeightPx) / 2f
-            canvas.drawBitmap(it.toBitmap(), centerX, centerY, null)
-            val drawableWithBorder = BitmapDrawable(resources, bitmapWithBorder).apply {
-                setBounds(0, 0, maxWidth, borderHeightPx)  // 设置最终的绘制范围
-            }
-            val ss = SpannableString(audioTag)
-            val imageSpan = ImageSpan(drawableWithBorder, ImageSpan.ALIGN_BASELINE)
-            ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val iconHeightDp = 24
+        val iconHeightPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, iconHeightDp.toFloat(), resources.displayMetrics
+        ).toInt()
+        val originalWidth = iconDrawable.intrinsicWidth
+        val originalHeight = iconDrawable.intrinsicHeight
+        val scaleFactor = iconHeightPx.toFloat() / originalHeight
+        val iconWidthPx = (originalWidth * scaleFactor).toInt()
+        iconDrawable.setBounds(0, 0, iconWidthPx, iconHeightPx)
+        val bitmapWithBorder =
+            createBitmap(maxWidth, borderHeightPx)
+        val canvas = Canvas(bitmapWithBorder)
 
-            return ss
+        val colorPrimary = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
+        val borderPaint = Paint().apply {
+            color = colorPrimary
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+            isAntiAlias = true
         }
+        val halfStroke = borderPaint.strokeWidth / 2
+        canvas.drawRect(
+            halfStroke,
+            halfStroke,
+            maxWidth.toFloat() - rightPadding - halfStroke,
+            borderHeightPx.toFloat() - halfStroke,
+            borderPaint
+        )
+        val centerX = (maxWidth - rightPadding - iconWidthPx) / 2f
+        val centerY = (borderHeightPx - iconHeightPx) / 2f
+        canvas.drawBitmap(iconDrawable.toBitmap(), centerX, centerY, null)
+        val drawableWithBorder = bitmapWithBorder.toDrawable(resources).apply {
+            setBounds(0, 0, maxWidth - rightPadding, borderHeightPx) // 设置最终的绘制范围
+        }
+        val ss = SpannableString(audioTag)
+        val imageSpan = ImageSpan(drawableWithBorder, ImageSpan.ALIGN_BOTTOM)
+        ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        return SpannableString("")
+        return ss
     }
+
 
     /**
      * 创建视频占位符
@@ -612,27 +644,28 @@ class DailyTextInputEdit : TextInputEditText {
         val newWidth = maxWidth
         val newHeight = (originalHeight * toWidth).toInt()
         val ss = SpannableString(videoTag)
-        val createBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888)
+        val createBitmap = createBitmap(newWidth, newHeight)
         val canvas = Canvas(createBitmap)
         val matrix = Matrix()
         matrix.setScale(scaleFactor, scaleFactor)
         canvas.drawBitmap(bitmap, matrix, null)
-        val playDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_play_arrow_24)
+        val playDrawable =
+            ContextCompat.getDrawable(context, R.drawable.baseline_play_circle_filled_24)
         val playBitmap = playDrawable?.let {
             val width = it.intrinsicWidth
             val height = it.intrinsicHeight
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
             it.setBounds(0, 0, width, height)
             it.draw(canvas)
             bitmap
         }
         playBitmap?.let {
-            val centerX = (newWidth - it.width) / 2f
+            val centerX = ((newWidth - paddingEnd) - it.width) / 2f
             val centerY = (newHeight - it.height) / 2f
             canvas.drawBitmap(it, centerX, centerY, null)
         }
-        val drawable = BitmapDrawable(resources, createBitmap).apply {
+        val drawable = createBitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
@@ -14,9 +18,7 @@ import androidx.core.content.edit
 import com.liuxing.daily.util.ConstUtil
 
 /**
- * Author：流星
- * DateTime：2024/10/7 上午11:31
- * Description：关闭日记列表图像显示，使用自定义壁纸时获取更好的体验
+ * 关闭日记列表图像显示，使用自定义壁纸时获取更好的体验
  */
 class TurnOffDailyImageDisplaySwitchPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {

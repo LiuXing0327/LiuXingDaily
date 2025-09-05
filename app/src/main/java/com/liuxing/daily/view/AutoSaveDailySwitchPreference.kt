@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
@@ -13,9 +17,7 @@ import com.liuxing.daily.R
 import androidx.core.content.edit
 
 /**
- * Author：流星
- * DateTime：2024/10/7 上午11:31
- * Description：自定义自动保存开关偏好
+ * 自定义自动保存开关偏好
  */
 class AutoSaveDailySwitchPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {

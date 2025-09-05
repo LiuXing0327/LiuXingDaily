@@ -16,6 +16,7 @@
         android:padding="@dimen/dp_16">
 
         <ImageView
+            android:contentDescription="@string/image"
             android:scaleType="centerCrop"
             android:id="@+id/image_view"
             android:layout_width="match_parent"
@@ -28,10 +29,11 @@
             android:orientation="horizontal">
 
             <com.google.android.material.textview.MaterialTextView
+                style="?attr/textAppearanceHeadline5"
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/dp_8"
+                android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:textStyle="bold"
                 android:maxLines="1"
@@ -55,6 +57,7 @@
             android:layout_height="wrap_content">
 
             <ImageView
+                android:contentDescription="@string/mood"
                 android:id="@+id/iv_mood"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -63,6 +66,7 @@
                 app:srcCompat="@drawable/ic_happy" />
 
             <ImageView
+                android:contentDescription="@string/weather"
                 android:id="@+id/iv_weather"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -87,6 +91,7 @@
                 android:padding="@dimen/dp_6">
 
                 <ImageView
+                    android:contentDescription="@string/label"
                     android:id="@+id/iv_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

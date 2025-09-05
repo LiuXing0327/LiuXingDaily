@@ -2,19 +2,20 @@ package com.liuxing.daily.ui.video
 
 import android.content.res.Configuration
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.util.TypedValue
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.SurfaceHolder
 import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import android.widget.FrameLayout
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +23,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.appbar.AppBarLayout
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityLookDailyVideoBinding
+import com.liuxing.daily.extension.slide
+import com.liuxing.daily.ui.immersive.ImmersiveActivity
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.WindowUtil
@@ -30,9 +33,8 @@ import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.PlayerStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.core.view.isVisible
 
-class LookDailyVideoActivity : AppCompatActivity() {
+class LookDailyVideoActivity : ImmersiveActivity() {
 
     private lateinit var dailyVideoPlayerModel: DailyVideoPlayerModel
     private lateinit var lookDailyVideoBinding: ActivityLookDailyVideoBinding
@@ -41,15 +43,15 @@ class LookDailyVideoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         lookDailyVideoBinding = ActivityLookDailyVideoBinding.inflate(layoutInflater)
         setContentView(lookDailyVideoBinding.root)
-/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
-        }*/
+        }
         initData()
     }
 
@@ -58,7 +60,6 @@ class LookDailyVideoActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
-        initStatusBarColor()
         initViewModel()
         userUpdatePlayerProgress()
         updatePlayerProgress()
@@ -79,19 +80,6 @@ class LookDailyVideoActivity : AppCompatActivity() {
     }
 
     /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window,this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
-    }
-
-    /**
      * 初始化ViewModel
      */
     private fun initViewModel() {
@@ -106,23 +94,6 @@ class LookDailyVideoActivity : AppCompatActivity() {
                 }
             }
 
-/*            playerStatus.observe(this@LookDailyVideoActivity) {
-                when (it) {
-                    PlayerStatus.Paused -> lookDailyVideoBinding.videoController.controlIvBt.setImageDrawable(
-                        ContextCompat.getDrawable(
-                            this@LookDailyVideoActivity,
-                            R.drawable.baseline_play_arrow_24
-                        )
-                    )
-
-                    else -> lookDailyVideoBinding.videoController.controlIvBt.setImageDrawable(
-                        ContextCompat.getDrawable(
-                            this@LookDailyVideoActivity,
-                            R.drawable.baseline_pause_24
-                        )
-                    )
-                }
-            }*/
             playerStatus.observe(this@LookDailyVideoActivity) {
                 when (it) {
                     PlayerStatus.Paused -> lookDailyVideoBinding.videoController.controlBt.icon =  ContextCompat.getDrawable(
@@ -146,6 +117,8 @@ class LookDailyVideoActivity : AppCompatActivity() {
     private fun setVideo() {
         lookDailyVideoBinding.surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
+                dailyVideoPlayerModel.videoPlayer.setDisplay(holder)
+                dailyVideoPlayerModel.videoPlayer.setScreenOnWhilePlaying(true)
                 if (dailyVideoPlayerModel.videoPlayer != null && !dailyVideoPlayerModel.videoPlayer.isPlaying) {
                     dailyVideoPath = intent.getStringExtra("look_daily_video_path")
                     dailyVideoPlayerModel.videoPlayer.reset()
@@ -153,8 +126,6 @@ class LookDailyVideoActivity : AppCompatActivity() {
                         dailyVideoPlayerModel.setVideoPath(it)
                     }
                 }
-                dailyVideoPlayerModel.videoPlayer.setDisplay(holder)
-                dailyVideoPlayerModel.videoPlayer.setScreenOnWhilePlaying(true)
             }
 
             override fun surfaceChanged(
@@ -219,23 +190,13 @@ class LookDailyVideoActivity : AppCompatActivity() {
      * @param appBarLayout appBarLayout
      */
     private fun enterImmersive(appBarLayout: AppBarLayout) {
-        appBarLayout.visibility = View.GONE
+        appBarLayout.slide(false)
+        Handler(Looper.getMainLooper()).postDelayed({
+            appBarLayout.visibility = View.GONE
+        }, 300)
         lookDailyVideoBinding.videoController.main.visibility = View.GONE
-        isImmersive = true
         lookDailyVideoBinding.main.setBackgroundColor(Color.BLACK)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.apply {
-                hide(WindowInsets.Type.systemBars())
-                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or
-                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    )
-        }
+        (this as ImmersiveActivity).enterImmersive()
     }
 
     /**
@@ -245,16 +206,10 @@ class LookDailyVideoActivity : AppCompatActivity() {
      */
     private fun exitImmersive(appBarLayout: AppBarLayout) {
         appBarLayout.visibility = View.VISIBLE
+        appBarLayout.slide(true)
         lookDailyVideoBinding.videoController.main.visibility = View.VISIBLE
-        isImmersive = false
         lookDailyVideoBinding.main.setBackgroundColor(Color.TRANSPARENT)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.show(WindowInsets.Type.systemBars())
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-        }
-
+        (this as ImmersiveActivity).exitImmersive()
         WindowUtil.followPatternSetColor(window,this)
     }
 

@@ -3,7 +3,6 @@ package com.liuxing.daily.adapter
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -109,7 +108,6 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     .map { Pair(it.value, filteredList.indexOf(it.value)) })
             }
         }
-
         categorizedList = resultList
         notifyDataSetChanged()
     }
@@ -175,6 +173,11 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                             ConstUtil.moodList[dailyEntity.moodIndex.minus(1)] // 将索引减1，得到原始索引
                         )
                     )
+                    ConstUtil.moodLabelList[dailyEntity.moodIndex.minus(1)].let { id ->
+                        holder.ivMood.let { mood ->
+                            mood.contentDescription = mood.context.getString(id)
+                        }
+                    }
                     View.VISIBLE
                 }
             holder.ivWeather.visibility =
@@ -187,6 +190,13 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                             ConstUtil.weatherList[dailyEntity.weatherIndex.minus(1)] // 将索引减1，得到原始索引
                         )
                     )
+                    ConstUtil.weatherLabelList[dailyEntity.weatherIndex.minus(1)].let { id ->
+                        holder.ivWeather.let { weather ->
+                            weather.contentDescription = weather.context.getString(id)
+
+                        }
+
+                    }
                     View.VISIBLE
                 }
             imageDisplay =

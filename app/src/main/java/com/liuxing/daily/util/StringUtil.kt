@@ -1,12 +1,11 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import com.google.android.material.textfield.TextInputEditText
 
-/**
- * Author：流星
- * DateTime：2024/10/4 下午3:14
- * Description：字符串工具类
- */
 object StringUtil {
 
     /**

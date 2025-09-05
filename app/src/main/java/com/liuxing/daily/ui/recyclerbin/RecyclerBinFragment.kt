@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.RecyclerBinAdapter
@@ -17,11 +18,14 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
+import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -123,12 +127,28 @@ class RecyclerBinFragment : Fragment(), DailyLikeFragment {
                     mainActivity.expandContextualToolbar()
                     mainActivity.setUpContextualToolbarTitle("$selectedItemsCount")
                     mainActivity.setUpContextualToolbarPinnedVisibility()
+                    mainActivity.enableOnBack(true)
                 } else {
                     recyclerBinAdapter.selectMode = false
                     mainActivity.collapseContextualToolbar()
+                    mainActivity.enableLightStatusBarWithAppBar()
+                    mainActivity.enableOnBack(false)
                 }
             }
 
+        })
+
+        recyclerBinBinding.recyclerBinView.addOnScrollListener(object :
+            RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(-1) && dailyList.isNotEmpty() && SystemBarController.isLightStatusBarEnabled) {
+                    val bitmap = mainActivity.getBitmap()
+                    bitmap?.let {
+                        mainActivity.setLightStausBarsFromBitmap(it)
+                    }
+                }
+            }
         })
     }
 
@@ -138,14 +158,20 @@ class RecyclerBinFragment : Fragment(), DailyLikeFragment {
     private fun setRecyclerDaily() {
         dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { recyclerBinDailyList ->
             lifecycleScope.launch {
-                dailyList = recyclerBinDailyList
-                val uuids = dailyList.mapNotNull { it.dailyUUID }
-                val imageMap = dailyViewModel.getImagePathForUuids(uuids)
-                recyclerBinAdapter.setDailyList(
-                    requireContext(),
-                    recyclerBinDailyList,
-                    imageMap
-                )
+                val uuids = withContext(Dispatchers.Default) {
+                    dailyList.mapNotNull { it.dailyUUID }
+                }
+                val imageMap = withContext(Dispatchers.IO) {
+                    dailyViewModel.getImagePathForUuids(uuids)
+                }
+                withContext(Dispatchers.Main) {
+                    recyclerBinAdapter.setDailyList(
+                        requireContext(),
+                        recyclerBinDailyList,
+                        imageMap
+                    )
+                    dailyList = recyclerBinDailyList
+                }
             }
         }
     }

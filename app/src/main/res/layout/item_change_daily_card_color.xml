@@ -7,6 +7,7 @@
     android:padding="@dimen/dp_16">
 
     <com.google.android.material.card.MaterialCardView
+        android:contentDescription="@string/color"
         android:id="@+id/color_card"
         android:clickable="true"
         android:foreground="?attr/selectableItemBackground"

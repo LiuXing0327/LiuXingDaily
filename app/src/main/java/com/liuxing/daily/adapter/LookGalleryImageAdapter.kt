@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.util.Log
@@ -9,9 +13,7 @@ import com.liuxing.daily.ui.image.LookDailyImageFragment
 import java.io.File
 
 /**
- * Author：流星
- * DateTime：2024/10/27 14:09
- * Description：看图库图片的适配器
+ * 看图库图片的适配器
  */
 class LookGalleryImageAdapter(
     fragmentActivity: FragmentActivity,

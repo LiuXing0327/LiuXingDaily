@@ -37,25 +37,27 @@
             android:layout_height="wrap_content"/>
 
         <com.google.android.material.textview.MaterialTextView
+            android:layout_marginTop="@dimen/dp_8"
             android:id="@+id/tv_link"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="@dimen/sp_16" />
 
-        <LinearLayout
-            android:padding="@dimen/dp_8"
+        <com.google.android.material.card.MaterialCardView
+            android:layout_marginTop="@dimen/dp_8"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?attr/colorSurfaceContainer">
 
             <com.google.android.material.textview.MaterialTextView
+                android:padding="@dimen/dp_16"
                 android:id="@+id/tv_remark"
                 android:textIsSelectable="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/sp_16" />
 
-        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

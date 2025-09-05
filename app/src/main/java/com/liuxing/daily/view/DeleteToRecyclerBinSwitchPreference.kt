@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
@@ -10,11 +14,6 @@ import androidx.preference.PreferenceViewHolder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
 
-/**
- * Author：流星
- * DateTime：2024/10/29 18:08
- * Description：
- */
 class DeleteToRecyclerBinSwitchPreference(
     context: Context,
     attrs: AttributeSet,

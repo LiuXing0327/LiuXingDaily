@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.CalendarToDailyAdapter
@@ -18,13 +19,18 @@ import com.liuxing.daily.databinding.FragmentCalendarQueryDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
@@ -105,6 +111,20 @@ class CalendarQueryDailyFragment : Fragment() {
     private fun initViewModel() {
         dailyViewModel = ViewModelProvider(requireActivity())[DailyViewModel::class.java]
         mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+
+        val mainActivity = (requireActivity() as MainActivity)
+        fragmentCalendarQueryDailyBinding.recyclerView.addOnScrollListener(object :
+            RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(-1) && dailyList.isNotEmpty() && SystemBarController.isLightStatusBarEnabled) {
+                    val bitmap = mainActivity.getBitmap()
+                    bitmap?.let {
+                        mainActivity.setLightStausBarsFromBitmap(it)
+                    }
+                }
+            }
+        })
     }
 
     /**
@@ -136,20 +156,25 @@ class CalendarQueryDailyFragment : Fragment() {
             .observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
                 override fun onChanged(value: List<DailyEntity>) {
                     lifecycleScope.launch {
-                        dailyList = value
-                        val uuids = value.mapNotNull { it.dailyUUID }
-                        val imageMap = dailyViewModel.getImagePathForUuids(uuids)
-
-                        calendarToDailyAdapter.setDailyList(
-                            requireContext(),
-                            dailyList,
-                            yearMonthDay.ifEmpty {
-                                DateUtil.getDateString(
-                                    0,
-                                    Date(fragmentCalendarQueryDailyBinding.calendarView.date)
-                                ).substring(0, 10)
-                            }, imageMap
-                        )
+                        val uuids = withContext(Dispatchers.Default) {
+                            value.mapNotNull { it.dailyUUID }
+                        }
+                        val imageMap = withContext(Dispatchers.IO) {
+                            dailyViewModel.getImagePathForUuids(uuids)
+                        }
+                        withContext(Dispatchers.Main) {
+                            calendarToDailyAdapter.setDailyList(
+                                requireContext(),
+                                dailyList,
+                                yearMonthDay.ifEmpty {
+                                    DateUtil.getDateString(
+                                        0,
+                                        Date(fragmentCalendarQueryDailyBinding.calendarView.date)
+                                    ).substring(0, 10)
+                                }, imageMap
+                            )
+                            dailyList = value
+                        }
                     }
 
                 }

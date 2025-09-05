@@ -1,24 +1,24 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.markdown.span
 
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.text.Layout
 import android.text.style.LeadingMarginSpan
-import androidx.core.content.ContextCompat
-import com.liuxing.daily.MyApplication
-import com.liuxing.daily.R
+import com.liuxing.daily.markdown.color.MarkdownColor
 
 /**
- * Author：流星
- * DateTime：2025/5/1 10:25
- * Description：BulletSpan
+ * 自定义 BulletSpan
  */
 class BulletSpan : LeadingMarginSpan {
 
     private val paint = Paint()
 
     init {
-        paint.color = ContextCompat.getColor(MyApplication.context!!, R.color.bullet_color)
+        paint.color = MarkdownColor.bulletColor
         paint.style = Paint.Style.FILL
     }
 

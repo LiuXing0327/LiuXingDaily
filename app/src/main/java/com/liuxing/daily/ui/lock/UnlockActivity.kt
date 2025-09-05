@@ -5,11 +5,14 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.TypedValue
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
+import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityUnlockBinding
 import com.liuxing.daily.ui.main.MainActivity
@@ -26,13 +29,13 @@ class UnlockActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         unlockBinding = ActivityUnlockBinding.inflate(layoutInflater)
         setContentView(unlockBinding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
         }
         initData()
@@ -42,25 +45,10 @@ class UnlockActivity : AppCompatActivity() {
      * 初始化数据
      */
     private fun initData() {
-        initStatusBarColor()
         initSharePreference()
         getAppPassword()
         changeButtonState()
         unlock()
-    }
-
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window, this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**

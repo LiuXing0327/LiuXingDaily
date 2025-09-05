@@ -5,6 +5,7 @@
     android:layout_height="match_parent">
 
     <ImageView
+        android:contentDescription="@string/wallpaper"
         android:scaleType="centerCrop"
         android:id="@+id/wallpaper"
         android:layout_weight="1"
@@ -12,6 +13,7 @@
         android:layout_height="0dp"/>
 
     <com.google.android.material.slider.Slider
+        android:contentDescription="@string/slider_alpha_description"
         android:id="@+id/slider"
         android:value="15"
         android:stepSize="1"

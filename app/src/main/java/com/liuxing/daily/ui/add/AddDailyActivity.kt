@@ -6,13 +6,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.util.TypedValue
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -23,6 +24,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
@@ -40,6 +43,7 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.util.ConstUtil
@@ -52,7 +56,6 @@ import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.view.DailyTextInputEdit
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
@@ -90,23 +93,23 @@ class AddDailyActivity : AppCompatActivity() {
     private var dailyLabel: String = ""
     private lateinit var mainViewModel: MainViewModel
     private var drawImageName = ""
+    private lateinit var onEnabledChangedListener: OnEnabledChangedListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         activityAddDailyBinding = ActivityAddDailyBinding.inflate(layoutInflater)
         setContentView(activityAddDailyBinding.root)
-/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
-        }*/
+        }
         initView()
         initData(savedInstanceState)
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
-
     }
 
     /**
@@ -126,6 +129,26 @@ class AddDailyActivity : AppCompatActivity() {
                 }
             }
         })
+        dailyTextInputEdit.setVideoDeletionListener(object :
+            DailyTextInputEdit.VideoDeletionListener {
+            override fun onVideoDeleted(videoPath: String) {
+                if (FileUtil().checkFileExists(videoPath)) {
+                    FileUtil().deleteFile(videoPath)
+                    videoList.remove(videoPath)
+                }
+            }
+
+        })
+        dailyTextInputEdit.setAudioDeletionListener(object :
+            DailyTextInputEdit.AudioDeletionListener {
+            override fun onAudioDeleted(audioPath: String) {
+                if (FileUtil().checkFileExists(audioPath)) {
+                    FileUtil().deleteFile(audioPath)
+                    audioList.remove(audioPath)
+                }
+            }
+
+        })
 
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -135,6 +158,15 @@ class AddDailyActivity : AppCompatActivity() {
         val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
         activityAddDailyBinding.inputTitle.textSize = textSize + 4
         dailyTextInputEdit.textSize = textSize
+
+        enableOnBack()
+        onEnabledChangedListener?.onEnableChanged(contentIsNotNull())
+        activityAddDailyBinding.inputTitle.addTextChangedListener {
+            onEnabledChangedListener?.onEnableChanged(contentIsNotNull())
+        }
+        activityAddDailyBinding.inputContent.addTextChangedListener {
+            onEnabledChangedListener?.onEnableChanged(contentIsNotNull())
+        }
     }
 
     /**
@@ -142,7 +174,6 @@ class AddDailyActivity : AppCompatActivity() {
      */
     private fun initData(savedInstanceState: Bundle?) {
         setActionBar()
-        initStatusBarColor()
         initMenu()
         setDailyCount()
         initViewModel()
@@ -159,19 +190,6 @@ class AddDailyActivity : AppCompatActivity() {
         setSupportActionBar(activityAddDailyBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
         this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window,this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**
@@ -223,10 +241,6 @@ class AddDailyActivity : AppCompatActivity() {
                                 backgroundColorIndex
                             ) { selectedColor, position ->
                                 backgroundColorIndex = position
-                                window.statusBarColor = ContextCompat.getColor(
-                                    this@AddDailyActivity,
-                                    selectedColor
-                                )
                             activityAddDailyBinding.main.setBackgroundColor(
                                 ContextCompat.getColor(
                                     this@AddDailyActivity,
@@ -641,6 +655,7 @@ class AddDailyActivity : AppCompatActivity() {
     private val onBackPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                Log.d("TAG", "handleOnBackPressed: ")
                 isDailyNull()
             }
         }
@@ -694,6 +709,19 @@ class AddDailyActivity : AppCompatActivity() {
             finish()
         }
 
+    }
+
+    private fun setOnEnabledChangedListener(onEnabledChangedListener: OnEnabledChangedListener) {
+        this.onEnabledChangedListener = onEnabledChangedListener
+    }
+
+    private fun enableOnBack() {
+        setOnEnabledChangedListener(object : OnEnabledChangedListener {
+            override fun onEnableChanged(enable: Boolean) {
+                onBackPressedCallback.isEnabled = enable
+            }
+
+        })
     }
 
     /**

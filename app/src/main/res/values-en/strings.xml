@@ -166,4 +166,15 @@
     <string name="redo">Redo</string>
     <string name="select_all">Select all</string>
     <string name="confirm_pinned_journal_message">Are you sure you want to %1$s this journal entry?</string>
+    <string name="color_label_transparent">Transparent</string>
+    <string name="color_label_purple">Purple</string>
+    <string name="color_label_red">Red</string>
+    <string name="color_label_green">Green</string>
+    <string name="color_label_blue">Blue</string>
+    <string name="color_label_yellow">Yellow</string>
+    <string name="color_label_pink">Pink</string>
+    <string name="slider_alpha_description">Image transparency slider, current transparency %1$d%%</string>
+    <string name="enter_your_password">Enter your password</string>
+    <string name="image">Image</string>
+    <string name="user_agreement_and_privacy_Policy">User Agreement and Privacy Policy</string>
 </resources>

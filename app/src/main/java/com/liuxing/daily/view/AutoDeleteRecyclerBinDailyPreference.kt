@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.annotation.SuppressLint
@@ -13,11 +17,6 @@ import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
 import com.liuxing.daily.R
 
-/**
- * Author：流星
- * DateTime：2025/1/18 18:09
- * Description：
- */
 class AutoDeleteRecyclerBinDailyPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {
 

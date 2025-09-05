@@ -1,13 +1,12 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import android.text.SpannableString
 import android.text.style.ImageSpan
 
-/**
- * Author：流星
- * DateTime：2024/11/3 9:04
- * Description：文本工具类
- */
 object TextUtil {
 
     /**

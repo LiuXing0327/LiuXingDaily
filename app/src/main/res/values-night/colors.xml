@@ -7,7 +7,7 @@
     <color name="color_5">@color/md_theme_primaryContainer_blue</color>
     <color name="color_6">@color/md_theme_primaryContainer_yellow</color>
     <color name="color_7">@color/md_theme_primaryContainer_pink</color>
-
+    <color name="bullet_color">@color/m3_ref_palette_neutral_variant80</color>
     <color name="md_theme_primary">#D0BCFF</color>
     <color name="md_theme_primaryFixed">#EADDFF</color>
     <color name="md_theme_inversePrimary">#6750A4</color>

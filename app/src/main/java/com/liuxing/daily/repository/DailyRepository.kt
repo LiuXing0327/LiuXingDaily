@@ -108,4 +108,8 @@ class DailyRepository(application: Application) {
     suspend fun queryAllDailyImageEntity(): List<DailyImageEntity> {
         return dailyDao.queryAllDailyImageEntity()
     }
+
+    suspend fun toggleIsDelete(uuids: List<String>) {
+        dailyDao.toggleIsDelete(uuids)
+    }
 }

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.content.Intent
@@ -15,9 +19,7 @@ import com.liuxing.daily.util.FileUtil
 import java.io.File
 
 /**
- * Author：流星
- * DateTime：2024/11/8 16:59
- * Description：图库适配器
+ * 图库适配器
  */
 class GalleryAdapter(private val imageList: List<File>) :
     RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
