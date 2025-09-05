@@ -21,6 +21,7 @@ import com.liuxing.daily.util.ConstUtil.imageRegex
 import com.liuxing.daily.util.ConstUtil.videoRegex
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.view.DailyTextView
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -263,6 +264,9 @@ class LookDailyPagerFragment : Fragment() {
                             ConstUtil.moodList[it.minus(1)]
                         )
                     )
+                    ConstUtil.moodLabelList[it.minus(1)].let { id ->
+                        binding.ivMood.contentDescription = getString(id)
+                    }
                     View.VISIBLE
                 }
             }
@@ -274,6 +278,9 @@ class LookDailyPagerFragment : Fragment() {
                             ConstUtil.weatherList[it.minus(1)]
                         )
                     )
+                    ConstUtil.weatherLabelList[it.minus(1)].let { id ->
+                        binding.ivWeather.contentDescription = getString(id)
+                    }
                     View.VISIBLE
                 }
             }

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import android.content.Context
@@ -5,11 +9,6 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 
-/**
- * Author：流星
- * DateTime：2024/10/27 10:28
- * Description：偏好工具类
- */
 object SharedPreferencesUtil {
 
     /**
@@ -29,6 +28,7 @@ object SharedPreferencesUtil {
      * @param dailyLabel 日记标签
      * @param videoListNotNull 视频集合不为空
      * @param audioListNotNull 音频集合不为空
+     * @param isPinned 置顶
      */
     fun autoSaveDailySharedPreferences(
         context: Context,
@@ -44,7 +44,8 @@ object SharedPreferencesUtil {
         imageListNotNull: Boolean,
         dailyLabel: String,
         videoListNotNull: Boolean,
-        audioListNotNull: Boolean
+        audioListNotNull: Boolean,
+        isPinned: Boolean = false
     ) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         sharedPreferences.edit {
@@ -79,6 +80,7 @@ object SharedPreferencesUtil {
             putString("switch_preference_auto_save_daily_label", dailyLabel)
             putBoolean("switch_preference_auto_save_video_list_not_null", videoListNotNull)
             putBoolean("switch_preference_auto_save_video_list_not_null", audioListNotNull)
+            putBoolean("switch_preference_auto_save_is_pinned",isPinned)
             apply()
         }
     }

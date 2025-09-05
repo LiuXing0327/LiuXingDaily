@@ -10,15 +10,20 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.liuxing.daily.adapter.OnThisDayAdapter
 import com.liuxing.daily.databinding.FragmentOnThisDayBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -104,6 +109,20 @@ class OnThisDayFragment : Fragment() {
         onThisDayAdapter = OnThisDayAdapter()
         onThisDayBinding.onThisDayRecycler.adapter = onThisDayAdapter
         setRecyclerViewData()
+
+        val mainActivity = (requireActivity() as MainActivity)
+        onThisDayBinding.onThisDayRecycler.addOnScrollListener(object :
+            RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(-1) && dailyList.isNotEmpty() && SystemBarController.isLightStatusBarEnabled) {
+                    val bitmap = mainActivity.getBitmap()
+                    bitmap?.let {
+                        mainActivity.setLightStausBarsFromBitmap(it)
+                    }
+                }
+            }
+        })
     }
 
     /**
@@ -121,14 +140,20 @@ class OnThisDayFragment : Fragment() {
         dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { dailyList ->
             this.dailyList = dailyList
             lifecycleScope.launch {
-                val uuids = dailyList.mapNotNull { it.dailyUUID }
-                val imageMap = dailyViewModel.getImagePathForUuids(uuids)
-                onThisDayAdapter.setDailyList(
-                    requireContext(),
-                    dailyList,
-                    DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
-                    imageMap
-                )
+                val uuids = withContext(Dispatchers.Default) {
+                    dailyList.mapNotNull { it.dailyUUID }
+                }
+                val imageMap = withContext(Dispatchers.IO) {
+                    dailyViewModel.getImagePathForUuids(uuids)
+                }
+                withContext(Dispatchers.Main) {
+                    onThisDayAdapter.setDailyList(
+                        requireContext(),
+                        dailyList,
+                        DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
+                        imageMap
+                    )
+                }
             }
         }
     }

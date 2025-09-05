@@ -12,18 +12,13 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityDrawImageBinding
 import com.liuxing.daily.listener.UndoRedoListener
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.view.DrawView
 import com.liuxing.library.ColorPickerView
 import java.io.File
@@ -39,7 +34,7 @@ class DrawImageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         binding = ActivityDrawImageBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -82,7 +77,6 @@ class DrawImageActivity : AppCompatActivity() {
      * 初始化数据
      */
     private fun initData() {
-        initStatusBarColor()
         fullScreenMode()
         changeBrushColor()
         back()
@@ -112,19 +106,6 @@ class DrawImageActivity : AppCompatActivity() {
                     View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     )
         }
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window, this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**
@@ -223,7 +204,6 @@ class DrawImageActivity : AppCompatActivity() {
                 setNeutralButton(getString(R.string.cancel), null)
                 setPositiveButton(getString(R.string.sure)) { _, _ ->
                     binding.drawView.setBackgroundColor(selectedBackgroundColor)
-                    window.statusBarColor = selectedBackgroundColor
                     binding.drawView.setEraserStrokeColor(selectedBackgroundColor)
                 }
                 setOnDismissListener {
@@ -288,5 +268,10 @@ class DrawImageActivity : AppCompatActivity() {
             binding.drawView.redo()
             binding.floatingToolbarButtonRedo.isChecked = false
         }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) fullScreenMode()
     }
 }

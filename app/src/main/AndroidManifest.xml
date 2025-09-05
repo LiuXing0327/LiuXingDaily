@@ -9,6 +9,7 @@
         android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -16,7 +17,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.流星日记"
         android:usesCleartextTraffic="true"
-        tools:targetApi="31">
+        tools:targetApi="33">
+        <activity
+            android:name=".ui.privacy.PrivacyActivity"
+            android:exported="false" />
         <activity
             android:name=".ui.draw.DrawImageActivity"
             android:exported="false" />

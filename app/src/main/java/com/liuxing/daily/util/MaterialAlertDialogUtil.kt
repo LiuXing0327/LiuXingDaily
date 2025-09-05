@@ -1,14 +1,15 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.util
 
+import android.app.Activity
 import android.content.Context
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-/**
- * Author：流星
- * DateTime：2025/4/28 11:38
- * Description：对话框工具类
- */
 object MaterialAlertDialogUtil {
 
     /**
@@ -32,8 +33,13 @@ object MaterialAlertDialogUtil {
         onNegative: (() -> Unit)? = null,
         neutralText: String = "",
         onNeutral: (() -> Unit)? = null
-    ): AlertDialog {
-        MaterialAlertDialogBuilder(context).apply {
+    ): AlertDialog? {
+        val activity = (context as? Activity) ?: return null
+        if(activity.isFinishing || activity.isDestroyed){
+            LogUtil.w("showDialog: null activity")
+            return null
+        }
+        MaterialAlertDialogBuilder(activity).apply {
             setMessage(message)
             setPositiveButton(positiveText) { _, _ ->
                 onPositive?.invoke()

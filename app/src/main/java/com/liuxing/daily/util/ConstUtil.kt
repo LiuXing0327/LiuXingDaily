@@ -29,6 +29,18 @@ object ConstUtil {
         R.drawable.baseline_daily_mw_not_add_24
     )
 
+    // 心情的标签
+    val moodLabelList = listOf(
+        R.string.happy,
+        R.string.quiet,
+        R.string.not_happy,
+        R.string.angry,
+        R.string.tired,
+        R.string.sad,
+        R.string.agitated,
+        R.string.not_add
+    )
+
     // 天气图片
     val weatherList: List<Int> =
         listOf(
@@ -42,6 +54,17 @@ object ConstUtil {
             R.drawable.ic_haze,
             R.drawable.baseline_daily_mw_not_add_24
         )
+    val weatherLabelList = listOf(
+        R.string.sunny,
+        R.string.overcast,
+        R.string.cloudy,
+        R.string.snow_day,
+        R.string.thunderstorm,
+        R.string.rain_day,
+        R.string.gale,
+        R.string.haze,
+        R.string.not_add
+    )
 
     // 日记背景颜色
     val backgroundColorList = listOf(
@@ -52,6 +75,17 @@ object ConstUtil {
         R.color.color_5,
         R.color.color_6,
         R.color.color_7
+    )
+
+    // 日记背景颜色的标签
+    val backgroundColorLabelList = listOf(
+        R.string.color_label_transparent,
+        R.string.color_label_purple,
+        R.string.color_label_red,
+        R.string.color_label_green,
+        R.string.color_label_blue,
+        R.string.color_label_yellow,
+        R.string.color_label_pink
     )
 
     // 媒体标签正则
@@ -69,4 +103,6 @@ object ConstUtil {
 
     // 日记列表图片显示键
     const val DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY = "switch_preference_image_display"
+
+    const val TERMS_AND_PRIVACY_AGREED_KEY = "terms_and_privacy_agreed"
 }

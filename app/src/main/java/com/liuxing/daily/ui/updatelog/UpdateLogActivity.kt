@@ -2,20 +2,20 @@ package com.liuxing.daily.ui.updatelog
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.widget.NestedScrollView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.data.VersionLogData
 import com.liuxing.daily.databinding.ActivityUpdateLogBinding
 import com.liuxing.daily.markdown.MarkdownParser
+import com.liuxing.daily.markdown.color.MarkdownColor
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import java.io.BufferedReader
 
 
@@ -27,15 +27,16 @@ class UpdateLogActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         activityUpdateLogBinding = ActivityUpdateLogBinding.inflate(layoutInflater)
         setContentView(activityUpdateLogBinding.root)
-/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
-        }*/
+        }
+        MarkdownColor.init(this)
         initData()
     }
 
@@ -46,7 +47,6 @@ class UpdateLogActivity : AppCompatActivity() {
         setActionBar()
         initSharedPreferences()
         getUpdateLog(sharedPreferences!!.getInt("update_log_sort_by", 0))
-        initStatusBarColor()
     }
 
     /**
@@ -157,33 +157,7 @@ class UpdateLogActivity : AppCompatActivity() {
             }
             sb.append("\n")
         }
-        activityUpdateLogBinding.tvUpdateLog.text = MarkdownParser.parseMarkdown((sb.toString()))
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window,this)
-        window.statusBarColor =
-            ContextCompat.getColor(this@UpdateLogActivity, android.R.color.transparent)
-        setScrollStatusBarColor()
-    }
-
-    /**
-     * 设置滚动后状态栏颜色
-     */
-    private fun setScrollStatusBarColor() {
-        activityUpdateLogBinding.nestedScrollView.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
-            if (scrollY == 0) window.statusBarColor =
-                ContextCompat.getColor(
-                    this@UpdateLogActivity,
-                    android.R.color.transparent
-                ) else window.statusBarColor = typedValue.data
-        })
+        val parsed = MarkdownParser.parseMarkdown((sb.toString()))
+        activityUpdateLogBinding.tvUpdateLog.text = parsed
     }
 }

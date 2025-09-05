@@ -2,21 +2,21 @@ package com.liuxing.daily.ui.gallery
 
 import android.os.Bundle
 import android.os.Environment
-import android.util.TypedValue
 import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.LookGalleryImageAdapter
 import com.liuxing.daily.databinding.ActivityLookGalleryImageBinding
+import com.liuxing.daily.ui.immersive.ImmersiveActivity
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.io.File
 
-class LookGalleryImageActivity : AppCompatActivity() {
+class LookGalleryImageActivity : ImmersiveActivity() {
 
     lateinit var lookGalleryImageBinding: ActivityLookGalleryImageBinding
     private lateinit var dailyViewModel: DailyViewModel
@@ -24,15 +24,15 @@ class LookGalleryImageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         lookGalleryImageBinding = ActivityLookGalleryImageBinding.inflate(layoutInflater)
         setContentView(lookGalleryImageBinding.root)
-/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }*/
+        }
         initData()
     }
 
@@ -41,7 +41,6 @@ class LookGalleryImageActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
-        initStatusBarColor()
         initViewmodel()
         loadImage()
         initImagePager()
@@ -56,19 +55,6 @@ class LookGalleryImageActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(false)
         }
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window,this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**

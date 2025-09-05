@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.markdown.span
 
 import android.graphics.Canvas
@@ -10,9 +14,7 @@ import android.text.style.LeadingMarginSpan
 import android.text.style.MetricAffectingSpan
 
 /**
- * Author：流星
- * DateTime：2025/5/1 8:44
- * Description：HeadingSpan
+ * HeadingSpan
  */
 class HeadingSpan(private val proportion: Float, private val lineHeight: Float) :
     MetricAffectingSpan(),

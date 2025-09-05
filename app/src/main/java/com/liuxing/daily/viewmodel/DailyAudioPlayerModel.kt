@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.viewmodel
 
 import androidx.lifecycle.LiveData
@@ -8,11 +12,6 @@ import com.liuxing.daily.ui.video.MyMediaPlayer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/**
- * Author：流星
- * DateTime：2024/12/13 17:52
- * Description：
- */
 class DailyAudioPlayerModel : ViewModel() {
     val audioPlayer = MyMediaPlayer()
     private val _playerStatus = MutableLiveData(PlayerStatus.NotReady)

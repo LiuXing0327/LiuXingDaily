@@ -1,17 +1,17 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode
 import com.liuxing.daily.R
 
-/**
- * Author：流星
- * DateTime：2024/10/25 14:27
- * Description：主题工具类
- */
 object ThemeUtil {
 
     /**

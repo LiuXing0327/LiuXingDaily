@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.content.Context
@@ -13,9 +17,7 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.util.ConstUtil
 
 /**
- * Author：流星
- * DateTime：2024/10/23 19:08
- * Description：天气适配器
+ * 天气适配器
  */
 class WeatherAdapter(context: Context) : RecyclerView.Adapter<WeatherAdapter.ViewHolder>() {
 

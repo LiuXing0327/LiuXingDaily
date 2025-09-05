@@ -1,10 +1,12 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
@@ -16,11 +18,13 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ImageSpan
 import android.util.AttributeSet
-import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.ui.audio.PlayAudioActivity
@@ -31,9 +35,7 @@ import com.liuxing.daily.util.ImageUtil.createImageThumbnail
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
- * Author：流星
- * DateTime：2024/11/2 12:55
- * Description：看日记文本
+ * 看日记文本
  */
 class DailyTextView : MaterialTextView {
 
@@ -255,27 +257,34 @@ class DailyTextView : MaterialTextView {
         val newWidth = maxWidth
         val newHeight = (originalHeight * toWidth).toInt()
         val ss = SpannableString(videoTag)
-        val createBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888)
+        val createBitmap = createBitmap(newWidth, newHeight)
         val canvas = Canvas(createBitmap)
         val matrix = Matrix()
         matrix.setScale(scaleFactor, scaleFactor)
         canvas.drawBitmap(bitmap, matrix, null)
-        val playDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_play_arrow_24)
+        val playDrawable =
+            ContextCompat.getDrawable(context, R.drawable.baseline_play_circle_filled_24)
         val playBitmap = playDrawable?.let {
             val width = it.intrinsicWidth
             val height = it.intrinsicHeight
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
             it.setBounds(0, 0, width, height)
             it.draw(canvas)
             bitmap
         }
         playBitmap?.let {
-            val centerX = (newWidth - it.width) / 2f
+            // 获取 @dimen/dp_16 的像素值
+            val parentPaddingPx = resources.getDimensionPixelSize(R.dimen.dp_16)
+            val extraRightPadding =
+                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics)
+                    .toInt()
+            val rightPadding = parentPaddingPx + extraRightPadding
+            val centerX = ((newWidth - rightPadding) - it.width) / 2f
             val centerY = (newHeight - it.height) / 2f
             canvas.drawBitmap(it, centerX, centerY, null)
         }
-        val drawable = BitmapDrawable(resources, createBitmap).apply {
+        val drawable = createBitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
@@ -341,9 +350,21 @@ class DailyTextView : MaterialTextView {
      */
     private fun createAudioSpannable(audioPath: String, audioIndex: Int): SpannableString {
         val audioTag = "<audio src=\"$audioPath\"/>"
-        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_24)
+        val iconDrawable =
+            ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_circle_fille_24)
             ?: return SpannableString("")
-        val maxWidth = resources.displayMetrics.widthPixels - 40
+
+        val screenWidth = resources.displayMetrics.widthPixels
+        val paddingHorizontal = 40 // 左右基础间距
+        // 获取 @dimen/dp_16 的像素值，并加上额外安全间距
+        val parentPaddingPx = resources.getDimensionPixelSize(R.dimen.dp_16)
+        val extraRightPadding = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            8f,
+            resources.displayMetrics
+        ).toInt()
+        val rightPadding = parentPaddingPx + extraRightPadding
+        val maxWidth = screenWidth - paddingHorizontal
         val borderHeightDp = 40
         val borderHeightPx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -358,37 +379,49 @@ class DailyTextView : MaterialTextView {
         ).toInt()
         val originalWidth = iconDrawable.intrinsicWidth
         val originalHeight = iconDrawable.intrinsicHeight
-        val scaleFactor = iconHeightPx.toFloat() / originalHeight.toFloat()
+        val scaleFactor = iconHeightPx.toFloat() / originalHeight
         val iconWidthPx = (originalWidth * scaleFactor).toInt()
         iconDrawable.setBounds(0, 0, iconWidthPx, iconHeightPx)
+
         val bitmapWithBorder =
-            Bitmap.createBitmap(maxWidth, borderHeightPx, Bitmap.Config.ARGB_8888)
+            createBitmap(maxWidth, borderHeightPx)
         val canvas = Canvas(bitmapWithBorder)
+        val colorPrimary = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
         val borderPaint = Paint().apply {
-            color = Color.BLACK
+            color = colorPrimary
             style = Paint.Style.STROKE
             strokeWidth = 4f
+            isAntiAlias = true
         }
-        canvas.drawRect(0f, 0f, maxWidth.toFloat(), borderHeightPx.toFloat(), borderPaint)
-
-        val centerX = (maxWidth - iconWidthPx) / 2f
+        val halfStroke = borderPaint.strokeWidth / 2
+        canvas.drawRect(
+            halfStroke,
+            halfStroke,
+            maxWidth.toFloat() - rightPadding - halfStroke,
+            borderHeightPx.toFloat() - halfStroke,
+            borderPaint
+        )
+        val centerX = (maxWidth - rightPadding - iconWidthPx) / 2f
         val centerY = (borderHeightPx - iconHeightPx) / 2f
         canvas.drawBitmap(iconDrawable.toBitmap(), centerX, centerY, null)
-        val drawableWithBorder = BitmapDrawable(resources, bitmapWithBorder).apply {
-            setBounds(0, 0, maxWidth, borderHeightPx)
-        }
-        val ss = SpannableString(audioTag)
-        val imageSpan = ImageSpan(drawableWithBorder, ImageSpan.ALIGN_BASELINE)
-        ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
+        val drawableWithBorder = bitmapWithBorder.toDrawable(resources).apply {
+            setBounds(0, 0, maxWidth - rightPadding, borderHeightPx)
+        }
+
+        val ss = SpannableString(audioTag)
+        val imageSpan = ImageSpan(drawableWithBorder, ImageSpan.ALIGN_BOTTOM)
+        ss.setSpan(imageSpan, 0, ss.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         ss.setSpan(
             createAudioClickableSpan(audioIndex),
             0,
             ss.length,
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
+
         return ss
     }
+
 
     /**
      * 创建音频点击事件

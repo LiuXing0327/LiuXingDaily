@@ -1,17 +1,14 @@
 package com.liuxing.daily
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
-import android.util.Log
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.util.ThemeUtil
 
 /**
- * Author：流星
- * Project：流星日记
+ *  Project：流星日记
  */
 class MyApplication : Application() {
     /**
@@ -28,14 +25,13 @@ class MyApplication : Application() {
     private var sharedPreferences: SharedPreferences? = null
 
     companion object {
-        @SuppressLint("StaticFieldLeak")
-        var context: Context? = null
-
+        lateinit var appContext: Context
+            private set
     }
 
     override fun onCreate() {
         super.onCreate()
-        context = applicationContext
+        appContext = applicationContext
         initSharePreferences()
        // DynamicColors.applyToActivitiesIfAvailable(this)
         ThemeUtil.setThemeMode(sharedPreferences!!.getInt("theme_mode_preference", 0))

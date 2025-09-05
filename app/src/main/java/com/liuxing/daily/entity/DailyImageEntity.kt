@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.entity
 
 import androidx.room.ColumnInfo
@@ -6,9 +10,7 @@ import androidx.room.PrimaryKey
 import com.google.gson.annotations.Expose
 
 /**
- * Author：流星
- * DateTime：2024/10/26 9:31
- * Description：日记图片的实体类
+ * 日记图片的实体类
  */
 @Entity(tableName = "DAILY_IMAGE")
 data class DailyImageEntity(

@@ -9,13 +9,13 @@ import android.os.Bundle
 import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -43,6 +43,7 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.util.ConstUtil
@@ -55,7 +56,6 @@ import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.view.DailyTextInputEdit
 import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -104,16 +104,18 @@ class EditDailyActivity : AppCompatActivity() {
     private val tempAudioList2 = mutableSetOf<String>()
     private val deleteAudioList = mutableSetOf<String>()
     private var drawImageName = ""
+    private lateinit var onEnabledChangedListener: OnEnabledChangedListener
+    private var isPinned = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         activityEditDailyBinding = ActivityEditDailyBinding.inflate(layoutInflater)
         setContentView(activityEditDailyBinding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
         initView()
@@ -153,6 +155,15 @@ class EditDailyActivity : AppCompatActivity() {
         val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
         activityEditDailyBinding.inputTitle.textSize = textSize + 4
         dailyTextInputEdit.textSize = textSize
+
+        enableOnBack()
+        onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
+        activityEditDailyBinding.inputTitle.addTextChangedListener {
+            onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
+        }
+        activityEditDailyBinding.inputContent.addTextChangedListener {
+            onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
+        }
     }
 
     /**
@@ -160,7 +171,6 @@ class EditDailyActivity : AppCompatActivity() {
      */
     private fun initData(savedInstanceState: Bundle?) {
         setActionBar()
-        initStatusBarColor()
         initViewModel()
         setDailyTitle()
         setDailyContent()
@@ -181,6 +191,7 @@ class EditDailyActivity : AppCompatActivity() {
         restoreIndex(savedInstanceState)
         setDailyLabel()
         getDailyLabels()
+        setIsPinned()
     }
 
     /**
@@ -190,19 +201,6 @@ class EditDailyActivity : AppCompatActivity() {
         setSupportActionBar(activityEditDailyBinding.toolbar)
         this.supportActionBar?.setDisplayShowTitleEnabled(false)
         this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window,this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**
@@ -297,11 +295,6 @@ class EditDailyActivity : AppCompatActivity() {
      */
     private fun setDailyBackgroundColorIndex() {
         backgroundColorIndex = getDailyBackgroundColorIndex()
-        window.statusBarColor =
-            ContextCompat.getColor(
-                this@EditDailyActivity,
-                ConstUtil.backgroundColorList[backgroundColorIndex]
-            )
     }
 
     /**
@@ -471,17 +464,29 @@ class EditDailyActivity : AppCompatActivity() {
                     if (FileUtil().checkFileExists(dailyAudioEntity.audioPath.toString())) {
                         newAudioList.add(dailyAudioEntity.audioPath.toString())
                         if (originalAudioIndex == 0) {
-                            originalVideoList.add(dailyAudioEntity.audioPath.toString())
-                            videoList.add(dailyAudioEntity.audioPath.toString())
+                            originalAudioList.add(dailyAudioEntity.audioPath.toString())
+                            audioList.add(dailyAudioEntity.audioPath.toString())
                         }
                     } else {
                         dailyViewModel.deleteSelectPathVideo(dailyAudioEntity.audioPath.toString())
                     }
                 }
-                if (dailyTextInputEdit.getOldVideoList() != newAudioList) {
-                    dailyTextInputEdit.setOldVideoList(newAudioList.toList())
+                if (dailyTextInputEdit.getOldAudioList() != newAudioList) {
+                    dailyTextInputEdit.setOldAudioList(newAudioList.toList())
                 }
             }
+    }
+
+    /**
+     * 获取置顶
+     */
+    private fun getIsPinned() = intent.getBooleanExtra("is_pinned", false)
+
+    /**
+     * 设置置顶
+     */
+    private fun setIsPinned() {
+        isPinned = getIsPinned()
     }
 
 
@@ -533,8 +538,6 @@ class EditDailyActivity : AppCompatActivity() {
                         colorRecycler.adapter =
                             ChangeDailyCardColorAdapter(ConstUtil.backgroundColorList,backgroundColorIndex) { selectedColor, position ->
                                 backgroundColorIndex = position
-                                window.statusBarColor =
-                                    ContextCompat.getColor(this@EditDailyActivity, selectedColor)
                                 activityEditDailyBinding.main.setBackgroundColor(
                                     ContextCompat.getColor(
                                         this@EditDailyActivity,
@@ -548,6 +551,7 @@ class EditDailyActivity : AppCompatActivity() {
                                     )
                                 )
 
+                                onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
                                 dialog.dismiss()
                             }
                     }
@@ -709,6 +713,7 @@ class EditDailyActivity : AppCompatActivity() {
                                                 dialog: DialogInterface?,
                                                 which: Int
                                             ) {
+                                                onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
                                                 singlePassword = inputPassword.text.toString()
                                             }
 
@@ -834,6 +839,7 @@ class EditDailyActivity : AppCompatActivity() {
                                     activityEditDailyBinding.tvLabel?.text = dailyLabel
                                     activityEditDailyBinding.lLabel?.visibility = View.VISIBLE
                                     dialog.dismiss()
+                                    onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
                                 }
 
                             })
@@ -936,6 +942,7 @@ class EditDailyActivity : AppCompatActivity() {
             tempMoodIndex = 1
             activityEditDailyBinding.ivMood.visibility = View.VISIBLE
         }
+        onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
     }
 
     /**
@@ -957,6 +964,7 @@ class EditDailyActivity : AppCompatActivity() {
             weatherIndex = position + 1
             tempWeatherIndex = 1
         }
+        onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
     }
 
     /**
@@ -1118,7 +1126,8 @@ class EditDailyActivity : AppCompatActivity() {
                 moodIndex = moodIndex,
                 weatherIndex = weatherIndex,
                 dailyUUID = dailyUuid,
-                dailyLabel = dailyLabel
+                dailyLabel = dailyLabel,
+                isPinned = isPinned
             )
         )
 
@@ -1258,6 +1267,19 @@ class EditDailyActivity : AppCompatActivity() {
 
         }
 
+    private fun setOnEnabledChangedListener(onEnabledChangedListener: OnEnabledChangedListener) {
+        this.onEnabledChangedListener = onEnabledChangedListener
+    }
+
+    private fun enableOnBack() {
+        setOnEnabledChangedListener(object : OnEnabledChangedListener {
+            override fun onEnableChanged(enable: Boolean) {
+                onBackPressedCallback.isEnabled = enable
+            }
+
+        })
+    }
+
     /**
      * 检查标题长度
      */
@@ -1318,7 +1340,8 @@ class EditDailyActivity : AppCompatActivity() {
                 imageList.isNotEmpty(),
                 dailyLabel,
                 videoList.isNotEmpty(),
-                audioList.isNotEmpty()
+                audioList.isNotEmpty(),
+                isPinned
             )
         }
     }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,11 +9,20 @@
     android:padding="@dimen/dp_8"
     tools:context=".ui.lock.UnlockActivity">
 
+    <ImageView
+        android:contentDescription="@string/app_lock"
+        android:padding="@dimen/dp_8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:src="@drawable/outline_lock_24" />
+
     <com.google.android.material.textview.MaterialTextView
+        android:padding="@dimen/dp_8"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="@string/unlocked"
+        android:text="@string/enter_your_password"
         android:textSize="@dimen/sp_22" />
 
     <include
@@ -22,6 +32,7 @@
         android:layout_height="wrap_content" />
 
     <com.google.android.material.button.MaterialButton
+        app:icon="@drawable/outline_lock_open_24"
         android:id="@+id/btn_unlock"
         android:text="@string/unlocked"
         android:layout_width="wrap_content"

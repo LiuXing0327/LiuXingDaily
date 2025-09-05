@@ -85,4 +85,8 @@ interface DailyDao {
 
     @Query("SELECT * FROM DAILY_IMAGE")
     suspend fun queryAllDailyImageEntity(): List<DailyImageEntity>
+
+    @Query("UPDATE DAILY_INFO SET IS_DELETED = NOT IS_DELETED WHERE DAILY_UUID IN (:uuids)")
+    suspend fun toggleIsDelete(uuids: List<String>)
+
 }

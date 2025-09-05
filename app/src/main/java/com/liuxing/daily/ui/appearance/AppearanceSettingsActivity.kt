@@ -1,16 +1,14 @@
 package com.liuxing.daily.ui.appearance
 
-import android.app.ActivityOptions
-import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.MenuItem
-import android.widget.Button
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import com.liuxing.daily.R
@@ -19,7 +17,6 @@ import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.databinding.ActivityAppearanceSettingsBinding
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 
 class AppearanceSettingsActivity : AppCompatActivity() {
 
@@ -28,15 +25,15 @@ class AppearanceSettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         appearanceSettingsBinding = ActivityAppearanceSettingsBinding.inflate(layoutInflater)
         setContentView(appearanceSettingsBinding.root)
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
-                }*/
+        }
         initData()
     }
 
@@ -45,7 +42,6 @@ class AppearanceSettingsActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
-        initStatusBarColor()
         initSharedPreferences()
         changeThemeMode()
         setColorData()
@@ -64,20 +60,7 @@ class AppearanceSettingsActivity : AppCompatActivity() {
     }
 
     /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window, this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
-    }
-
-    /**
-     * 初始化SharedPreference
+     * 初始化 [sharedPreferences]
      */
     private fun initSharedPreferences() {
         if (sharedPreferences == null) {

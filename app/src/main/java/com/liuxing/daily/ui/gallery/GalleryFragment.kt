@@ -7,8 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.liuxing.daily.adapter.GalleryAdapter
 import com.liuxing.daily.databinding.FragmentGalleryBinding
+import com.liuxing.daily.ui.config.SystemBarController
+import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.FileUtil
 import java.io.File
 
@@ -87,6 +90,19 @@ class GalleryFragment : Fragment() {
         loadImage()
         val galleryAdapter = GalleryAdapter(imageList.toList())
         galleryBinding.recyclerView.adapter = galleryAdapter
+
+        val mainActivity = (requireActivity() as MainActivity)
+        galleryBinding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(-1) && imageList.isNotEmpty() && SystemBarController.isLightStatusBarEnabled) {
+                    val bitmap = mainActivity.getBitmap()
+                    bitmap?.let {
+                        mainActivity.setLightStausBarsFromBitmap(it)
+                    }
+                }
+            }
+        })
     }
 
     /**

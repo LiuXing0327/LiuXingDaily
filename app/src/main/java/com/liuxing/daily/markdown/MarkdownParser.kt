@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.markdown
 
 import android.text.Spannable
@@ -5,9 +9,14 @@ import android.text.SpannableStringBuilder
 import com.liuxing.daily.markdown.span.HeadingSpan
 
 /**
- * Author：流星
- * DateTime：2025/4/6 12:53
- * Description：Markdown 解析
+ * Markdown 解析器
+ *
+ * 使用示例：
+ * ```
+ * val markdown = "# 标题\n- 列表项\n普通文本"
+ * val parsed = MarkdownParser.parseMarkdown(markdown)
+ * textView.text = parsed
+ * ```
  */
 object MarkdownParser {
 
@@ -52,7 +61,7 @@ object MarkdownParser {
         val start = builder.length
         builder.append(content).append("\n")
         builder.setSpan(
-            HeadingSpan(1.5f, 1f),
+            HeadingSpan(1.5f, 3f),
             start,
             builder.length,
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -85,7 +94,11 @@ object MarkdownParser {
  * - LIST_ITEM 列表项
  * - NORMAL 普通文本
  */
-private enum class LineType {
+private enum
+/**
+ * Markdown 解析
+ */
+class LineType {
     HEADING, LIST_ITEM, NORMAL
 }
 

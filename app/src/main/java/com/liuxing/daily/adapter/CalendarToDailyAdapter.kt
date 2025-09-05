@@ -149,6 +149,11 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                             ConstUtil.moodList[dailyEntity.moodIndex.minus(1)] // 将索引减1，得到原始索引
                         )
                     )
+                    ConstUtil.moodLabelList[dailyEntity.moodIndex.minus(1)].let { id ->
+                        holder.ivMood.let { mood ->
+                            mood.contentDescription = mood.context.getString(id)
+                        }
+                    }
                     View.VISIBLE
                 }
             holder.ivWeather.visibility =
@@ -161,6 +166,13 @@ class CalendarToDailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                             ConstUtil.weatherList[dailyEntity.weatherIndex.minus(1)] // 将索引减1，得到原始索引
                         )
                     )
+                    ConstUtil.weatherLabelList[dailyEntity.weatherIndex.minus(1)].let { id ->
+                        holder.ivWeather.let { weather ->
+                            weather.contentDescription = weather.context.getString(id)
+
+                        }
+
+                    }
                     View.VISIBLE
                 }
             imageDisplay =

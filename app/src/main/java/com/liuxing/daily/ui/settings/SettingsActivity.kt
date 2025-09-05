@@ -8,9 +8,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.MenuItem
 import android.widget.ImageView
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -18,6 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -30,6 +32,7 @@ import com.liuxing.daily.databinding.SettingsActivityBinding
 import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
+import com.liuxing.daily.ui.privacy.PrivacyActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.ui.webdav.WebDavBackupActivity
 import com.liuxing.daily.util.CheckAppUpdateUtil
@@ -40,7 +43,6 @@ import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,7 +58,7 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         activityBinding = SettingsActivityBinding.inflate(layoutInflater)
         setContentView(activityBinding.root)
@@ -66,28 +68,14 @@ class SettingsActivity : AppCompatActivity() {
                 .replace(R.id.settings, SettingsFragment())
                 .commit()
         }
-        /*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
-                }*/
+        }
         setSupportActionBar(activityBinding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
-        initStatusBarColor()
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window, this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     override fun onRestart() {
@@ -156,7 +144,7 @@ class SettingsActivity : AppCompatActivity() {
                 textLineSpacingValue(sharedPreferences)
             textLineSpacingPreference?.summary = "$textLineSpacingValue"
             textLineSpacingPreference?.setOnPreferenceClickListener {
-                MaterialAlertDialogBuilder(requireContext()).apply {
+                MaterialAlertDialogBuilder(requireContext(),R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
                     val updateTextLineSpacingLayout =
                         layoutInflater.inflate(R.layout.update_text_line_spacing_layout, null)
                     val tvText =
@@ -246,7 +234,7 @@ class SettingsActivity : AppCompatActivity() {
                 R.drawable.outline_text_increase_24
             ) else ContextCompat.getDrawable(requireContext(), R.drawable.outline_text_decrease_24)
             textFontSizePreference?.setOnPreferenceClickListener {
-                MaterialAlertDialogBuilder(requireContext()).apply {
+                MaterialAlertDialogBuilder(requireContext(),R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
                     val newTextSize = textSizeValue(sharedPreferences)
                     val updateTextFontSizeLayout =
                         layoutInflater.inflate(R.layout.update_text_font_size_layout, null)
@@ -295,6 +283,13 @@ class SettingsActivity : AppCompatActivity() {
                 showWallpaperDialog()
                 true
             }
+
+            val userAgreementAndPrivacyPolicyPreference =
+                findPreference<Preference>("user_agreement_and_privacy_policy_preference")
+            userAgreementAndPrivacyPolicyPreference?.setOnPreferenceClickListener {
+                IntentUtil.startActivity(requireContext(), PrivacyActivity::class.java)
+                true
+            }
         }
 
         /**
@@ -318,12 +313,16 @@ class SettingsActivity : AppCompatActivity() {
                 wallpaper.alpha = wallpaperAlpha
                 val slider =
                     wallpaperLayout.findViewById<Slider>(R.id.slider)
+                slider.contentDescription =
+                    getString(R.string.slider_alpha_description, (wallpaperAlpha * 100f).toInt())
                 slider.value = wallpaperAlpha * 100F
                 var newAlpha = wallpaperAlpha
                 slider.addOnChangeListener { _, value, fromUser ->
                     if (fromUser) {
                         newAlpha = value / 100F
                         wallpaper.alpha = newAlpha
+                        slider.contentDescription =
+                            getString(R.string.slider_alpha_description, value.toInt())
                     }
                 }
                 setTitle(getString(R.string.wallpaper))

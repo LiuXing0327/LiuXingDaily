@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import android.app.Activity
@@ -7,9 +11,7 @@ import android.widget.FrameLayout
 
 
 /**
- * Author：流星
- * DateTime：2024/10/04 10:54:02
- * Description：处理键盘遮挡输入框
+ * 处理键盘遮挡输入框
  */
 class SoftHideKeyBoardUtil(activity: Activity) {
     private val childOfContent: View =

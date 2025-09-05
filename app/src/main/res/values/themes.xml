@@ -6,7 +6,9 @@
         <item name="searchViewShowingColor">@color/light_showing_color</item>
         <item name="collapsed_status_bar">@color/light_collapsed_status_bar_color</item>
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
-        <item name="toolbarWithCloseButtonStyle">@style/Widget.Theme.流星日记.Toolbar.WithCloseButton</item>
+        <item name="toolbarWithCloseButtonStyle">
+            @style/Widget.Theme.流星日记.Toolbar.WithCloseButton
+        </item>
     </style>
 
     <style name="RedTheme" parent="Theme.Material3.DayNight.NoActionBar">
@@ -301,4 +303,13 @@
         <item name="fullscreenBackgroundColor">@color/light_blue_600</item>
         <item name="fullscreenTextColor">@color/light_blue_A200</item>
     </style>
+
+    <style name="Theme.流星日记.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.流星日记.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.流星日记.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

@@ -1,9 +1,12 @@
 package com.liuxing.daily.ui.main
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -13,6 +16,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.SubMenu
 import android.view.View
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
@@ -21,12 +27,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.ColorUtils
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -34,10 +42,13 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
+import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.search.SearchView
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textview.MaterialTextView
@@ -51,15 +62,19 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
 import com.liuxing.daily.listener.DailyLikeFragment
+import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
+import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.label.DailyLabelActivity
 import com.liuxing.daily.ui.lock.UnlockActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.settings.SettingsActivity
+import com.liuxing.daily.util.BitmapUtil
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
@@ -69,7 +84,6 @@ import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
-import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -86,6 +100,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.net.URL
 import java.util.Date
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -122,18 +137,22 @@ class MainActivity : AppCompatActivity() {
     private var isImporting = false
 
     private lateinit var mainViewModel: MainViewModel
+    private lateinit var onEnabledChangedListener: OnEnabledChangedListener
+    private lateinit var bitmap: Bitmap
+    private var wallpaperFileMD5 = ""
+    private val termsAndPrivacyAgreedKey = ConstUtil.TERMS_AND_PRIVACY_AGREED_KEY
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding.root)
-/*        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.contextual_toolbar_container)) { v, insets ->
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
-        }*/
+        }
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
@@ -181,6 +200,10 @@ class MainActivity : AppCompatActivity() {
         insertAutoDaily()
         initView()
         initData()
+        val agreed = sharedPreferences?.getBoolean(termsAndPrivacyAgreedKey, false) ?: false
+        if (!agreed) {
+            showPolicyDialog()
+        }
         val appPassword = sharedPreferences?.getString("app_password", "")
         val lock = intent.getBooleanExtra("lock", true)
         if (!appPassword.isNullOrEmpty() && lock) {
@@ -232,6 +255,8 @@ class MainActivity : AppCompatActivity() {
                     sharedPreferences.getString("switch_preference_auto_save_daily_uuid", "")
                 val autoSaveDailyLabel =
                     sharedPreferences.getString("switch_preference_auto_save_daily_label", "")
+                val autoSaveIsPinned =
+                    sharedPreferences.getBoolean("switch_preference_auto_save_is_pinned", false)
                 initViewModel()
                 when (insertUpdate) {
                     1 -> dailyViewModel.updateDaily(
@@ -245,7 +270,8 @@ class MainActivity : AppCompatActivity() {
                             moodIndex = autoSaveMoodIndex,
                             weatherIndex = autoSaveWeatherIndex,
                             dailyUUID = autoSaveDailyUuid,
-                            dailyLabel = autoSaveDailyLabel
+                            dailyLabel = autoSaveDailyLabel,
+                            isPinned = autoSaveIsPinned
                         )
                     )
 
@@ -282,8 +308,6 @@ class MainActivity : AppCompatActivity() {
         setActionBar()
         initNavController()
         setNavigation()
-        searchViewShowingStatusBarColor(false)
-        searchViewFocus()
         initViewModel()
         initSharePreferences()
         initSearchRecyclerView()
@@ -333,43 +357,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * 搜索视图的焦点监听
-     */
-    private fun searchViewFocus() {
-
-        activityMainBinding.searchView.editText.setOnFocusChangeListener { v, hasFocus ->
-            searchViewShowingStatusBarColor(hasFocus)
-        }
-    }
-
-    /**
-     * 搜索视图显示？不显示的状态栏颜色
-     *
-     * @param showing 是否显示
-     */
-    private fun searchViewShowingStatusBarColor(showing: Boolean) {
-
-        // 获取主题属性值
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.searchViewShowingColor, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window, this)
-        when {
-            showing -> {
-                WindowCompat.getInsetsController(window,activityMainBinding.searchView).setAppearanceLightStatusBars(true)
-                window.statusBarColor = typedValue.data
-
-            }
-
-            else -> {
-                window.statusBarColor =
-                    ContextCompat.getColor(this, android.R.color.transparent)
-            }
-        }
-    }
-
-    /**
      * 是否打开搜索视图
      *
      * @return 搜索视图的开关值
@@ -385,11 +372,13 @@ class MainActivity : AppCompatActivity() {
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+                if (currentFragment is DailyLikeFragment && currentFragment.getSelectMode()) {
+                    hideContextualToolbar()
+                    return
+                }
                 when {
                     isOpenSearchView() -> activityMainBinding.searchView.hide()
                     activityMainBinding.main.isOpen -> activityMainBinding.main.close()
-
-                    (currentFragment as DailyLikeFragment).getSelectMode() -> hideContextualToolbar()
 
                     isDailyFragment -> finish()
                     !isDailyFragment -> navController.navigate(R.id.dailyFragment)
@@ -398,6 +387,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+    fun enableOnBack(enable: Boolean) {
+        onBackPressedCallback.isEnabled = enable
+    }
+
+    private fun setOnEnableOnBackListener(onEnabledChangedListener: OnEnabledChangedListener) {
+        this.onEnabledChangedListener = onEnabledChangedListener
+    }
 
     /**
      * 浮动按钮点击事件
@@ -466,6 +463,23 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initSearchView() {
         activityMainBinding.searchView.inflateMenu(R.menu.menu_search_daily)
+
+        activityMainBinding.searchView.addTransitionListener { searchView, previousState, newState ->
+            val enable =
+                SearchView.TransitionState.SHOWN == newState || SearchView.TransitionState.SHOWING == newState
+            onEnabledChangedListener?.onEnableChanged(enable)
+            mainViewModel.setEnableAppBarOffsetChange(!enable)
+            if (enable) {
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                val typedValue = TypedValue()
+                theme.resolveAttribute(
+                    com.google.android.material.R.attr.colorSurfaceContainerHigh, typedValue, true
+                )
+                val color = typedValue.data
+                val isDark = ColorUtils.calculateLuminance(color) < 0.5
+                insetsController.isAppearanceLightStatusBars = !isDark
+            }
+        }
         searchDaily()
     }
 
@@ -1061,7 +1075,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.import_successful)
             )
 
-            delay(1000)
+            delay(3000)
             isImporting = false
         }
     }
@@ -1073,7 +1087,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult(),
         object : ActivityResultCallback<ActivityResult> {
             override fun onActivityResult(result: ActivityResult) {
-                if (result.resultCode != Activity.RESULT_OK) return
+                if (result.resultCode != RESULT_OK) return
                 val data = result.data ?: return
                 val url = data.data!!
                 val processedFileList = mutableSetOf<String>()
@@ -1252,18 +1266,21 @@ class MainActivity : AppCompatActivity() {
                     R.id.dailyFragment -> {
                         isDailyFragment = true
                         isRecyclerBinFragment = false
+                        onEnabledChangedListener?.onEnableChanged(false)
                         View.VISIBLE
                     }
 
                     R.id.calendarQueryDailyFragment -> {
                         isDailyFragment = false
                         isRecyclerBinFragment = false
+                        onEnabledChangedListener?.onEnableChanged(true)
                         View.VISIBLE
                     }
 
                     R.id.recyclerBinFragment -> {
                         isDailyFragment = false
                         isRecyclerBinFragment = true
+                        onEnabledChangedListener?.onEnableChanged(true)
                         View.GONE
                     }
 
@@ -1290,6 +1307,118 @@ class MainActivity : AppCompatActivity() {
         tvDailyTextCount = headerView.findViewById(R.id.tv_daily_text_count)
         tvDailyImageCount = headerView.findViewById(R.id.tv_daily_image_count)
 
+        setOnEnableOnBackListener(object : OnEnabledChangedListener {
+            override fun onEnableChanged(enable: Boolean) {
+                onBackPressedCallback.isEnabled = enable
+            }
+
+        })
+
+        activityMainBinding.main.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+                onEnabledChangedListener?.onEnableChanged(true)
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                onEnabledChangedListener?.onEnableChanged(false)
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {
+            }
+
+        })
+
+        activityMainBinding.appBarLayout.addOnOffsetChangedListener { appBarLayout, verticalOffset ->
+            val offsetChange = mainViewModel.enableAppBarOffsetChange.value ?: true
+            if (offsetChange) checkStatusBarColor()
+        }
+    }
+
+    fun checkStatusBarColor() {
+        val background = activityMainBinding.appBarLayout.background
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        if (background is MaterialShapeDrawable) {
+            val fillColor = background.fillColor
+            val color = fillColor?.defaultColor ?: Color.TRANSPARENT
+            if (color == Color.TRANSPARENT) {
+                val bitmapValid = BitmapUtil.check({ bitmap })
+                if (bitmapValid) {
+                    setLightStausBarsFromBitmap(bitmap)
+                }
+            } else {
+                val isDark = ColorUtils.calculateLuminance(color) < 0.5
+                insetsController.isAppearanceLightStatusBars = !isDark
+            }
+        }
+    }
+
+    fun getBitmap(): Bitmap? {
+        BitmapUtil.check { bitmap }.let {
+            return if (it) {
+                bitmap
+            } else {
+                null
+            }
+        }
+    }
+
+    private fun showPolicyDialog() {
+        val webLayout = layoutInflater.inflate(R.layout.web_view_layout, null)
+        val webView = webLayout.findViewById<WebView>(R.id.web_view)
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView?, request: WebResourceRequest?
+            ): Boolean {
+                val url = request?.url.toString()
+                return if (url.startsWith("mailto:")) {
+                    try {
+                        val intent = Intent(Intent.ACTION_SENDTO)
+                        intent.data = url.toUri()
+                        startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        CopyUtil.copyTextToClipboard(this@MainActivity, url.split(":")[1])
+                    }
+                    true
+                } else {
+                    true
+                }
+            }
+        }
+
+        Thread {
+            try {
+                val url =
+                    URL("https://gitee.com/LiuXing0327/app-privacy/raw/master/daily/terms_and_privacy.html")
+                val htmlContent = url.readText()
+
+                runOnUiThread {
+                    webView.loadDataWithBaseURL(
+                        "https://gitee.com/", htmlContent, "text/html", "UTF-8", null
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+        MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
+            setView(webLayout)
+            setPositiveButton("已阅读并同意") { _, _ ->
+                sharedPreferences?.edit {
+                    putBoolean(termsAndPrivacyAgreedKey, true)
+                    apply()
+                }
+            }
+            setNeutralButton("不同意并退出") { _, _ ->
+                finish()
+            }
+            setCancelable(false)
+            create()
+            show()
+        }
     }
 
     /**
@@ -1512,12 +1641,36 @@ class MainActivity : AppCompatActivity() {
             loadSearchDailyData("")
         }
 
-        if (File(ConstUtil.WALLPAPER_PATH).exists()) {
-            val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
-            activityMainBinding.wallpaper.setImageBitmap(bitmap)
+        val fileMD5 = FileUtil().getFileMD5(File(ConstUtil.WALLPAPER_PATH))
+        if (wallpaperFileMD5.isEmpty() || wallpaperFileMD5 != fileMD5) {
+            wallpaperFileMD5 = fileMD5
+            setWallpaperAndStausBar()
         }
+
         val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         activityMainBinding.wallpaper.alpha = wallpaperAlpha
+    }
+
+    private fun setWallpaperAndStausBar() {
+        if (File(ConstUtil.WALLPAPER_PATH).exists()) {
+            bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+            activityMainBinding.wallpaper.setImageBitmap(bitmap)
+            setLightStausBarsFromBitmap(bitmap)
+        }
+    }
+
+    fun setLightStausBarsFromBitmap(bitmap: Bitmap) {
+        Palette.from(bitmap).maximumColorCount(7).setRegion(0, 0, bitmap.width, 100)
+            .generate { palette ->
+                val mostUsed = palette?.swatches?.maxByOrNull { it.population }
+                mostUsed?.let { swatch ->
+                    val isDark = ColorUtils.calculateLuminance(swatch.rgb) < 0.5
+                    val wallpaperAlpha = activityMainBinding.wallpaper.alpha
+                    val insetsController =
+                        WindowCompat.getInsetsController(window, window.decorView)
+                    insetsController.isAppearanceLightStatusBars = !isDark && wallpaperAlpha > 0.5f
+                }
+            }
     }
 
     companion object {
@@ -1554,9 +1707,6 @@ class MainActivity : AppCompatActivity() {
     private fun setSearchRecyclerViewItemOnLongClick() {
         dailySearchAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
             override fun onItemLongOnClick(position: Int) {
-                activityMainBinding.searchBar.expand(
-                    activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
-                )
                 val moveInRecyclerBin =
                     sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
                 val dailyEntity = dailyList.filter { !it.isDeleted }[position]
@@ -1785,30 +1935,76 @@ class MainActivity : AppCompatActivity() {
         recreate()
     }
 
+    /**
+     * 展开多选模式下的工具栏
+     */
     fun expandContextualToolbar() {
-        searchViewShowingStatusBarColor(true)
         activityMainBinding.searchBar.expand(
             activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
         )
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            disableLightStatusBarWithAppBar()
+            val enable = mainViewModel.enableAppBarOffsetChange.value ?: false
+            if (!enable) {
+                val background = activityMainBinding.contextualToolbarContainer.background
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                if (background is MaterialShapeDrawable) {
+                    val fillColor = background.fillColor
+                    val color = fillColor?.defaultColor ?: Color.TRANSPARENT
+                    val isDark = ColorUtils.calculateLuminance(color) < 0.5
+                    insetsController.isAppearanceLightStatusBars = !isDark
+                }
+            }
+        }, 300)
     }
 
+    /**
+     * 折叠多选模式下的工具栏
+     *
+     * @return 工具栏的折叠状态
+     */
     fun collapseContextualToolbar(): Boolean = activityMainBinding.searchBar.collapse(
         activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
     )
 
+    /**
+     * 隐藏多选模式下的工具栏
+     */
     private fun hideContextualToolbar() {
         if (collapseContextualToolbar()) {
-            searchViewShowingStatusBarColor(false)
             val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
             if (currentFragment is DailyLikeFragment) {
                 currentFragment.clearSection()
+                enableLightStatusBarWithAppBar()
             }
         }
     }
 
+    /**
+     * 启用浅色状态栏，并允许 AppBar 偏移
+     */
+    fun enableLightStatusBarWithAppBar() {
+        mainViewModel.setEnableAppBarOffsetChange(true)
+        SystemBarController.isLightStatusBarEnabled = true
+    }
+
+    /**
+     * 禁用浅色状态栏，并禁止 AppBar 偏移
+     */
+    fun disableLightStatusBarWithAppBar() {
+        mainViewModel.setEnableAppBarOffsetChange(false)
+        SystemBarController.isLightStatusBarEnabled = false
+    }
+
+    /**
+     * 设置多选模式下的工具栏
+     */
     private fun setUpContextualToolbar() {
         activityMainBinding.contextualToolbar.setNavigationOnClickListener {
             hideContextualToolbar()
+            val bitmapValid = BitmapUtil.check { bitmap }
+            if (bitmapValid) setLightStausBarsFromBitmap(bitmap)
         }
         activityMainBinding.contextualToolbar.inflateMenu(R.menu.menu_searchbar_contextual_toolbar)
 
@@ -1908,57 +2104,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 回收或还原被选中的日记项
+     *
+     * @param selectedList 选中的日记列表
+     */
     private fun recyclerSelected(selectedList: List<DailyEntity>) {
-        selectedList.forEach { dailyEntity ->
-            dailyViewModel.updateDaily(
-                dailyEntity.copy(isDeleted = !dailyEntity.isDeleted)
-            )
-        }
+        dailyViewModel.toggleIsDelete(selectedList.map { it.dailyUUID ?: "" })
     }
 
+    /**
+     * 删除选中的日记项
+     *
+     * @param selectedList 选中的日记列表
+     */
     private fun deleteSelected(selectedList: List<DailyEntity>) {
-        selectedList.forEach { dailyEntity ->
-            if (dailyEntity.dailyUUID.isNullOrEmpty()) return
-
-            val fileUtil = FileUtil()
-
-            dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
-                .observe(this) { images ->
-                    images.mapNotNull { it.imagePath }.forEach { path ->
-                        if (fileUtil.checkFileExists(path)) {
-                            fileUtil.deleteFile(path)
-                        }
-                    }
-                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID)
-                }
-
-            dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID).observe(this) { videos ->
-                videos.mapNotNull { it.videoPath }.forEach { path ->
-                    if (fileUtil.checkFileExists(path)) {
-                        fileUtil.deleteFile(path)
-                    }
-                }
-                dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID)
-            }
-
-            dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
-                .observe(this) { audios ->
-                    audios.mapNotNull { it.audioPath }.forEach { path ->
-                        if (fileUtil.checkFileExists(path)) {
-                            fileUtil.deleteFile(path)
-                        }
-                    }
-                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID)
-                }
-
-            dailyViewModel.deleteDaily(dailyEntity)
-        }
+        dailyViewModel.deleteSelected(selectedList)
     }
 
+    /**
+     * 设置多选模式下的工具栏标题
+     */
     fun setUpContextualToolbarTitle(title: String) {
         activityMainBinding.contextualToolbar.title = title
     }
 
+    /**
+     * 设置多选模式下工具栏中「置顶/取消置顶」按钮的可见性
+     *
+     * 避免对两个状态的项进行置顶或取消置顶
+     */
     fun setUpContextualToolbarPinnedVisibility() {
         val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
         if (currentFragment is DailyLikeFragment) {

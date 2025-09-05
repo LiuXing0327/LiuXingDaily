@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.annotation.SuppressLint
@@ -9,11 +13,10 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.liuxing.daily.R
+import com.liuxing.daily.util.ConstUtil
 
 /**
- * Author：流星
- * DateTime：2024/11/9 16:04
- * Description：切换颜色的适配器
+ * 切换颜色的适配器
  */
 class ChangeDailyCardColorAdapter(
     private val colorList: List<Int>,
@@ -51,6 +54,9 @@ class ChangeDailyCardColorAdapter(
 
             selectedPosition = position
             onColorSelected(color,position)
+            ConstUtil.backgroundColorLabelList[position].let {
+                holder.colorCard.contentDescription = holder.colorCard.context.getString(it)
+            }
         }
     }
 

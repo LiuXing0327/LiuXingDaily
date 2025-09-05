@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.annotation.SuppressLint
@@ -10,16 +14,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.liuxing.daily.R
 import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
+import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.view.RoundTricolorView
 
 /**
- * Author：流星
- * DateTime：2025/1/26 13:10
- * Description：主题色切换适配器
+ * 主题色切换适配器
  */
 class ThemeColorAdapter(
     private val context: Context,
@@ -53,6 +57,9 @@ class ThemeColorAdapter(
             themeColorData.rightColor
         )
 
+        holder.themeColorCard.contentDescription =
+            holder.themeColorCard.context.getString(ConstUtil.backgroundColorLabelList[position + 1])
+
         holder.itemView.setOnClickListener {
             if (themeColorData.isSelected) {
                 return@setOnClickListener
@@ -78,6 +85,7 @@ class ThemeColorAdapter(
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val themeColorCard: MaterialCardView = itemView.findViewById(R.id.theme_color_card)
         val roundTricolor: RoundTricolorView = itemView.findViewById(R.id.round_tricolor_view)
         val icSelected: ImageView = itemView.findViewById(R.id.ic_selected)
     }

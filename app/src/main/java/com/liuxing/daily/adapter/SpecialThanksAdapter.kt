@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.text.Html
@@ -13,9 +17,7 @@ import com.liuxing.daily.R
 import com.liuxing.daily.data.SpecialThanksData
 
 /**
- * Author：流星
- * DateTime：2024/10/15 下午8:30
- * Description：特别鸣谢列表适配器
+ * 特别鸣谢列表适配器
  */
 class SpecialThanksAdapter : RecyclerView.Adapter<SpecialThanksAdapter.ViewHolder>() {
 

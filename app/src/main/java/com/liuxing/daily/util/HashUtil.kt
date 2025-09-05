@@ -1,13 +1,14 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import java.security.MessageDigest
 import java.util.Objects
 
 /**
- * Author：流星
- * DateTime：2024/10/13 下午4:55
- * Description：哈希工具类
- */
+ *  *  *  */
 object HashUtil {
 
     fun hashSHA256(input: String): String {

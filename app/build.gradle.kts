@@ -13,8 +13,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "2.7"
+        versionCode = 18
+        versionName = "2.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,8 +33,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+        }
     }
     viewBinding {
         enable = true
@@ -87,4 +89,7 @@ dependencies {
 
     // ColorPickerView
     implementation(libs.colorpickerview)
+
+    // palette
+    implementation("androidx.palette:palette-ktx:1.0.0")
 }

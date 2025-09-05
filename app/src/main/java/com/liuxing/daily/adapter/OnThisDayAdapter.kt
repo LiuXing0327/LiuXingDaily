@@ -152,6 +152,11 @@ class OnThisDayAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                             ConstUtil.moodList[dailyEntity.moodIndex.minus(1)] // 将索引减1，得到原始索引
                         )
                     )
+                    ConstUtil.moodLabelList[dailyEntity.moodIndex.minus(1)].let { id ->
+                        holder.ivMood.let { mood ->
+                            mood.contentDescription = mood.context.getString(id)
+                        }
+                    }
                     View.VISIBLE
                 }
             holder.ivWeather.visibility =
@@ -164,6 +169,13 @@ class OnThisDayAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                             ConstUtil.weatherList[dailyEntity.weatherIndex.minus(1)] // 将索引减1，得到原始索引
                         )
                     )
+                    ConstUtil.weatherLabelList[dailyEntity.weatherIndex.minus(1)].let { id ->
+                        holder.ivWeather.let { weather ->
+                            weather.contentDescription = weather.context.getString(id)
+
+                        }
+
+                    }
                     View.VISIBLE
                 }
             imageDisplay =
@@ -205,7 +217,7 @@ class OnThisDayAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     class DailyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvTitle: MaterialTextView = itemView.findViewById(R.id.tv_title)
         val tvContent: MaterialTextView = itemView.findViewById(R.id.tv_content)
-        val tvDateTime: MaterialTextView = itemView.findViewById(R.id.tv_date_time)
+        val tvDateTime : MaterialTextView = itemView.findViewById(R.id.tv_date_time)
         val cardView: MaterialCardView = itemView.findViewById(R.id.main_layout)
         val ivMood: ImageView = itemView.findViewById(R.id.iv_mood)
         val ivWeather: ImageView = itemView.findViewById(R.id.iv_weather)

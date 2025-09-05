@@ -1,9 +1,12 @@
 package com.liuxing.daily.ui.webdav
 
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
+import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -57,13 +60,13 @@ class WebDavBackupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // enableEdgeToEdge()
+        enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         webDavBackupBinding = ActivityWebDavBackupBinding.inflate(layoutInflater)
         setContentView(webDavBackupBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
         SoftHideKeyBoardUtil(this)
@@ -75,7 +78,6 @@ class WebDavBackupActivity : AppCompatActivity() {
      */
     private fun initData() {
         setActionBar()
-        initStatusBarColor()
         getWebDavAccountNumber()
         initSardine()
         initViewModel()
@@ -92,19 +94,6 @@ class WebDavBackupActivity : AppCompatActivity() {
         setSupportActionBar(webDavBackupBinding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
-    }
-
-    /**
-     * 初始化状态栏颜色
-     */
-    private fun initStatusBarColor() {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(
-            R.attr.collapsed_status_bar, typedValue, true
-        )
-        WindowUtil.followPatternSetColor(window, this)
-        window.statusBarColor =
-            ContextCompat.getColor(this, android.R.color.transparent)
     }
 
     /**
@@ -165,7 +154,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                 webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() ||
                 webDavBackupBinding.inputPassword.text.isNullOrEmpty()
             ) {
-                MaterialAlertDialogUtil.showDialog(
+                dialog = MaterialAlertDialogUtil.showDialog(
                     this@WebDavBackupActivity,
                     getString(R.string.failed_to_connect),
                     getString(R.string.sure),
@@ -205,7 +194,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                     val testUrl = "${url}${if (url.endsWith("/")) "" else "/"}"
                     sardine.list(testUrl)
                     withContext(Dispatchers.Main) {
-                        MaterialAlertDialogUtil.showDialog(
+                        dialog = MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
                             getString(R.string.connection_successful),
                             getString(R.string.sure),
@@ -214,7 +203,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        MaterialAlertDialogUtil.showDialog(
+                        dialog = MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
                             getString(R.string.failed_to_connect),
                             getString(R.string.sure),
@@ -717,5 +706,10 @@ class WebDavBackupActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // menuInflater.inflate(R.menu.menu_web_dav_backup, menu)
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        dialog?.dismiss()
     }
 }

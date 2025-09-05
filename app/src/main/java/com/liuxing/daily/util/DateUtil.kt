@@ -12,7 +12,7 @@ object DateUtil {
 
     private val dateFormat =
         arrayOf(
-            if (MyApplication.context?.getString(R.string.daily) == "日记") "yyyy/MM/dd HH:mm" else "yyyy-MM-dd HH:mm",
+            if (MyApplication.appContext.getString(R.string.daily) == "日记") "yyyy/MM/dd HH:mm" else "yyyy-MM-dd HH:mm",
             "yyyy-MM-dd",
             "HH:mm"
         )

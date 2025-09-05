@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.content.Context
@@ -12,10 +16,10 @@ import android.view.View
 import com.liuxing.daily.listener.UndoRedoListener
 
 /**
- * Author：流星
- * DateTime：2025/7/14 14:21
- * Description：画板
+ *  *  *  *//**
+ * 画板
  */
+
 class DrawView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
     private var path = Path()

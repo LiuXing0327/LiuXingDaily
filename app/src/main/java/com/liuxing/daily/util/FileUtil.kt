@@ -1,12 +1,15 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.util
 
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import java.io.File
+import java.security.MessageDigest
 
 /**
- * Author：流星
- * DateTime：2024/10/26 11:18
- * Description：文件工具类
+ * 文件工具类
  */
 class FileUtil {
 
@@ -32,6 +35,14 @@ class FileUtil {
         val file = File(filePath)
         return file.exists()
     }
+
+    /**
+     * 检查文件是否存在
+     *
+     * @param file 文件
+     * @return 文件是否存在
+     */
+    fun checkFileExists(file: File): Boolean = file.exists()
 
     /**
      * 检查文件是否存在
@@ -109,5 +120,25 @@ class FileUtil {
             paths.add(file.absolutePath)
         }
         return paths
+    }
+
+    /**
+     * 获取文件的 MD5 值
+     *
+     * @param file 需要计算的文件
+     * @return 文件的 MD5 字符串
+     */
+    fun getFileMD5(file: File): String {
+        if (!checkFileExists(file)) return ""
+        val messageDigest = MessageDigest.getInstance("MD5")
+        file.inputStream().use { fis ->
+            val buffer = ByteArray(1024)
+            var len: Int
+            while (fis.read(buffer).also { len = it } != -1) {
+                messageDigest.update(buffer, 0, len)
+            }
+        }
+        val bytes = messageDigest.digest()
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 }

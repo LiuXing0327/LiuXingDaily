@@ -4,12 +4,12 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="@dimen/dp_8"
-    android:layout_marginStart="@dimen/dp_2"
+    android:layout_marginStart="@dimen/dp_4"
     android:layout_marginTop="@dimen/dp_8"
-    app:cardCornerRadius="@dimen/dp_30"
-    android:layout_marginEnd="@dimen/dp_2">
+    android:layout_marginEnd="@dimen/dp_4">
 
         <ImageView
+            android:contentDescription="@string/image"
             android:id="@+id/image_view"
             android:layout_width="match_parent"
             android:layout_height="@dimen/dp_200"

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.content.Context
@@ -13,9 +17,7 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.util.ConstUtil
 
 /**
- * Author：流星
- * DateTime：2024/10/22 下午6:54
- * Description：心情适配器
+ * 心情适配器
  */
 class MoodAdapter(context: Context) : RecyclerView.Adapter<MoodAdapter.ViewHolder>() {
 

@@ -14,11 +14,11 @@
     <color name="color_6">@color/md_theme_primaryContainer_yellow</color>
     <color name="color_7">@color/md_theme_primaryContainer_pink</color>
     <color name="mw_color">#FCC21B</color>
-    <color name="bullet_color">@color/m3_ref_palette_neutral_variant80</color>
-
+    <color name="bullet_color">@color/m3_ref_palette_neutral_variant30</color>
     <color name="md_theme_primary">#6750A4</color>
     <color name="md_theme_primaryFixed">#EADDFF</color>
     <color name="md_theme_inversePrimary">#D0BCFF</color>
+    <color name="car_grey_868">#ff282a2d</color>
 
     <color name="md_theme_primary_red">#8F4C38</color>
     <color name="md_theme_onPrimary_red">#FFFFFF</color>

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.dao
 
 import androidx.lifecycle.LiveData
@@ -9,10 +13,7 @@ import androidx.room.Update
 import com.liuxing.daily.entity.DailyLabelEntity
 
 /**
- * Author：流星
- * DateTime：2024/11/12 10:16
- * Description：日记标签Dao
- */
+ *  *  *  */
 @Dao
 interface DailyLabelDao {
 

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 流星
+ */
+
 package com.liuxing.daily.view
 
 import android.R
@@ -9,12 +13,6 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import kotlin.math.min
 
-
-/**
- * Author：流星
- * DateTime：2025/1/24 13:14
- * Description：
- */
 class RoundTricolorView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
     private val topPaint = Paint()

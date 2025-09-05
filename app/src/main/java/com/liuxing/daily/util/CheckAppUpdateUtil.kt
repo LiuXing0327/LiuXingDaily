@@ -56,7 +56,9 @@ object CheckAppUpdateUtil {
                             val updateDialog = MaterialAlertDialogBuilder(context)
                             updateDialog.setIcon(R.drawable.baseline_new_releases_24)
                             updateDialog.setTitle(context.getString(R.string.new_version) + "：$latestVersionName")
-                            updateDialog.setMessage(MarkdownParser.parseMarkdown(releaseNotes.replace("-","- ")))
+                            val parsed =
+                                MarkdownParser.parseMarkdown(releaseNotes.replace("-", "- "))
+                            updateDialog.setMessage(parsed)
                             updateDialog.setPositiveButton(
                                 context.getString(R.string.sure),
                                 DialogInterface.OnClickListener { dialog, which ->

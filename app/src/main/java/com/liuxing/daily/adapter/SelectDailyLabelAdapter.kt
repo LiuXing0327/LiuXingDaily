@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 流星
+ */
+
 package com.liuxing.daily.adapter
 
 import android.view.LayoutInflater
@@ -10,10 +14,10 @@ import com.liuxing.daily.R
 import com.liuxing.daily.listener.OnItemClickListener
 
 /**
- * Author：流星
- * DateTime：2024/11/16 22:28
- * Description：选择日记标签
+ *  *  *  *//**
+ * 选择日记标签
  */
+
 class SelectDailyLabelAdapter(
     private val dailyLabelList: List<String>
 ) :
