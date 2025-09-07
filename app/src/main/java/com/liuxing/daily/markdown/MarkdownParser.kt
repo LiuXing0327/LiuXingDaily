@@ -94,11 +94,7 @@ object MarkdownParser {
  * - LIST_ITEM 列表项
  * - NORMAL 普通文本
  */
-private enum
-/**
- * Markdown 解析
- */
-class LineType {
+private enum class LineType {
     HEADING, LIST_ITEM, NORMAL
 }
 
