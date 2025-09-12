@@ -12,6 +12,7 @@
     android:layout_height="wrap_content">
 
     <ImageView
+        android:contentDescription="@string/sunny"
         android:id="@+id/iv_weather"
         android:layout_width="@dimen/dp_50"
         android:layout_height="@dimen/dp_50"
@@ -23,7 +24,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="晴天" />
+        android:text="@string/sunny" />
 
 </LinearLayout>
 
