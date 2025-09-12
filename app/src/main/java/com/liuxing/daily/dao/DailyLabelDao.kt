@@ -12,8 +12,6 @@ import androidx.room.Query
 import androidx.room.Update
 import com.liuxing.daily.entity.DailyLabelEntity
 
-/**
- *  *  *  */
 @Dao
 interface DailyLabelDao {
 
