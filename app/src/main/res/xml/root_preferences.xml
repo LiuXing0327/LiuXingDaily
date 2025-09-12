@@ -17,6 +17,12 @@
             app:title="@string/special_thanks" />
 
         <Preference
+            app:icon="@drawable/outline_code_24"
+            app:iconSpaceReserved="true"
+            app:key="open_source_preference"
+            app:title="@string/open_source_libraries"/>
+
+        <Preference
             app:icon="@drawable/outline_privacy_tip_24"
             app:iconSpaceReserved="true"
             app:key="user_agreement_and_privacy_policy_preference"
