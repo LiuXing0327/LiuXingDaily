@@ -30,6 +30,7 @@ import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
 import com.liuxing.daily.ui.about.AboutActivity
+import com.liuxing.daily.ui.about.OpenSourceActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
 import com.liuxing.daily.ui.privacy.PrivacyActivity
@@ -111,6 +112,12 @@ class SettingsActivity : AppCompatActivity() {
             val specialThanksPreference = findPreference<Preference>("special_thanks_preference")
             specialThanksPreference?.setOnPreferenceClickListener {
                 IntentUtil.startActivity(requireContext(), SpecialThanksActivity::class.java)
+                true
+            }
+
+            val openSourcePreference = findPreference<Preference>("open_source_preference")
+            openSourcePreference?.setOnPreferenceClickListener {
+                IntentUtil.startActivity(requireContext(), OpenSourceActivity::class.java)
                 true
             }
 
