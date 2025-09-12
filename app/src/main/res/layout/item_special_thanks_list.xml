@@ -44,10 +44,10 @@
             android:textSize="@dimen/sp_16" />
 
         <com.google.android.material.card.MaterialCardView
+            style="?attr/materialCardViewFilledStyle"
             android:layout_marginTop="@dimen/dp_8"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurfaceContainer">
+            android:layout_height="wrap_content">
 
             <com.google.android.material.textview.MaterialTextView
                 android:padding="@dimen/dp_16"

@@ -16,7 +16,6 @@ import android.view.View
 import com.liuxing.daily.listener.UndoRedoListener
 
 /**
- *  *  *  *//**
  * 画板
  */
 

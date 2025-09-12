@@ -15,6 +15,7 @@ import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.LogUtil
 
 /**
  * 心情适配器
@@ -55,6 +56,7 @@ class MoodAdapter(context: Context) : RecyclerView.Adapter<MoodAdapter.ViewHolde
             )
         )
         holder.tvMood.text = moodTextList[position]
+        holder.ivMood.contentDescription = moodTextList[position]
         holder.itemView.setOnClickListener {
             onItemClickListener?.onItemClick(position)
         }

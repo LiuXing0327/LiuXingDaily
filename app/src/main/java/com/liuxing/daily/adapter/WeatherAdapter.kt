@@ -64,6 +64,7 @@ class WeatherAdapter(context: Context) : RecyclerView.Adapter<WeatherAdapter.Vie
             )
         )
         holder.tvWeather.text = weatherTextList[position]
+        holder.ivWeather.contentDescription = weatherTextList[position]
         holder.itemView.setOnClickListener {
             onItemClickListener?.onItemClick(position)
         }

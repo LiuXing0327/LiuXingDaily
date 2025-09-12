@@ -78,6 +78,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -1855,6 +1856,9 @@ class MainActivity : AppCompatActivity() {
 
                 for (path in filePaths) {
 
+                    // 排除壁纸
+                    if(path == ConstUtil.WALLPAPER_PATH) continue
+
                     when (File(path).extension) {
                         "jpg" -> {
                             var contentExistsInDatabase = false
@@ -1863,7 +1867,7 @@ class MainActivity : AppCompatActivity() {
                                 val dailyImages =
                                     dailyViewModel.queryDailyImageByUuidToList(it.dailyUUID!!)
                                 dailyImages.forEach { dailyImageEntity ->
-                                    if (dailyImageEntity.imagePath == path || path == ConstUtil.WALLPAPER_PATH) {
+                                    if (dailyImageEntity.imagePath == path) {
                                         contentExistsInDatabase = true
                                         return@forEach
                                     }

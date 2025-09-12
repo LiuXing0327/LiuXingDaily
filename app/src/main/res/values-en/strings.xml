@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">醒悟</string>
+    <string name="app_name">Wake</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title">Title</string>
     <string name="daily">Diary</string>
@@ -57,7 +57,7 @@
     <string name="weather">Weather</string>
     <string name="sunny">Sunny</string>
     <string name="add_image">Add Image</string>
-    <string name="author_name">Author: 流星</string>
+    <string name="author_name">Author: LiuXing</string>
     <string name="current_version">Current version: %1$s</string>
     <string name="qq_920994447">QQ Group: 920994447</string>
     <string name="a_href_a"><![CDATA[<a href=\'%1$s\'>Source Code：%2$s</a>]]></string>
@@ -177,4 +177,6 @@
     <string name="enter_your_password">Enter your password</string>
     <string name="image">Image</string>
     <string name="user_agreement_and_privacy_Policy">User Agreement and Privacy Policy</string>
+    <string name="app_icon">App icon</string>
+        <string name="open_source_libraries">Open Source Libraries</string>
 </resources>

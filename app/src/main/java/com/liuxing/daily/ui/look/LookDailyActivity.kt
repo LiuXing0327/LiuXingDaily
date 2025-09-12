@@ -3,6 +3,7 @@ package com.liuxing.daily.ui.look
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,10 +11,13 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -53,7 +57,7 @@ class LookDailyActivity : AppCompatActivity() {
         ThemeUtil.applyTheme(this)
         lookDailyBinding = ActivityLookDailyBinding.inflate(layoutInflater)
         setContentView(lookDailyBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
                             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                             insets
@@ -165,6 +169,20 @@ class LookDailyActivity : AppCompatActivity() {
                 } else finish()
             }
         })
+    }
+
+    fun setLightStausBarsFromBitmap(bitmap: Bitmap) {
+        Palette.from(bitmap).maximumColorCount(7).setRegion(0, 0, bitmap.width, 100)
+            .generate { palette ->
+                val mostUsed = palette?.swatches?.maxByOrNull { it.population }
+                mostUsed?.let { swatch ->
+                    val isDark = ColorUtils.calculateLuminance(swatch.rgb) < 0.5
+                    val wallpaperAlpha = lookDailyBinding.wallpaper.alpha
+                    val insetsController =
+                        WindowCompat.getInsetsController(window, window.decorView)
+                    insetsController.isAppearanceLightStatusBars = !isDark && wallpaperAlpha > 0.5f
+                }
+            }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -458,6 +476,7 @@ class LookDailyActivity : AppCompatActivity() {
         super.onResume()
         if (File(ConstUtil.WALLPAPER_PATH).exists()) {
             val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+            setLightStausBarsFromBitmap(bitmap)
             lookDailyBinding.wallpaper.setImageBitmap(bitmap)
         }
         val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
