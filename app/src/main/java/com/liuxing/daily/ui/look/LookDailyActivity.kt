@@ -53,7 +53,7 @@ class LookDailyActivity : AppCompatActivity() {
         ThemeUtil.applyTheme(this)
         lookDailyBinding = ActivityLookDailyBinding.inflate(layoutInflater)
         setContentView(lookDailyBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
                             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                             insets
