@@ -5,13 +5,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
-import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -24,7 +22,6 @@ import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
-import com.liuxing.daily.util.WindowUtil
 
 
 class AboutActivity : AppCompatActivity() {
@@ -110,7 +107,10 @@ class AboutActivity : AppCompatActivity() {
         }
         activityAboutBinding.tvJoinGroup.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, "920994447")
-            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvGithub, getString(R.string.copy_successful))
+            SnackbarUtil.showSnackbarShort(
+                activityAboutBinding.tvGithub,
+                getString(R.string.copy_successful)
+            )
             true
         }
         // 设置可点击
