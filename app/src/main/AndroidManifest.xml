@@ -19,6 +19,9 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="33">
         <activity
+            android:name=".ui.about.OpenSourceActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.privacy.PrivacyActivity"
             android:exported="false" />
         <activity
