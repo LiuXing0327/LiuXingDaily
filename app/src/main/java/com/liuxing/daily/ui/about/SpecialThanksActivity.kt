@@ -25,6 +25,11 @@ class SpecialThanksActivity : BaseSpecialThanksActivity() {
                             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                             insets
         }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.recycler_view)) { v, insets ->
+            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(navigationBars.left, 0, navigationBars.right, navigationBars.bottom)
+            insets
+        }
         initData()
     }
 
