@@ -33,9 +33,9 @@ object LogUtil {
     /**
      * 错误
      */
-    fun e(message: String) {
+    fun e(message: String, throwable: Throwable) {
         if (DEBUG) {
-            Log.e(getTag(), message)
+            Log.e(getTag(), message, throwable)
         }
     }
 
