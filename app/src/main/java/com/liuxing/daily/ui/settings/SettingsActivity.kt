@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.setPadding
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -73,6 +74,11 @@ class SettingsActivity : AppCompatActivity() {
                     val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settings)) { v, insets ->
+            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(navigationBars.left,0,navigationBars.right,navigationBars.bottom)
+            insets
         }
         setSupportActionBar(activityBinding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -156,6 +162,7 @@ class SettingsActivity : AppCompatActivity() {
                         layoutInflater.inflate(R.layout.update_text_line_spacing_layout, null)
                     val tvText =
                         updateTextLineSpacingLayout.findViewById<MaterialTextView>(R.id.tv_text)
+                    tvText.textSize = textSizeValue(sharedPreferences)
                     val slider = updateTextLineSpacingLayout.findViewById<Slider>(R.id.slider)
                     val newLineSpacingValue =
                         textLineSpacingValue(sharedPreferences)
@@ -419,6 +426,9 @@ class SettingsActivity : AppCompatActivity() {
 
         /**
          * 获取文本行距
+         *
+         * @param sharedPreferences SharedPreferences
+         * @return 文本行距，默认 0f
          */
         private fun textLineSpacingValue(sharedPreferences: SharedPreferences): Float {
             val textLineSpacingValue =
@@ -449,6 +459,9 @@ class SettingsActivity : AppCompatActivity() {
 
         /**
          * 获取文本字体大小
+         *
+         * @param sharedPreferences SharedPreferences
+         * @return 文本字体大小，默认 16f
          */
         private fun textSizeValue(sharedPreferences: SharedPreferences): Float =
             sharedPreferences.getFloat("text_font_size_preference", 16f)
