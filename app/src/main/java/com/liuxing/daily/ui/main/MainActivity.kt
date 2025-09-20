@@ -150,9 +150,14 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.contextual_toolbar_container)) { v, insets ->
-                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-                    insets
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fragmentContainerView)) { v, insets ->
+            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(navigationBars.left, 0, navigationBars.right, navigationBars.bottom)
+            insets
         }
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         val okHttpClient = OkHttpClient()
@@ -1925,6 +1930,7 @@ class MainActivity : AppCompatActivity() {
                     val fileExists = fileUtil.checkFileExists(filepath)
                     if (fileExists) {
                         fileUtil.deleteFile(filepath)
+                        LogUtil.d("delete filePath : $filepath")
                     }
                 }
             }
@@ -1947,7 +1953,8 @@ class MainActivity : AppCompatActivity() {
             activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
         )
 
-        Handler(Looper.getMainLooper()).postDelayed({
+        lifecycleScope.launch {
+            delay(300)
             disableLightStatusBarWithAppBar()
             val enable = mainViewModel.enableAppBarOffsetChange.value ?: false
             if (!enable) {
@@ -1960,6 +1967,9 @@ class MainActivity : AppCompatActivity() {
                     insetsController.isAppearanceLightStatusBars = !isDark
                 }
             }
+        }
+        Handler(Looper.getMainLooper()).postDelayed({
+
         }, 300)
     }
 
