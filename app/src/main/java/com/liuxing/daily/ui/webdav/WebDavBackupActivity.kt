@@ -604,7 +604,7 @@ class WebDavBackupActivity : AppCompatActivity() {
     /**
      * 从 WebDav 导入数据
      */
-    private suspend fun importDailyZipFromWebDav(url: String, password: String? = null) {
+    private suspend fun importDailyZipFromWebDav(url: String, password: String) {
         try {
             val inputStream = sardine.get(url) ?: return
 
@@ -615,7 +615,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                 }
             }
 
-            val zipFile = if (!password.isNullOrEmpty()) {
+            val zipFile = if (password.isNotEmpty()) {
                 ZipFile(tempZipFile, password.toCharArray())
             } else {
                 ZipFile(tempZipFile)
