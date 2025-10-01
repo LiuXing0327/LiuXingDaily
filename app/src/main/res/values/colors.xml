@@ -13,6 +13,7 @@
     <color name="color_5">@color/md_theme_primaryContainer_blue</color>
     <color name="color_6">@color/md_theme_primaryContainer_yellow</color>
     <color name="color_7">@color/md_theme_primaryContainer_pink</color>
+    <color name="color_8">@color/md_theme_primaryContainer_light_cyan</color>
     <color name="mw_color">#FCC21B</color>
     <color name="bullet_color">@color/m3_ref_palette_neutral_variant30</color>
     <color name="md_theme_primary">#6750A4</color>
@@ -734,4 +735,13 @@
     <color name="light_blue_A200">#FF40C4FF</color>
     <color name="light_blue_A400">#FF00B0FF</color>
     <color name="black_overlay">#66000000</color>
+
+    <integer-array name="progress_color">
+        <item>@color/md_theme_primary</item>
+        <item>@color/md_theme_primary_red</item>
+        <item>@color/md_theme_primary_green</item>
+        <item>@color/md_theme_primary_blue</item>
+        <item>@color/md_theme_primary_yellow</item>
+        <item>@color/md_theme_primary_pink</item>
+    </integer-array>
 </resources>
