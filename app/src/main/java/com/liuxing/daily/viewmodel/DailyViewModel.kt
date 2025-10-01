@@ -11,9 +11,9 @@ import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyVideoEntity
 import com.liuxing.daily.repository.DailyRepository
 import com.liuxing.daily.util.FileUtil
-import com.liuxing.daily.util.LogUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DailyViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -146,15 +146,12 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         return result
     }
 
-    fun toggleIsDelete(uuids: List<String>) {
-        viewModelScope.launch {
-            dailyRepository.toggleIsDelete(uuids)
-        }
+    suspend fun toggleIsDelete(uuids: List<String>) = withContext(Dispatchers.IO) {
+        dailyRepository.toggleIsDelete(uuids)
     }
 
-    fun deleteSelected(selectedList: List<DailyEntity>) {
+    suspend fun deleteSelected(selectedList: List<DailyEntity>) = withContext(Dispatchers.IO) {
         val fileUtil = FileUtil()
-        viewModelScope.launch(Dispatchers.IO) {
             selectedList.forEach { dailyEntity ->
                 val uuid = dailyEntity.dailyUUID ?: return@forEach
                 queryDailyImageByUuidToList(uuid).mapNotNull { it.imagePath }
@@ -172,9 +169,9 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
                 queryDailyAudioByUuidToList(uuid).mapNotNull { it.audioPath }.forEach { path ->
                     if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
                 }
+                deletePathAudioByDailyUuid(uuid)
 
                 deleteDaily(dailyEntity)
             }
-        }
     }
 }
