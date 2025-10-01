@@ -1,14 +1,14 @@
 package com.liuxing.daily.util
 
 import android.content.Context
-import android.view.LayoutInflater
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.liuxing.daily.R
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.view.LayoutInflater
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.liuxing.daily.R
 import com.liuxing.daily.markdown.MarkdownParser
 import okhttp3.Call
 import okhttp3.Callback
@@ -82,14 +82,13 @@ object CheckAppUpdateUtil {
 
     /**
      * 提示不用更新的弹窗或检查失败
+     *
+     * @param context 上下文
+     * @param message 要显示的信息
      */
     fun checkFailedOrNoVersionDialog(context: Context,message:String){
         Handler(Looper.getMainLooper()).post {
-            MaterialAlertDialogBuilder(context)
-                .setMessage(message)
-                .setPositiveButton(context.getString(R.string.sure),null)
-                .create()
-                .show()
+            MaterialAlertDialogUtil.showDialog(context, message, context.getString(R.string.sure))
         }
     }
 }

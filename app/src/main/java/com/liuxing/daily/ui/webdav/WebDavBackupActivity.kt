@@ -2,14 +2,11 @@ package com.liuxing.daily.ui.webdav
 
 import android.os.Bundle
 import android.util.Log
-import android.util.TypedValue
-import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
@@ -22,22 +19,32 @@ import com.liuxing.daily.databinding.ActivityWebDavBackupBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
-import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.LogUtil
+import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
+import com.liuxing.daily.util.ZipUtil.addFileToZipSafely
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.lingala.zip4j.ZipFile
+import net.lingala.zip4j.model.ZipParameters
+import net.lingala.zip4j.model.enums.AesKeyStrength
+import net.lingala.zip4j.model.enums.EncryptionMethod
+import okhttp3.Credentials
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.Request
+import okhttp3.RequestBody
+import okio.BufferedSink
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 
 private const val WEB_DAV_URL_KEY = "web_dav_url_key"
@@ -128,6 +135,40 @@ class WebDavBackupActivity : AppCompatActivity() {
     }
 
     /**
+     * 保存 WebDav 配置
+     */
+    private fun saveWebDavConfig() {
+        SharedPreferencesUtil.putString(
+            this, WEB_DAV_URL_KEY, webDavBackupBinding.inputUrl.text.toString()
+        )
+        SharedPreferencesUtil.putString(
+            this, WEB_DAV_USER_NAME, webDavBackupBinding.inputAccountNumber.text.toString()
+        )
+        SharedPreferencesUtil.putString(
+            this, WEB_DAV_PASS_WORD, webDavBackupBinding.inputPassword.text.toString()
+        )
+        SharedPreferencesUtil.putString(
+            this, WEB_DAV_ENCRYPT_PASS_WORD, webDavBackupBinding.inputEncrypt.text.toString()
+        )
+    }
+
+    /**
+     * 保持光标所在位置
+     */
+    private fun keepCursorPosition() {
+        val editTexts = arrayOf(
+            webDavBackupBinding.inputUrl,
+            webDavBackupBinding.inputAccountNumber,
+            webDavBackupBinding.inputPassword,
+            webDavBackupBinding.inputEncrypt
+        )
+
+        editTexts.forEach { editText ->
+            editText.setSelection(editText.text?.length ?: 0)
+        }
+    }
+
+    /**
      * 初始化视图模型
      */
     private fun initViewModel() {
@@ -163,30 +204,11 @@ class WebDavBackupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            SharedPreferencesUtil.putString(
-                this,
-                WEB_DAV_URL_KEY,
-                webDavBackupBinding.inputUrl.text.toString()
-            )
-            SharedPreferencesUtil.putString(
-                this,
-                WEB_DAV_USER_NAME,
-                webDavBackupBinding.inputAccountNumber.text.toString()
-            )
-            SharedPreferencesUtil.putString(
-                this,
-                WEB_DAV_PASS_WORD,
-                webDavBackupBinding.inputPassword.text.toString()
-            )
-            SharedPreferencesUtil.putString(
-                this,
-                WEB_DAV_ENCRYPT_PASS_WORD,
-                webDavBackupBinding.inputEncrypt.text.toString()
-            )
-
+            saveWebDavConfig()
             // 初始化 Sardine
             getWebDavAccountNumber()
             initSardine()
+            keepCursorPosition()
 
             // 测试连接
             CoroutineScope(Dispatchers.IO).launch {
@@ -215,248 +237,269 @@ class WebDavBackupActivity : AppCompatActivity() {
         }
     }
 
+    private fun <T> chunkList(list: List<T>, chunkSize: Int): List<List<T>> {
+        if (chunkSize <= 0) return listOf(list)
+        val result = mutableListOf<List<T>>()
+        var i = 0
+        while (i < list.size) {
+            val end = (i + chunkSize).coerceAtMost(list.size)
+            result.add(list.subList(i, end))
+            i += chunkSize
+        }
+        return result
+    }
+
+    @Throws(Exception::class)
+    private fun uploadFileWithOkHttp(
+        uploadUrl: String,
+        zipFile: File,
+        username: String,
+        password: String,
+        progressCallback: ((sentBytes: Long, totalBytes: Long) -> Unit)? = null
+    ) {
+        val client = sharedOkHttpClient
+
+        val requestBody = object : RequestBody() {
+            private val contentTypeString = "application/zip"
+
+            override fun contentType() = contentTypeString.toMediaTypeOrNull()
+
+            override fun contentLength(): Long {
+                return try {
+                    zipFile.length()
+                } catch (e: Exception) {
+                    -1L
+                }
+            }
+
+            @Throws(IOException::class)
+            override fun writeTo(sink: BufferedSink) {
+                val total = contentLength().coerceAtLeast(0L)
+                var uploaded = 0L
+
+                zipFile.inputStream().use { fis ->
+                    val buffer = ByteArray(8 * 1024)
+                    var read: Int
+                    while (true) {
+                        read = fis.read(buffer)
+                        if (read == -1) break
+                        sink.write(buffer, 0, read)
+                        uploaded += read
+                        progressCallback?.invoke(uploaded, total)
+                    }
+                }
+            }
+
+        }
+
+        val credential = Credentials.basic(username, password)
+        val request =
+            Request.Builder().url(uploadUrl).addHeader("Authorization", credential).put(requestBody)
+                .build()
+
+        client.newCall(request).execute().use { resp ->
+            if (!resp.isSuccessful) {
+                throw IOException("Upload failed: ${resp.code} ${resp.message}")
+            }
+        }
+    }
 
     /**
-     * 备份数据到 WebDav
+     * 分批备份数据到 WebDav
      */
     private fun backupDataToWebDav() {
         webDavBackupBinding.btSave.setOnClickListener {
-            if (!webDavBackupBinding.inputUrl.text.isNullOrEmpty() ||
-                !webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() ||
-                !webDavBackupBinding.inputPassword.text.isNullOrEmpty()
+            if (webDavBackupBinding.inputUrl.text.isNullOrEmpty() || webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() || webDavBackupBinding.inputPassword.text.isNullOrEmpty()
             ) {
-                SharedPreferencesUtil.putString(
-                    this,
-                    WEB_DAV_URL_KEY,
-                    webDavBackupBinding.inputUrl.text.toString()
-                )
-                SharedPreferencesUtil.putString(
-                    this, WEB_DAV_USER_NAME,
-                    webDavBackupBinding.inputAccountNumber.text.toString()
-                )
-                SharedPreferencesUtil.putString(
-                    this,
-                    WEB_DAV_PASS_WORD,
-                    webDavBackupBinding.inputPassword.text.toString()
-                )
-                SharedPreferencesUtil.putString(
-                    this,
-                    WEB_DAV_ENCRYPT_PASS_WORD,
-                    webDavBackupBinding.inputEncrypt.text.toString()
-                )
+                return@setOnClickListener
+            }
 
-                if (!isSardineInit) {
-                    initSardine()
-                }
+            // 保存配置
+            saveWebDavConfig()
+            if (!isSardineInit) {
+                getWebDavAccountNumber()
+                initSardine()
+            }
+            keepCursorPosition()
 
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        FileUtil().checkDirExists(sardine, url).let {
-                            val fileName = if (url.endsWith("/")) "醒悟" else "/醒悟"
-                            if (!it) sardine.createDirectory("${url}${fileName}")
+            CoroutineScope(Dispatchers.IO).launch {
+                var dialogShown = false
+                try {
+                    FileUtil().checkDirExists(sardine, url).let {
+                        val dirName = if (url.endsWith("/")) "醒悟" else "/醒悟"
+                        if (!it) sardine.createDirectory("${url}${dirName}")
+                    }
+                    val dailyWithMediaList = mutableListOf<DailyWithMedia>()
+                    val processedDailyUuids = mutableSetOf<String>()
+                    dailyList.forEach { dailyEntity ->
+                        if (!processedDailyUuids.contains(dailyEntity.dailyUUID)) {
+                            processedDailyUuids.add(dailyEntity.dailyUUID.toString())
+                            val queryImageList =
+                                dailyViewModel.queryDailyImageByUuidToList(dailyEntity.dailyUUID.toString())
+                            val queryVideoList =
+                                dailyViewModel.queryDailyVideoByUuidToList(dailyEntity.dailyUUID.toString())
+                            val queryAudioList =
+                                dailyViewModel.queryDailyAudioByUuidToList(dailyEntity.dailyUUID.toString())
+                            dailyWithMediaList.add(
+                                DailyWithMedia(
+                                    dailyEntity, queryImageList, queryVideoList, queryAudioList
+                                )
+                            )
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        val materialAlertDialogBuilder =
+                            MaterialAlertDialogBuilder(this@WebDavBackupActivity)
+                        materialAlertDialogBuilder.setView(
+                            layoutInflater.inflate(
+                                R.layout.loading_lndicators_dialog_layout, null
+                            )
+                        )
+                        materialAlertDialogBuilder.setCancelable(false)
+                        dialog = materialAlertDialogBuilder.create()
+                        dialog!!.show()
+                        dialogShown = true
+                    }
+                    val batchSize = 30
+                    val batches = chunkList(dailyWithMediaList, batchSize)
+                    val globalProcessedImageNames = mutableSetOf<String>()
+                    val globalProcessedVideoNames = mutableSetOf<String>()
+                    val globalProcessedAudioNames = mutableSetOf<String>()
+                    val password = webDavBackupBinding.inputEncrypt.text.toString()
+                    val baseZipParams = ZipParameters().apply {
+                        if (password.isNotEmpty()) {
+                            isEncryptFiles = true
+                            encryptionMethod = EncryptionMethod.AES
+                            aesKeyStrength = AesKeyStrength.KEY_STRENGTH_256
+                        }
+                    }
+
+                    batches.forEachIndexed { batchIndex, batch ->
+                        val tempDir = File(
+                            externalCacheDir, "temp_daily_batch_${batchIndex + 1}"
+                        ).apply { mkdirs() }
+                        val zipFilePath = File(externalCacheDir, "daily_part_${batchIndex + 1}.zip")
+                        val zip = if (password.isNotEmpty()) ZipFile(
+                            zipFilePath, password.toCharArray()
+                        ) else ZipFile(zipFilePath)
+                        val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+                        batch.forEach { dailyWithMedia ->
+                            val jsonFile =
+                                File(tempDir, "${dailyWithMedia.dailyEntity.dailyUUID}.json")
+                            jsonFile.writeText(gson.toJson(dailyWithMedia))
+                            val jsonParams = ZipParameters().apply {
+                                isEncryptFiles = baseZipParams.isEncryptFiles
+                                encryptionMethod = baseZipParams.encryptionMethod
+                                aesKeyStrength = baseZipParams.aesKeyStrength
+                                fileNameInZip = "${dailyWithMedia.dailyEntity.dailyUUID}.json"
+                            }
+                            zip.addFile(jsonFile, jsonParams)
+
+                            dailyWithMedia.imageList?.forEach { img ->
+                                img?.imagePath?.let { imagePath ->
+                                    val imageFile = File(imagePath)
+                                    if (imageFile.exists() && !globalProcessedImageNames.contains(
+                                            imageFile.name
+                                        )
+                                    ) {
+                                        globalProcessedImageNames.add(imageFile.name)
+                                        addFileToZipSafely(
+                                            zip, imageFile, "Pictures", baseZipParams
+                                        )
+                                    }
+                                }
+                            }
+
+                            dailyWithMedia.videoList?.forEach { vid ->
+                                vid?.videoPath?.let { videoPath ->
+                                    val videoFile = File(videoPath)
+                                    if (videoFile.exists() && !globalProcessedVideoNames.contains(
+                                            videoFile.name
+                                        )
+                                    ) {
+                                        globalProcessedVideoNames.add(videoFile.name)
+                                        addFileToZipSafely(zip, videoFile, "Movies", baseZipParams)
+                                    }
+                                }
+                            }
+
+                            dailyWithMedia.audioList?.forEach { au ->
+                                au?.audioPath?.let { audioPath ->
+                                    val audioFile = File(audioPath)
+                                    if (audioFile.exists() && !globalProcessedAudioNames.contains(
+                                            audioFile.name
+                                        )
+                                    ) {
+                                        globalProcessedAudioNames.add(audioFile.name)
+                                        addFileToZipSafely(zip, audioFile, "Music", baseZipParams)
+                                    }
+                                }
+                            }
                         }
 
-                        FileUtil().checkFileExists(sardine, url).let {
-                            if (it) {
-                                FileUtil().deleteFile(sardine, url)
-                            }
-                            val processedFileList = mutableSetOf<String>()
-                            val processedImageFileList = mutableSetOf<String>()
-                            val processedVideoFileList = mutableSetOf<String>()
-                            val processedAudioFileList = mutableSetOf<String>()
-
-                            withContext(Dispatchers.Main) {
-                                val materialAlertDialogBuilder =
-                                    MaterialAlertDialogBuilder(this@WebDavBackupActivity)
-                                materialAlertDialogBuilder.setView(
-                                    layoutInflater.inflate(
-                                        R.layout.loading_lndicators_dialog_layout,
-                                        null
-                                    )
-                                )
-                                materialAlertDialogBuilder.setCancelable(false)
-                                dialog = materialAlertDialogBuilder.create()
-                                dialog!!.show()
-                            }
-
-                            val dailyWithMediaList = mutableListOf<DailyWithMedia>()
-                            dailyList.forEach { dailyEntity ->
-                                if (!processedFileList.contains(dailyEntity.dailyUUID)) {
-                                    processedFileList.add(dailyEntity.dailyUUID.toString())
-                                    val queryImageList =
-                                        dailyViewModel.queryDailyImageByUuidToList(dailyEntity.dailyUUID.toString())
-                                    val queryVideoList =
-                                        dailyViewModel.queryDailyVideoByUuidToList(dailyEntity.dailyUUID.toString())
-                                    val queryAudioList =
-                                        dailyViewModel.queryDailyAudioByUuidToList(dailyEntity.dailyUUID.toString())
-                                    dailyWithMediaList.add(
-                                        DailyWithMedia(
-                                            dailyEntity,
-                                            queryImageList,
-                                            queryVideoList,
-                                            queryAudioList
-                                        )
-                                    )
-                                }
-                            }
-
-                            val zipFilePath = File(externalCacheDir, "daily.zip")
-                            val password = webDavBackupBinding.inputEncrypt.text.toString()
-
-                            val zipFile = if (password.isNotEmpty()) {
-                                net.lingala.zip4j.ZipFile(zipFilePath, password.toCharArray())
-                            } else {
-                                net.lingala.zip4j.ZipFile(zipFilePath)
-                            }
-
-                            val baseZipParameters = net.lingala.zip4j.model.ZipParameters().apply {
-                                if (password.isNotEmpty()) {
-                                    isEncryptFiles = true
-                                    encryptionMethod =
-                                        net.lingala.zip4j.model.enums.EncryptionMethod.AES
-                                    aesKeyStrength =
-                                        net.lingala.zip4j.model.enums.AesKeyStrength.KEY_STRENGTH_256
-                                }
-                            }
-
-                            val tempDir = File(externalCacheDir, "temp_daily").apply {
-                                mkdirs()
-                            }
-
-                            dailyWithMediaList.forEach { dailyWithMedia ->
-                                val jsonFile =
-                                    File(tempDir, "${dailyWithMedia.dailyEntity.dailyUUID}.json")
-                                val gson =
-                                    GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-                                jsonFile.writeText(gson.toJson(dailyWithMedia))
-                                val jsonParams = net.lingala.zip4j.model.ZipParameters().apply {
-                                    isEncryptFiles = baseZipParameters.isEncryptFiles
-                                    encryptionMethod = baseZipParameters.encryptionMethod
-                                    aesKeyStrength = baseZipParameters.aesKeyStrength
-                                    fileNameInZip = "${dailyWithMedia.dailyEntity.dailyUUID}.json"
-                                }
-                                zipFile.addFile(jsonFile, jsonParams)
-
-                                dailyWithMedia.imageList?.forEach { dailyImageEntity ->
-                                    dailyImageEntity?.imagePath?.let { imagePath ->
-                                        val imageFile = File(imagePath)
-                                        if (imageFile.exists() && !processedImageFileList.contains(
-                                                imageFile.name
-                                            )
-                                        ) {
-                                            processedImageFileList.add(imageFile.name)
-                                            val imageParams =
-                                                net.lingala.zip4j.model.ZipParameters().apply {
-                                                    isEncryptFiles =
-                                                        baseZipParameters.isEncryptFiles
-                                                    encryptionMethod =
-                                                        baseZipParameters.encryptionMethod
-                                                    aesKeyStrength =
-                                                        baseZipParameters.aesKeyStrength
-                                                    fileNameInZip = "Pictures/${imageFile.name}"
-                                                }
-                                            zipFile.addFile(imageFile, imageParams)
-                                        }
-                                    }
-                                }
-
-                                dailyWithMedia.videoList?.forEach { dailyVideoEntity ->
-                                    dailyVideoEntity?.videoPath?.let { videoPath ->
-                                        val videoFile = File(videoPath)
-                                        if (videoFile.exists() && !processedVideoFileList.contains(
-                                                videoFile.name
-                                            )
-                                        ) {
-                                            processedVideoFileList.add(videoFile.name)
-                                            val videoParams =
-                                                net.lingala.zip4j.model.ZipParameters().apply {
-                                                    isEncryptFiles =
-                                                        baseZipParameters.isEncryptFiles
-                                                    encryptionMethod =
-                                                        baseZipParameters.encryptionMethod
-                                                    aesKeyStrength =
-                                                        baseZipParameters.aesKeyStrength
-                                                    fileNameInZip = "Movies/${videoFile.name}"
-                                                }
-                                            zipFile.addFile(videoFile, videoParams)
-                                        }
-                                    }
-                                }
-
-                                dailyWithMedia.audioList?.forEach { dailyAudioEntity ->
-                                    dailyAudioEntity?.audioPath?.let { audioPath ->
-                                        val audioFile = File(audioPath)
-                                        if (audioFile.exists() && !processedAudioFileList.contains(
-                                                audioFile.name
-                                            )
-                                        ) {
-                                            processedAudioFileList.add(audioFile.name)
-                                            val audioParams =
-                                                net.lingala.zip4j.model.ZipParameters().apply {
-                                                    isEncryptFiles =
-                                                        baseZipParameters.isEncryptFiles
-                                                    encryptionMethod =
-                                                        baseZipParameters.encryptionMethod
-                                                    aesKeyStrength =
-                                                        baseZipParameters.aesKeyStrength
-                                                    fileNameInZip = "Music/${audioFile.name}"
-                                                }
-                                            zipFile.addFile(audioFile, audioParams)
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 处理标签
-                            val queryLabelList = dailyViewModel.queryDailyLabelToList()
+                        // 处理标签（只添加一次，放在第一个 batch）
+                        if (batchIndex == 0) {
                             val labelFile = File(tempDir, "labels.json")
-                            val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-                            labelFile.writeText(gson.toJson(queryLabelList))
-                            val labelParams = net.lingala.zip4j.model.ZipParameters().apply {
-                                isEncryptFiles = baseZipParameters.isEncryptFiles
-                                encryptionMethod = baseZipParameters.encryptionMethod
-                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                            labelFile.writeText(gson.toJson(dailyViewModel.queryDailyLabelToList()))
+                            val labelParams = ZipParameters().apply {
+                                isEncryptFiles = baseZipParams.isEncryptFiles
+                                encryptionMethod = baseZipParams.encryptionMethod
+                                aesKeyStrength = baseZipParams.aesKeyStrength
                                 fileNameInZip = "Label/labels.json"
                             }
-                            zipFile.addFile(labelFile, labelParams)
+                            zip.addFile(labelFile, labelParams)
+                        }
+                        tempDir.listFiles()?.forEach { it.delete() }
+                        val remoteFileName = "daily_part_${batchIndex + 1}.zip"
+                        val remotePath =
+                            if (url.endsWith("/")) "${url}醒悟/$remoteFileName" else "$url/醒悟/$remoteFileName"
 
+                        // 上传
+                        try {
+                            uploadFileWithOkHttp(
+                                uploadUrl = remotePath,
+                                zipFile = zipFilePath,
+                                username = webDavBackupBinding.inputAccountNumber.text.toString(),
+                                password = webDavBackupBinding.inputPassword.text.toString()
+                            ) { sent, total ->
+                                LogUtil.d("Batch ${batchIndex + 1} uploaded $sent / $total")
+                            }
+                            // 上传成功后删除本地 zip
+                            if (zipFilePath.exists()) zipFilePath.delete()
+                            // 删除临时目录
                             tempDir.deleteRecursively()
 
-                            val fileName =
-                                if (url.endsWith("/")) "醒悟/daily.zip" else "/醒悟/daily.zip"
-                            val upload = "${url}${fileName}"
-                            sardine.put(upload, zipFilePath.readBytes())
-
-                            withContext(Dispatchers.Main) {
-                                if (FileUtil().checkFileExists(zipFilePath.toString())) FileUtil().deleteFile(
-                                    zipFilePath.toString()
-                                )
-                                dialog?.dismiss()
-                                SnackbarUtil.showSnackbarShort(
-                                    webDavBackupBinding.btSave,
-                                    getString(R.string.backup_success)
-                                )
-                            }
+                        } catch (e: Exception) {
+                            throw e
                         }
-                    } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
+                    }
+
+                    // 所有批次上传成功
+                    withContext(Dispatchers.Main) {
+                        if (dialogShown) {
                             dialog?.dismiss()
-                            val tempZipFile = File(externalCacheDir, "temp_daily.zip")
-                            if (tempZipFile.exists()) {
-                                tempZipFile.deleteRecursively()
-                            }
-                            MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
-                                setMessage(getString(R.string.failed_to_backup_data))
-                                setPositiveButton(getString(R.string.sure), null)
-                                create()
-                                show()
-                            }
+                        }
+                        SnackbarUtil.showSnackbarShort(
+                            webDavBackupBinding.btSave, getString(R.string.backup_success)
+                        )
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        if (dialog != null && dialog!!.isShowing) dialog!!.dismiss()
+                        LogUtil.e("Backup Failed -> ${e.message}", e)
+                        MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
+                            setMessage(getString(R.string.failed_to_backup_data))
+                            setPositiveButton(getString(R.string.sure), null)
+                            create()
+                            show()
                         }
                     }
                 }
             }
         }
     }
+
 
     /**
      * 从 WebDav 恢复数据
@@ -467,69 +510,103 @@ class WebDavBackupActivity : AppCompatActivity() {
                 !webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() ||
                 !webDavBackupBinding.inputPassword.text.isNullOrEmpty()
             ) {
-                SharedPreferencesUtil.putString(
-                    this,
-                    WEB_DAV_URL_KEY,
-                    webDavBackupBinding.inputUrl.text.toString()
-                )
-                SharedPreferencesUtil.putString(
-                    this, WEB_DAV_USER_NAME,
-                    webDavBackupBinding.inputAccountNumber.text.toString()
-                )
-                SharedPreferencesUtil.putString(
-                    this, WEB_DAV_PASS_WORD,
-                    webDavBackupBinding.inputPassword.text.toString()
-                )
-                SharedPreferencesUtil.putString(
-                    this,
-                    WEB_DAV_ENCRYPT_PASS_WORD,
-                    webDavBackupBinding.inputEncrypt.text.toString()
-                )
-
+                saveWebDavConfig()
                 if (!isSardineInit) {
                     getWebDavAccountNumber()
                     initSardine()
                 }
+                keepCursorPosition()
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    val fileName = if (url.endsWith("/")) "醒悟/daily.zip" else "/醒悟/daily.zip"
-                    importDailyZipFromWebDav(
-                        "${url}${fileName}",
-                        webDavBackupBinding.inputEncrypt.text.toString()
-                    )
+                    val password = webDavBackupBinding.inputEncrypt.text.toString()
+                    importAllDailyParts(password)
                 }
+
             }
         }
     }
 
     /**
-     * 从 WebDav 导入数据
+     * 从 WebDav 导入所有分片备份文件。
+     *
+     * 说明：
+     * 1. 优先尝试分片备份的方式：
+     *      - 按顺序检查 remotePath 是否存在 daily_part_1.zip、daily_part_2.zip...。
+     *      - 如果存在则逐个下载并导入，直到遇到不存在的分片为止。
+     *      - 每个分片都会调用 importDailyZipFromWebDav 进行解压和数据写入。
+     *
+     * 2. 如果 daily_part_1.zip 不存在：
+     *      - 则判断 daily.zip 是否存在，存在则调用 importDailyZipFromWebDav 进行解压和数据写入。
+     *      - 兼容之前未采用分片方式的备份。
+     *
+     *
+     * @param password 解压密码
      */
-    private suspend fun importDailyZipFromWebDav(url: String, password: String? = null) {
+    private suspend fun importAllDailyParts(password: String) {
+        withContext(Dispatchers.Main) {
+            val builder = MaterialAlertDialogBuilder(this@WebDavBackupActivity)
+            builder.setView(layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null))
+            builder.setCancelable(false)
+            dialog = builder.create()
+            dialog!!.show()
+        }
+
+        var batchIndex = 1
+
         try {
-            val inputStream = sardine.get(url)
-            if (inputStream == null) {
-                withContext(Dispatchers.Main) {
-                    MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
-                        setMessage(getString(R.string.import_failed))
-                        setPositiveButton(getString(R.string.sure), null)
-                        create()
-                        show()
-                    }
+            val firstPart = if (url.endsWith("/")) "醒悟/daily_part_1.zip"
+            else "/醒悟/daily_part_1.zip"
+            val firstPartPath = "$url$firstPart"
+
+            if (sardine.exists(firstPartPath)) {
+                while (true) {
+                    val fileName = if (url.endsWith("/")) "醒悟/daily_part_$batchIndex.zip"
+                    else "/醒悟/daily_part_$batchIndex.zip"
+                    val remotePath = "$url$fileName"
+
+                    val exists = sardine.exists(remotePath)
+                    if (!exists) break
+
+                    importDailyZipFromWebDav(remotePath, password)
+                    batchIndex++
                 }
-                return
+            } else {
+                //兼容旧的单文件
+                val fileName = if (url.endsWith("/")) "醒悟/daily.zip" else "/醒悟/daily.zip"
+                val oldPath = "$url$fileName"
+
+                if (sardine.exists(oldPath)) {
+                    importDailyZipFromWebDav(oldPath, password)
+                }
             }
 
             withContext(Dispatchers.Main) {
-                val materialAlertDialogBuilder =
-                    MaterialAlertDialogBuilder(this@WebDavBackupActivity)
-                materialAlertDialogBuilder.setView(
-                    layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null)
+                dialog?.dismiss()
+                SnackbarUtil.showSnackbarShort(
+                    webDavBackupBinding.btSave,
+                    getString(R.string.recovery_successful)
                 )
-                materialAlertDialogBuilder.setCancelable(false)
-                dialog = materialAlertDialogBuilder.create()
-                dialog!!.show()
             }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                dialog?.dismiss()
+                LogUtil.e("Failed to restore batch $batchIndex", e)
+                MaterialAlertDialogBuilder(this@WebDavBackupActivity)
+                    .setMessage(getString(R.string.recovery_failed))
+                    .setPositiveButton(getString(R.string.sure), null)
+                    .create()
+                    .show()
+            }
+        }
+    }
+
+
+    /**
+     * 从 WebDav 导入数据
+     */
+    private suspend fun importDailyZipFromWebDav(url: String, password: String) {
+        try {
+            val inputStream = sardine.get(url) ?: return
 
             val tempZipFile = File(externalCacheDir, "temp_daily.zip")
             inputStream.use { input ->
@@ -538,10 +615,10 @@ class WebDavBackupActivity : AppCompatActivity() {
                 }
             }
 
-            val zipFile = if (!password.isNullOrEmpty()) {
-                net.lingala.zip4j.ZipFile(tempZipFile, password.toCharArray())
+            val zipFile = if (password.isNotEmpty()) {
+                ZipFile(tempZipFile, password.toCharArray())
             } else {
-                net.lingala.zip4j.ZipFile(tempZipFile)
+                ZipFile(tempZipFile)
             }
 
             val diaryWithMediaList = mutableListOf<DailyWithMedia>()
@@ -663,24 +740,8 @@ class WebDavBackupActivity : AppCompatActivity() {
                     }
                 }
             }
-            withContext(Dispatchers.Main) {
-                dialog?.dismiss()
-                SnackbarUtil.showSnackbarShort(
-                    webDavBackupBinding.btSave,
-                    getString(R.string.recovery_successful)
-                )
-            }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                File(externalCacheDir, "temp_daily.zip")?.delete()
-                dialog?.dismiss()
-                MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
-                    setMessage(getString(R.string.recovery_failed))
-                    setPositiveButton(getString(R.string.sure), null)
-                    create()
-                    show()
-                }
-            }
+        } finally {
+            File(externalCacheDir, "temp_daily.zip")?.delete()
         }
     }
 

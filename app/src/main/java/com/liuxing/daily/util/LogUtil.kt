@@ -9,6 +9,9 @@ import android.util.Log
 
 object LogUtil {
 
+    /**
+     * 全局开关
+     */
     private const val DEBUG = true
 
     /**
@@ -22,26 +25,29 @@ object LogUtil {
     }
 
     /**
-     * 调试
+     * 调试日志
      */
-    fun d(message: String) {
+    fun d(message: String, tag: String? = null) {
         if (DEBUG) {
-            Log.d(getTag(), message)
+            Log.d(tag ?: getTag(), message)
         }
     }
 
     /**
-     * 错误
+     * 错误日志
      */
-    fun e(message: String) {
+    fun e(message: String, throwable: Throwable, tag: String? = null) {
         if (DEBUG) {
-            Log.e(getTag(), message)
+            Log.e(tag ?: getTag(), message, throwable)
         }
     }
 
-    fun w(message: String) {
+    /**
+     * 警告日志
+     */
+    fun w(message: String, tag: String? = null) {
         if (DEBUG) {
-            Log.w(getTag(), message)
+            Log.w(tag ?: getTag(), message)
         }
     }
 }

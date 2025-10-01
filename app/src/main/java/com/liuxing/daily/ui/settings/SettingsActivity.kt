@@ -1,6 +1,5 @@
 package com.liuxing.daily.ui.settings
 
-import android.app.Activity
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.SharedPreferences
@@ -29,6 +28,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
+import com.liuxing.daily.extension.bindPreferenceAction
+import com.liuxing.daily.extension.bindPreferenceToActivity
 import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.OpenSourceActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
@@ -40,7 +41,6 @@ import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
-import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
@@ -74,6 +74,11 @@ class SettingsActivity : AppCompatActivity() {
                     v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
         }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settings)) { v, insets ->
+            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(navigationBars.left,0,navigationBars.right,navigationBars.bottom)
+            insets
+        }
         setSupportActionBar(activityBinding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
@@ -94,55 +99,30 @@ class SettingsActivity : AppCompatActivity() {
 
     class SettingsFragment : PreferenceFragmentCompat() {
 
-        private var optionsIndex: Int = 0
-        private lateinit var sharedPreferences: SharedPreferences
+        /**
+         * 当前选中的应用锁选项索引，默认索引为 0
+         */
+        private var appLockOptionsIndex: Int = 0
+        private val sharedPreferences: SharedPreferences by lazy {
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+        }
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
-            sharedPreferences =
-                PreferenceManager.getDefaultSharedPreferences(requireContext())
+            bindPreferenceToActivity<AboutActivity>("about_preference")
+            bindPreferenceToActivity<SpecialThanksActivity>("special_thanks_preference")
+            bindPreferenceToActivity<OpenSourceActivity>("open_source_preference")
+            bindPreferenceToActivity<UpdateLogActivity>("update_log_preference")
+            bindPreferenceToActivity<AppearanceSettingsActivity>("appearance_preference")
+            bindPreferenceToActivity<WebDavBackupActivity>("webdav_backup_preference")
+            bindPreferenceToActivity<PrivacyActivity>("user_agreement_and_privacy_policy_preference")
 
-            val aboutPreference = findPreference<Preference>("about_preference")
-            aboutPreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), AboutActivity::class.java)
-                true
-            }
-
-            val specialThanksPreference = findPreference<Preference>("special_thanks_preference")
-            specialThanksPreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), SpecialThanksActivity::class.java)
-                true
-            }
-
-            val openSourcePreference = findPreference<Preference>("open_source_preference")
-            openSourcePreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), OpenSourceActivity::class.java)
-                true
-            }
-
-            val checkUpdatePreference = findPreference<Preference>("check_update_preference")
-            checkUpdatePreference?.setOnPreferenceClickListener {
+            bindPreferenceAction("check_update_preference") {
                 CheckAppUpdateUtil.checkUpdate(requireContext())
-                true
             }
-
-            val updateLogPreference = findPreference<Preference>("update_log_preference")
-            updateLogPreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), UpdateLogActivity::class.java)
-                true
-            }
-
-            val themeColorPreference = findPreference<Preference>("appearance_preference")
-            themeColorPreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), AppearanceSettingsActivity::class.java)
-                true
-            }
-
-            val webDavBackupPreference = findPreference<Preference>("webdav_backup_preference")
-            webDavBackupPreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), WebDavBackupActivity::class.java)
-                true
+            bindPreferenceAction("background_image_preference"){
+                showWallpaperDialog()
             }
 
             val textLineSpacingPreference =
@@ -150,86 +130,19 @@ class SettingsActivity : AppCompatActivity() {
             val textLineSpacingValue =
                 textLineSpacingValue(sharedPreferences)
             textLineSpacingPreference?.summary = "$textLineSpacingValue"
-            textLineSpacingPreference?.setOnPreferenceClickListener {
-                MaterialAlertDialogBuilder(requireContext(),R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
-                    val updateTextLineSpacingLayout =
-                        layoutInflater.inflate(R.layout.update_text_line_spacing_layout, null)
-                    val tvText =
-                        updateTextLineSpacingLayout.findViewById<MaterialTextView>(R.id.tv_text)
-                    val slider = updateTextLineSpacingLayout.findViewById<Slider>(R.id.slider)
-                    val newLineSpacingValue =
-                        textLineSpacingValue(sharedPreferences)
-                    tvText.setLineSpacing(newLineSpacingValue, 1F)
-                    slider.value = newLineSpacingValue
-                    var newValue = 0F
-                    slider.addOnChangeListener { _, value, fromUser ->
-                        if (fromUser) {
-                            tvText.setLineSpacing(value, 1F)
-                            newValue = value
-                        }
-                    }
-                    setTitle(getString(R.string.text_line_spacing))
-                    setView(updateTextLineSpacingLayout)
-                    setNeutralButton(getString(R.string.cancel), null)
-                    setPositiveButton(getString(R.string.sure)) { _, _ ->
-                        sharedPreferences.edit {
-                            putFloat("text_line_spacing_preference", newValue)
-                            apply()
-                        }
-                        textLineSpacingPreference.summary =
-                            "${textLineSpacingValue(sharedPreferences)}"
-                    }
-                    create()
-                    show()
+            bindPreferenceAction("text_line_spacing_preference"){
+                textLineSpacingPreference?.let {
+                    showTextLineSpacingDialog(it)
                 }
-                true
             }
 
             val appLockPreference = findPreference<Preference>("app_lock_preference")
-            optionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
+            appLockOptionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
             val options = arrayOf(getString(R.string.close), getString(R.string.enabled))
-            appLockPreference?.summary = options[optionsIndex]
+            appLockPreference?.summary = options[appLockOptionsIndex]
             appLockPreference?.setOnPreferenceClickListener {
-                optionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
-                MaterialAlertDialogBuilder(requireContext()).apply {
-                    setTitle(R.string.app_lock)
-                    setSingleChoiceItems(options, optionsIndex) { dialog, which ->
-                        if (which == 1) {
-                            MaterialAlertDialogBuilder(requireContext()).apply {
-                                val view = layoutInflater.inflate(
-                                    R.layout.dialog_input_password_layout,
-                                    null
-                                )
-                                val inputPassword =
-                                    view.findViewById<TextInputEditText>(R.id.input_password)
-                                setTitle(getString(R.string.password))
-                                setView(view)
-                                setPositiveButton(
-                                    getString(R.string.sure)
-                                ) { _, _ ->
-                                    if (!inputPassword.text.isNullOrEmpty()) {
-                                        putLockInfo(
-                                            sharedPreferences,
-                                            which,
-                                            inputPassword.text.toString()
-                                        )
-                                        appLockPreference?.summary = getString(R.string.enabled)
-                                    }
-                                }
-                                setNeutralButton(getString(R.string.cancel), null)
-                                create()
-                                show()
-                            }
-                        } else {
-                            putLockInfo(sharedPreferences, which)
-                            appLockPreference?.summary = getString(R.string.close)
-                        }
-                        dialog.dismiss()
-                    }
-                    setPositiveButton(getString(R.string.cancel), null)
-                    create()
-                    show()
-                }
+                appLockOptionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
+                showLockDialog(it,options)
                 true
             }
 
@@ -241,60 +154,7 @@ class SettingsActivity : AppCompatActivity() {
                 R.drawable.outline_text_increase_24
             ) else ContextCompat.getDrawable(requireContext(), R.drawable.outline_text_decrease_24)
             textFontSizePreference?.setOnPreferenceClickListener {
-                MaterialAlertDialogBuilder(requireContext(),R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
-                    val newTextSize = textSizeValue(sharedPreferences)
-                    val updateTextFontSizeLayout =
-                        layoutInflater.inflate(R.layout.update_text_font_size_layout, null)
-                    val tvTitle =
-                        updateTextFontSizeLayout.findViewById<MaterialTextView>(R.id.tv_title)
-                    val tvContent =
-                        updateTextFontSizeLayout.findViewById<MaterialTextView>(R.id.tv_content)
-                    tvTitle.textSize = newTextSize + 4
-                    tvContent.textSize = newTextSize
-                    val slider = updateTextFontSizeLayout.findViewById<Slider>(R.id.slider)
-                    slider.value = newTextSize
-                    var newValue = textSize
-                    slider.addOnChangeListener { _, value, fromUser ->
-                        if (fromUser) {
-                            newValue = value
-                            tvTitle.textSize = newValue + 4
-                            tvContent.textSize = newValue
-                        }
-                    }
-                    setTitle(getString(R.string.text_font_size))
-                    setView(updateTextFontSizeLayout)
-                    setPositiveButton(getString(R.string.sure)) { _, _ ->
-                        sharedPreferences.edit {
-                            putFloat("text_font_size_preference", newValue)
-                            apply()
-                        }
-                        textFontSizePreference.summary = newValue.toString()
-                        textFontSizePreference.icon = if (newValue >= 16) ContextCompat.getDrawable(
-                            requireContext(),
-                            R.drawable.outline_text_increase_24
-                        ) else ContextCompat.getDrawable(
-                            requireContext(),
-                            R.drawable.outline_text_decrease_24
-                        )
-                    }
-                    setNeutralButton(getString(R.string.cancel), null)
-                    create()
-                    show()
-                }
-                true
-            }
-
-            val backgroundImagePreference =
-                findPreference<Preference>("background_image_preference")
-            backgroundImagePreference?.setOnPreferenceClickListener {
-                showWallpaperDialog()
-                true
-            }
-
-            val userAgreementAndPrivacyPolicyPreference =
-                findPreference<Preference>("user_agreement_and_privacy_policy_preference")
-            userAgreementAndPrivacyPolicyPreference?.setOnPreferenceClickListener {
-                IntentUtil.startActivity(requireContext(), PrivacyActivity::class.java)
+                showTextFontSizeDialog(it,textSize)
                 true
             }
         }
@@ -376,7 +236,7 @@ class SettingsActivity : AppCompatActivity() {
                 ActivityResultContracts.StartActivityForResult(),
                 object : ActivityResultCallback<ActivityResult> {
                     override fun onActivityResult(result: ActivityResult) {
-                        if (result.resultCode != Activity.RESULT_OK) return
+                        if (result.resultCode != RESULT_OK) return
                         val data = result.data ?: return
                         val uri: Uri = data.data ?: return
 
@@ -404,6 +264,7 @@ class SettingsActivity : AppCompatActivity() {
                                     }
                                 }
                             } catch (e: Exception) {
+                                e.printStackTrace()
                                 withContext(Dispatchers.Main) {
                                     MaterialAlertDialogUtil.showDialog(
                                         requireContext(),
@@ -419,6 +280,9 @@ class SettingsActivity : AppCompatActivity() {
 
         /**
          * 获取文本行距
+         *
+         * @param sharedPreferences SharedPreferences
+         * @return 文本行距，默认 0f
          */
         private fun textLineSpacingValue(sharedPreferences: SharedPreferences): Float {
             val textLineSpacingValue =
@@ -449,8 +313,154 @@ class SettingsActivity : AppCompatActivity() {
 
         /**
          * 获取文本字体大小
+         *
+         * @param sharedPreferences SharedPreferences
+         * @return 文本字体大小，默认 16f
          */
         private fun textSizeValue(sharedPreferences: SharedPreferences): Float =
             sharedPreferences.getFloat("text_font_size_preference", 16f)
+
+        /**
+         * 显示设置文本行间距的对话框
+         *
+         * @param preference Preference
+         */
+        fun showTextLineSpacingDialog(preference: Preference) {
+            MaterialAlertDialogBuilder(
+                requireContext(),
+                R.style.ThemeOverlay_App_MaterialAlertDialog
+            ).apply {
+                val updateTextLineSpacingLayout =
+                    layoutInflater.inflate(R.layout.update_text_line_spacing_layout, null)
+                val tvText =
+                    updateTextLineSpacingLayout.findViewById<MaterialTextView>(R.id.tv_text)
+                tvText.textSize = textSizeValue(sharedPreferences)
+                val slider = updateTextLineSpacingLayout.findViewById<Slider>(R.id.slider)
+                val newLineSpacingValue =
+                    textLineSpacingValue(sharedPreferences)
+                tvText.setLineSpacing(newLineSpacingValue, 1F)
+                slider.value = newLineSpacingValue
+                var newValue = 0F
+                slider.addOnChangeListener { _, value, fromUser ->
+                    if (fromUser) {
+                        tvText.setLineSpacing(value, 1F)
+                        newValue = value
+                    }
+                }
+                setTitle(getString(R.string.text_line_spacing))
+                setView(updateTextLineSpacingLayout)
+                setNeutralButton(getString(R.string.cancel), null)
+                setPositiveButton(getString(R.string.sure)) { _, _ ->
+                    sharedPreferences.edit {
+                        putFloat("text_line_spacing_preference", newValue)
+                        apply()
+                    }
+                    preference.summary =
+                        "${textLineSpacingValue(sharedPreferences)}"
+                }
+                create()
+                show()
+            }
+        }
+
+        /**
+         * 显示是否设置应用锁的对话框
+         *
+         * @param preference Preference
+         * @param options 对话框的选项
+         */
+        fun showLockDialog(preference: Preference, options: Array<String>) {
+            MaterialAlertDialogBuilder(requireContext()).apply {
+                setTitle(R.string.app_lock)
+                setSingleChoiceItems(options, appLockOptionsIndex) { dialog, which ->
+                    if (which == 1) {
+                        MaterialAlertDialogBuilder(requireContext()).apply {
+                            val view = layoutInflater.inflate(
+                                R.layout.dialog_input_password_layout,
+                                null
+                            )
+                            val inputPassword =
+                                view.findViewById<TextInputEditText>(R.id.input_password)
+                            setTitle(getString(R.string.password))
+                            setView(view)
+                            setPositiveButton(
+                                getString(R.string.sure)
+                            ) { _, _ ->
+                                if (!inputPassword.text.isNullOrEmpty()) {
+                                    putLockInfo(
+                                        sharedPreferences,
+                                        which,
+                                        inputPassword.text.toString()
+                                    )
+                                    preference.summary = getString(R.string.enabled)
+                                }
+                            }
+                            setNeutralButton(getString(R.string.cancel), null)
+                            create()
+                            show()
+                        }
+                    } else {
+                        putLockInfo(sharedPreferences, which)
+                        preference.summary = getString(R.string.close)
+                    }
+                    dialog.dismiss()
+                }
+                setPositiveButton(getString(R.string.cancel), null)
+                create()
+                show()
+            }
+        }
+
+        /**
+         * 显示设置文本字体大小的对话框
+         *
+         * @param preference Preference
+         * @param textSize 未修改前的字体大小
+         */
+        fun showTextFontSizeDialog(preference: Preference, textSize: Float) {
+            MaterialAlertDialogBuilder(
+                requireContext(),
+                R.style.ThemeOverlay_App_MaterialAlertDialog
+            ).apply {
+                val newTextSize = textSizeValue(sharedPreferences)
+                val updateTextFontSizeLayout =
+                    layoutInflater.inflate(R.layout.update_text_font_size_layout, null)
+                val tvTitle =
+                    updateTextFontSizeLayout.findViewById<MaterialTextView>(R.id.tv_title)
+                val tvContent =
+                    updateTextFontSizeLayout.findViewById<MaterialTextView>(R.id.tv_content)
+                tvTitle.textSize = newTextSize + 4
+                tvContent.textSize = newTextSize
+                val slider = updateTextFontSizeLayout.findViewById<Slider>(R.id.slider)
+                slider.value = newTextSize
+                var newValue = textSize
+                slider.addOnChangeListener { _, value, fromUser ->
+                    if (fromUser) {
+                        newValue = value
+                        tvTitle.textSize = newValue + 4
+                        tvContent.textSize = newValue
+                    }
+                }
+                setTitle(getString(R.string.text_font_size))
+                setView(updateTextFontSizeLayout)
+                setPositiveButton(getString(R.string.sure)) { _, _ ->
+                    sharedPreferences.edit {
+                        putFloat("text_font_size_preference", newValue)
+                        apply()
+                    }
+                    preference.summary = newValue.toString()
+                    preference.icon = if (newValue >= 16) ContextCompat.getDrawable(
+                        requireContext(),
+                        R.drawable.outline_text_increase_24
+                    ) else ContextCompat.getDrawable(
+                        requireContext(),
+                        R.drawable.outline_text_decrease_24
+                    )
+                }
+                setNeutralButton(getString(R.string.cancel), null)
+                create()
+                show()
+            }
+        }
     }
 }

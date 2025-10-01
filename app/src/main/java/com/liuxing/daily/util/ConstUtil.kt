@@ -74,7 +74,8 @@ object ConstUtil {
         R.color.color_4,
         R.color.color_5,
         R.color.color_6,
-        R.color.color_7
+        R.color.color_7,
+        R.color.color_8
     )
 
     // 日记背景颜色的标签
@@ -82,10 +83,12 @@ object ConstUtil {
         R.string.color_label_transparent,
         R.string.color_label_purple,
         R.string.color_label_red,
+        R.string.color_label_light_cyan,
         R.string.color_label_green,
         R.string.color_label_blue,
         R.string.color_label_yellow,
-        R.string.color_label_pink
+        R.string.color_label_pink,
+        R.string.color_label_light_cyan
     )
 
     // 媒体标签正则
@@ -104,5 +107,6 @@ object ConstUtil {
     // 日记列表图片显示键
     const val DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY = "switch_preference_image_display"
 
+    // 用户协议与隐私政策
     const val TERMS_AND_PRIVACY_AGREED_KEY = "terms_and_privacy_agreed"
 }

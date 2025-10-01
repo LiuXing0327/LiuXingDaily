@@ -21,7 +21,6 @@ import com.liuxing.daily.util.ConstUtil.imageRegex
 import com.liuxing.daily.util.ConstUtil.videoRegex
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.view.DailyTextView
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -398,6 +397,20 @@ class LookDailyPagerFragment : Fragment() {
                     ContextCompat.getColor(
                         requireContext(),
                         R.color.color_7
+                    ), (alpha * 255).toInt()
+                )
+            }
+
+            7 -> if (!wallPagerExists) {
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.color_8
+                )
+            } else {
+                ColorUtils.setAlphaComponent(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.color_8
                     ), (alpha * 255).toInt()
                 )
             }

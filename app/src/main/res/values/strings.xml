@@ -185,4 +185,5 @@
     <string name="user_agreement_and_privacy_Policy">用户协议与隐私政策</string>
     <string name="app_icon">应用图标</string>
     <string name="open_source_libraries">开源库</string>
+    <string name="color_label_light_cyan">浅青色</string>
 </resources>

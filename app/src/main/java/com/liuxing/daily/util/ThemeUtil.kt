@@ -5,7 +5,6 @@
 package com.liuxing.daily.util
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -38,15 +37,17 @@ object ThemeUtil {
     fun applyTheme(context: Context) {
         val themeColorId = SharedPreferencesUtil.getInt(context, "theme_color_id", 0)
         when (themeColorId) {
-            1 -> setThemeToRed(context)
+            ThemeColor.RED.id -> setThemeToRed(context)
 
-            2 -> setThemeToGreen(context)
+            ThemeColor.LIGHT_CYAN.id  -> setThemeToLightCyan(context)
 
-            3 -> setThemeToBlue(context)
+            ThemeColor.GREEN.id -> setThemeToGreen(context)
 
-            4 -> setThemeToYellow(context)
+            ThemeColor.BLUE.id -> setThemeToBlue(context)
 
-            5 -> setThemeToPink(context)
+            ThemeColor.YELLOW.id  -> setThemeToYellow(context)
+
+            ThemeColor.PINK.id  -> setThemeToPink(context)
 
             else -> setThemeToPurple(context)
         }
@@ -66,6 +67,10 @@ object ThemeUtil {
         context.setTheme(R.style.RedTheme)
     }
 
+    fun setThemeToLightCyan(context: Context) {
+        context.setTheme(R.style.lightCyanTheme)
+    }
+
     fun setThemeToGreen(context: Context) {
         context.setTheme(R.style.GreenTheme)
     }
@@ -81,4 +86,14 @@ object ThemeUtil {
     fun setThemeToPink(context: Context) {
         context.setTheme(R.style.PinkTheme)
     }
+}
+
+enum class ThemeColor(val id: Int, val themeLabel: Int) {
+    PURPLE(0, R.string.color_label_purple),
+    RED(1,R.string.color_label_red),
+    GREEN(2, R.string.color_label_green),
+    BLUE(3, R.string.color_label_blue),
+    YELLOW(4, R.string.color_label_yellow),
+    PINK(5, R.string.color_label_pink),
+    LIGHT_CYAN(6, R.string.color_label_light_cyan)
 }

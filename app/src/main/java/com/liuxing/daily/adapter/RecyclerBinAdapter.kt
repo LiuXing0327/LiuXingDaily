@@ -160,6 +160,12 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     dateString,
                     remainingDays
                 )
+                holder.tvDateTime.setTextColor(
+                    ContextCompat.getColor(
+                        holder.tvDateTime.context,
+                        R.color.md_theme_error_red
+                    )
+                )
             } else {
                 holder.tvDateTime.text = dateString
             }

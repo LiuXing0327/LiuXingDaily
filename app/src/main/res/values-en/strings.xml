@@ -178,5 +178,6 @@
     <string name="image">Image</string>
     <string name="user_agreement_and_privacy_Policy">User Agreement and Privacy Policy</string>
     <string name="app_icon">App icon</string>
-        <string name="open_source_libraries">Open Source Libraries</string>
+    <string name="open_source_libraries">Open Source Libraries</string>
+    <string name="color_label_light_cyan">Light cyan</string>
 </resources>

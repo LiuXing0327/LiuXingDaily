@@ -173,6 +173,14 @@ class AppearanceSettingsActivity : AppCompatActivity() {
                 ContextCompat.getColor(this, R.color.md_theme_primary_pink),
                 ContextCompat.getColor(this, R.color.md_theme_inversePrimary_pink),
                 false
+            ),
+
+            ThemeColorData(
+                6,
+                ContextCompat.getColor(this, R.color.md_theme_primaryFixed_light_cyan),
+                ContextCompat.getColor(this, R.color.md_theme_primary_light_cyan),
+                ContextCompat.getColor(this, R.color.md_theme_inversePrimary_light_cyan),
+                false
             )
         )
         val themeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)

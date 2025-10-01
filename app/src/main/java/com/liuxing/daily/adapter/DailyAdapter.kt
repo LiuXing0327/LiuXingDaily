@@ -43,6 +43,20 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val selectItems = mutableSetOf<String>()
     var selectMode = false
 
+    fun removeItemsByUuid(uuids: List<String>) {
+        val mutableList = categorizedList.toMutableList()
+        uuids.forEach { uuid ->
+            val index = mutableList.indexOfFirst {
+                it is Pair<*, *> && (it.first as? DailyEntity)?.dailyUUID == uuid
+            }
+            if (index != -1) {
+                mutableList.removeAt(index)
+                notifyItemRemoved(index)
+            }
+        }
+        categorizedList = mutableList
+    }
+
     fun setDailyList(
         context: Context,
         dailyList: List<DailyEntity>,
@@ -54,7 +68,7 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         this.imageMap = imageMap
 
         // 过滤被回收的数据
-        val filteredList = dailyList.filter { !it.isDeleted }
+        val filteredList = dailyList.toList().filter { !it.isDeleted }
 
         // 分离置顶项和非置顶项
         val pinnedItems = filteredList.filter { it.isPinned }.sortedByDescending { it.dateTime }
