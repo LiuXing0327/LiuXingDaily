@@ -67,6 +67,7 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.add.AddDailyActivity
 import com.liuxing.daily.ui.config.SystemBarController
+import com.liuxing.daily.ui.daily.DailyFragment
 import com.liuxing.daily.ui.label.DailyLabelActivity
 import com.liuxing.daily.ui.lock.UnlockActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
@@ -78,7 +79,6 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fragmentContainerView)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinator_layout)) { v, insets ->
             val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             v.setPadding(navigationBars.left, 0, navigationBars.right, navigationBars.bottom)
             insets
@@ -611,189 +611,55 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.item_clear -> {
-                    if (isRecyclerBinFragment) {
-                        val deletedDailyList = dailyList.filter { it.isDeleted }
-                        if (deletedDailyList.isNotEmpty())
-                            MaterialAlertDialogUtil.showDialog(
+                    val moveInRecyclerBin =
+                        sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
+
+                    val tempList = dailyList
+                    val isDeleted = tempList.any { it.isDeleted }
+                    if (isDeleted) {
+                        dialog = MaterialAlertDialogUtil.showDialog(
+                            this,
+                            getString(R.string.do_you_want_to_delete_or_restore_the_daily),
+                            getString(R.string.delete),
+                            {
+                                deleteSelected(tempList)
+                            },
+                            getString(R.string.restore),
+                            {
+                                recyclerSelected(tempList)
+                                isDailyFragment
+                            },
+                            getString(R.string.cancel)
+                        )
+                    } else {
+                        if (moveInRecyclerBin) {
+                            dialog = MaterialAlertDialogUtil.showDialog(
+                                this,
+                                getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
+                                getString(R.string.sure),
+                                {
+                                    recyclerSelected(tempList)
+                                },
+                                getString(R.string.delete),
+                                {
+                                    deleteSelected(tempList)
+                                },
+                                getString(R.string.cancel)
+                            )
+                        } else {
+                            dialog = MaterialAlertDialogUtil.showDialog(
                                 this,
                                 getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
                                 getString(R.string.sure),
                                 {
-                                    if (deletedDailyList.isEmpty()) return@showDialog
-                                    deletedDailyList.forEach { dailyEntity ->
-                                        val fileUtil = FileUtil()
-                                        dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
-                                            .observe(this) { dailyImageList ->
-                                                val existingImagePaths =
-                                                    dailyImageList.map { it.imagePath }.toSet()
-                                                if (existingImagePaths.isNotEmpty()) {
-                                                    val list = existingImagePaths.toList()
-                                                    list.forEach {
-                                                        if (fileUtil.checkFileExists(it!!)) {
-                                                            fileUtil.deleteFile(it)
-                                                        }
-                                                    }
-                                                }
-                                                dailyViewModel.deletePathImageByDailyUuid(
-                                                    dailyEntity.dailyUUID.toString()
-                                                )
-                                            }
-                                        dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
-                                            .observe(this) { dailyVideoList ->
-                                                val existingVideoPaths =
-                                                    dailyVideoList.map { it.videoPath }.toSet()
-                                                if (existingVideoPaths.isNotEmpty()) {
-                                                    val list = existingVideoPaths.toList()
-                                                    list.forEach {
-                                                        if (fileUtil.checkFileExists(it!!)) {
-                                                            fileUtil.deleteFile(it)
-                                                        }
-                                                    }
-                                                }
-                                                dailyViewModel.deletePathVideoByDailyUuid(
-                                                    dailyEntity.dailyUUID.toString()
-                                                )
-                                            }
-                                        dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
-                                            .observe(this) { dailyAudioList ->
-                                                val existingAudioPaths =
-                                                    dailyAudioList.map { it.audioPath }.toSet()
-                                                if (existingAudioPaths.isNotEmpty()) {
-                                                    val list = existingAudioPaths.toList()
-                                                    list.forEach {
-                                                        if (fileUtil.checkFileExists(it!!)) {
-                                                            fileUtil.deleteFile(it)
-                                                        }
-                                                    }
-                                                }
-                                                dailyViewModel.deletePathAudioByDailyUuid(
-                                                    dailyEntity.dailyUUID.toString()
-                                                )
-                                            }
-                                        dailyViewModel.deleteDaily(dailyEntity)
-                                    }
-                                }, getString(R.string.restore),
+                                    deleteSelected(tempList)
+                                },
+                                getString(R.string.recycler_bin),
                                 {
-                                    deletedDailyList.forEach { dailyEntity ->
-                                        dailyViewModel.updateDaily(
-                                            DailyEntity(
-                                                dailyEntity.id,
-                                                dailyEntity.title,
-                                                dailyEntity.content,
-                                                dailyEntity.dateTime,
-                                                dailyEntity.backgroundColorIndex,
-                                                dailyEntity.singlePassword,
-                                                dailyEntity.moodIndex,
-                                                dailyEntity.weatherIndex,
-                                                dailyEntity.dailyUUID,
-                                                false,
-                                                dailyEntity.dailyLabel,
-                                                dailyRecyclerDateTime = null,
-                                                dailyEntity.isPinned
-                                            )
-                                        )
-                                    }
-                                }, getString(R.string.cancel)
+                                    recyclerSelected(tempList)
+                                },
+                                getString(R.string.cancel)
                             )
-                    } else
-                    if (dailyList.isNotEmpty()) {
-                        val materialAlertDialogBuilder =
-                            MaterialAlertDialogBuilder(this@MainActivity)
-                        materialAlertDialogBuilder.setView(
-                            layoutInflater.inflate(
-                                R.layout.loading_lndicators_dialog_layout,
-                                null
-                            )
-                        )
-                        materialAlertDialogBuilder.setCancelable(true)
-                        dialog = materialAlertDialogBuilder.create()
-                        val moveInRecyclerBin =
-                            sharedPreferences!!.getBoolean(
-                                "switch_delete_to_recycler_bin_daily",
-                                true
-                            )
-                        if (moveInRecyclerBin) {
-                            MaterialAlertDialogBuilder(this).apply {
-                                setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                                setPositiveButton(getString(R.string.sure)) { _, _ ->
-                                    dailyList.forEach { dailyEntity ->
-                                        dialog!!.show()
-                                        dailyViewModel.updateDaily(
-                                            DailyEntity(
-                                                dailyEntity.id,
-                                                dailyEntity.title,
-                                                dailyEntity.content,
-                                                dailyEntity.dateTime,
-                                                dailyEntity.backgroundColorIndex,
-                                                dailyEntity.singlePassword,
-                                                dailyEntity.moodIndex,
-                                                dailyEntity.weatherIndex,
-                                                dailyEntity.dailyUUID,
-                                                true,
-                                                dailyEntity.dailyLabel,
-                                                isPinned = dailyEntity.isPinned
-                                            )
-                                        )
-                                    }
-                                    dialog?.dismiss()
-                                }
-                                setNegativeButton(getString(R.string.cancel)) { _, _ ->
-                                    dialog?.dismiss()
-                                }
-                                setOnDismissListener { dialog?.dismiss() }
-                                create()
-                                show()
-                            }
-
-                        } else {
-                            MaterialAlertDialogBuilder(this).apply {
-                                setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                                setPositiveButton(getString(R.string.delete)) { _, _ ->
-                                    dialog!!.show()
-                                    dailyList.forEach { dailyEntity ->
-                                        dailyEntity.dailyUUID?.let {
-                                            dailyViewModel.deletePathImageByDailyUuid(
-                                                it
-                                            )
-                                            dailyViewModel.deletePathVideoByDailyUuid(it)
-                                            dailyViewModel.deletePathAudioByDailyUuid(it)
-                                        }
-                                        dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                                        dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
-                                        dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
-                                        dailyViewModel.deleteDaily(dailyEntity)
-                                    }
-                                    dialog?.dismiss()
-                                }
-                                setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
-                                    dailyList.forEach { dailyEntity ->
-                                        dialog!!.show()
-                                        dailyViewModel.updateDaily(
-                                            DailyEntity(
-                                                dailyEntity.id,
-                                                dailyEntity.title,
-                                                dailyEntity.content,
-                                                dailyEntity.dateTime,
-                                                dailyEntity.backgroundColorIndex,
-                                                dailyEntity.singlePassword,
-                                                dailyEntity.moodIndex,
-                                                dailyEntity.weatherIndex,
-                                                dailyEntity.dailyUUID,
-                                                true,
-                                                dailyEntity.dailyLabel,
-                                                isPinned = dailyEntity.isPinned
-                                            )
-                                        )
-                                    }
-                                    dialog?.dismiss()
-                                }
-                                setNeutralButton(getString(R.string.cancel)) { _, _ ->
-                                    dialog?.dismiss()
-                                }
-                                setOnDismissListener { dialog?.dismiss() }
-                                create()
-                                show()
-                            }
                         }
                     }
                 }
@@ -1930,7 +1796,6 @@ class MainActivity : AppCompatActivity() {
                     val fileExists = fileUtil.checkFileExists(filepath)
                     if (fileExists) {
                         fileUtil.deleteFile(filepath)
-                        LogUtil.d("delete filePath : $filepath")
                     }
                 }
             }
@@ -1968,9 +1833,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        Handler(Looper.getMainLooper()).postDelayed({
-
-        }, 300)
     }
 
     /**
@@ -2124,7 +1986,16 @@ class MainActivity : AppCompatActivity() {
      * @param selectedList 选中的日记列表
      */
     private fun recyclerSelected(selectedList: List<DailyEntity>) {
-        dailyViewModel.toggleIsDelete(selectedList.map { it.dailyUUID ?: "" })
+        val builder = MaterialAlertDialogBuilder(this)
+        builder.setView(layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null))
+        builder.setCancelable(false)
+        dialog = builder.create()
+        dialog!!.show()
+
+        lifecycleScope.launch {
+            dailyViewModel.toggleIsDelete(selectedList.map { it.dailyUUID ?: "" })
+            dialog?.dismiss()
+        }
     }
 
     /**
@@ -2133,11 +2004,25 @@ class MainActivity : AppCompatActivity() {
      * @param selectedList 选中的日记列表
      */
     private fun deleteSelected(selectedList: List<DailyEntity>) {
-        dailyViewModel.deleteSelected(selectedList)
+        val builder = MaterialAlertDialogBuilder(this)
+        builder.setView(layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null))
+        builder.setCancelable(false)
+        dialog = builder.create()
+        dialog?.show()
+
+        lifecycleScope.launch {
+            dailyViewModel.deleteSelected(selectedList)
+            val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+            (currentFragment as DailyFragment).getAdapter()
+                .removeItemsByUuid(selectedList.mapNotNull { it.dailyUUID })
+            dialog?.dismiss()
+        }
     }
 
     /**
      * 设置多选模式下的工具栏标题
+     *
+     * @param title 工具栏标题
      */
     fun setUpContextualToolbarTitle(title: String) {
         activityMainBinding.contextualToolbar.title = title
