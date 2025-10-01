@@ -146,4 +146,11 @@ object SharedPreferencesUtil {
     fun getString(content: Context, key: String, defValue: String): String {
         return getSharedPreferences(content).getString(key, defValue).toString()
     }
+
+    /**
+     * 移除
+     */
+    fun remove(context: Context,key: String){
+        getEditor(context)?.remove(key)
+    }
 }
