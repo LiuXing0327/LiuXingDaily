@@ -6,7 +6,6 @@ package com.liuxing.daily.util
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -23,6 +22,7 @@ object MaterialAlertDialogUtil {
      * @param onNegative setNegativeButton的回调函数
      * @param neutralText [onNeutral]文本
      * @param onNeutral setNeutralButton的回调函数
+     * @return MaterialAlertDialog
      */
     fun showDialog(
         context: Context,
