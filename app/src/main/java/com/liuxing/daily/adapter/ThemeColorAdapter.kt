@@ -18,8 +18,9 @@ import com.google.android.material.card.MaterialCardView
 import com.liuxing.daily.R
 import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
-import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
+import com.liuxing.daily.util.ThemeColor
 import com.liuxing.daily.view.RoundTricolorView
 
 /**
@@ -57,8 +58,12 @@ class ThemeColorAdapter(
             themeColorData.rightColor
         )
 
-        holder.themeColorCard.contentDescription =
-            holder.themeColorCard.context.getString(ConstUtil.backgroundColorLabelList[position + 1])
+        val themeColor =
+            ThemeColor.entries.firstOrNull { it.id == themeColorData.id } ?: ThemeColor.PURPLE
+        themeColor.themeLabel.let { labelRes ->
+            holder.themeColorCard.contentDescription =
+                holder.themeColorCard.context.getString(labelRes)
+        }
 
         holder.itemView.setOnClickListener {
             if (themeColorData.isSelected) {
