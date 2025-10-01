@@ -1,0 +1,65 @@
+<resources>
+
+    <style name="lightCyanTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/md_theme_primary_light_cyan</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary_light_cyan</item>
+        <item name="colorPrimaryContainer">@color/md_theme_primaryContainer_light_cyan</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer_light_cyan</item>
+        <item name="colorSecondary">@color/md_theme_secondary_light_cyan</item>
+        <item name="colorOnSecondary">@color/md_theme_onSecondary_light_cyan</item>
+        <item name="colorSecondaryContainer">@color/md_theme_secondaryContainer_light_cyan</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_onSecondaryContainer_light_cyan
+        </item>
+        <item name="colorTertiary">@color/md_theme_tertiary_light_cyan</item>
+        <item name="colorOnTertiary">@color/md_theme_onTertiary_light_cyan</item>
+        <item name="colorTertiaryContainer">@color/md_theme_tertiaryContainer_light_cyan</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_onTertiaryContainer_light_cyan</item>
+        <item name="colorError">@color/md_theme_error_light_cyan</item>
+        <item name="colorOnError">@color/md_theme_onError_light_cyan</item>
+        <item name="colorErrorContainer">@color/md_theme_errorContainer_light_cyan</item>
+        <item name="colorOnErrorContainer">@color/md_theme_onErrorContainer_light_cyan</item>
+        <item name="android:colorBackground">@color/md_theme_background_light_cyan</item>
+        <item name="colorOnBackground">@color/md_theme_onBackground_light_cyan</item>
+        <item name="colorSurface">@color/md_theme_surface_light_cyan</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface_light_cyan</item>
+        <item name="colorSurfaceVariant">@color/md_theme_surfaceVariant_light_cyan</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_onSurfaceVariant_light_cyan</item>
+        <item name="colorOutline">@color/md_theme_outline_light_cyan</item>
+        <item name="colorOutlineVariant">@color/md_theme_outlineVariant_light_cyan</item>
+        <item name="colorSurfaceInverse">@color/md_theme_inverseSurface_light_cyan</item>
+        <item name="colorOnSurfaceInverse">@color/md_theme_inverseOnSurface_light_cyan</item>
+        <item name="colorPrimaryInverse">@color/md_theme_inversePrimary_light_cyan</item>
+        <item name="colorPrimaryFixed">@color/md_theme_primaryFixed_light_cyan</item>
+        <item name="colorOnPrimaryFixed">@color/md_theme_onPrimaryFixed_light_cyan</item>
+        <item name="colorPrimaryFixedDim">@color/md_theme_primaryFixedDim_light_cyan</item>
+        <item name="colorOnPrimaryFixedVariant">@color/md_theme_onPrimaryFixedVariant_light_cyan
+        </item>
+        <item name="colorSecondaryFixed">@color/md_theme_secondaryFixed_light_cyan</item>
+        <item name="colorOnSecondaryFixed">@color/md_theme_onSecondaryFixed_light_cyan</item>
+        <item name="colorSecondaryFixedDim">@color/md_theme_secondaryFixedDim_light_cyan</item>
+        <item name="colorOnSecondaryFixedVariant">
+            @color/md_theme_onSecondaryFixedVariant_light_cyan
+        </item>
+        <item name="colorTertiaryFixed">@color/md_theme_tertiaryFixed_light_cyan</item>
+        <item name="colorOnTertiaryFixed">@color/md_theme_onTertiaryFixed_light_cyan</item>
+        <item name="colorTertiaryFixedDim">@color/md_theme_tertiaryFixedDim_light_cyan</item>
+        <item name="colorOnTertiaryFixedVariant">@color/md_theme_onTertiaryFixedVariant_light_cyan
+        </item>
+        <item name="colorSurfaceDim">@color/md_theme_surfaceDim_light_cyan</item>
+        <item name="colorSurfaceBright">@color/md_theme_surfaceBright_light_cyan</item>
+        <item name="colorSurfaceContainerLowest">@color/md_theme_surfaceContainerLowest_light_cyan
+        </item>
+        <item name="colorSurfaceContainerLow">@color/md_theme_surfaceContainerLow_light_cyan</item>
+        <item name="colorSurfaceContainer">@color/md_theme_surfaceContainer_light_cyan</item>
+        <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh_light_cyan
+        </item>
+        <item name="colorSurfaceContainerHighest">
+            @color/md_theme_surfaceContainerHighest_light_cyan
+        </item>
+
+        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_light_cyan</item>
+        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_light_cyan</item>
+
+        <item name="popupMenuBackground">@drawable/custom_popup_background</item>
+    </style>
+</resources>
