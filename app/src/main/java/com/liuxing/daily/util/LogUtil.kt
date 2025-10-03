@@ -12,7 +12,7 @@ object LogUtil {
     /**
      * 全局开关
      */
-    private const val DEBUG = true
+    private const val DEBUG = false
 
     /**
      * 获取调用者的类名作为 tag
