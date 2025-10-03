@@ -235,7 +235,7 @@ class DailyFragment : Fragment(),DailyLikeFragment {
     }
 
     fun getAdapter(): DailyAdapter = dailyAdapter
-    override fun getDailyList(): List<DailyEntity> = dailyList
+    override fun getDailyList(): List<DailyEntity> = dailyList.filter { !it.isDeleted }
     override fun getSelectedItems(): List<String> = dailyAdapter.getSelectedItems()
     override fun clearSection() = dailyAdapter.clearSection()
     override fun selectAllItems() = dailyAdapter.selectAllItems()
