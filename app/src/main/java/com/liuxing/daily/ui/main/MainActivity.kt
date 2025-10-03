@@ -35,6 +35,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -65,12 +66,14 @@ import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.markdown.color.MarkdownColor
 import com.liuxing.daily.ui.add.AddDailyActivity
 import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.daily.DailyFragment
 import com.liuxing.daily.ui.label.DailyLabelActivity
 import com.liuxing.daily.ui.lock.UnlockActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.BitmapUtil
 import com.liuxing.daily.util.CheckAppUpdateUtil
@@ -79,6 +82,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -160,6 +164,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
+        MarkdownColor.init(this)
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
         val handler = Handler(Looper.getMainLooper())
@@ -611,55 +616,60 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.item_clear -> {
-                    val moveInRecyclerBin =
-                        sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
-
-                    val tempList = dailyList
-                    val isDeleted = tempList.any { it.isDeleted }
-                    if (isDeleted) {
-                        dialog = MaterialAlertDialogUtil.showDialog(
-                            this,
-                            getString(R.string.do_you_want_to_delete_or_restore_the_daily),
-                            getString(R.string.delete),
-                            {
-                                deleteSelected(tempList)
-                            },
-                            getString(R.string.restore),
-                            {
-                                recyclerSelected(tempList)
-                                isDailyFragment
-                            },
-                            getString(R.string.cancel)
+                    if (isDailyLikeFragment()) {
+                        val moveInRecyclerBin = sharedPreferences!!.getBoolean(
+                            "switch_delete_to_recycler_bin_daily", true
                         )
-                    } else {
-                        if (moveInRecyclerBin) {
-                            dialog = MaterialAlertDialogUtil.showDialog(
-                                this,
-                                getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
-                                getString(R.string.sure),
-                                {
-                                    recyclerSelected(tempList)
-                                },
-                                getString(R.string.delete),
-                                {
-                                    deleteSelected(tempList)
-                                },
-                                getString(R.string.cancel)
-                            )
-                        } else {
-                            dialog = MaterialAlertDialogUtil.showDialog(
-                                this,
-                                getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
-                                getString(R.string.sure),
-                                {
-                                    deleteSelected(tempList)
-                                },
-                                getString(R.string.recycler_bin),
-                                {
-                                    recyclerSelected(tempList)
-                                },
-                                getString(R.string.cancel)
-                            )
+                        val dailyLikeFragment = getDailyLikeFragment()
+                        val tempList = dailyLikeFragment.getDailyList()
+                        val isDeleted = tempList.any { it.isDeleted }
+                        if (tempList.isNotEmpty()) {
+                            if (isDeleted) {
+                                dialog = MaterialAlertDialogUtil.showDialog(
+                                    this,
+                                    getString(R.string.do_you_want_to_delete_or_restore_the_daily),
+                                    getString(R.string.delete),
+                                    {
+                                        deleteSelected(tempList)
+                                    },
+                                    getString(R.string.restore),
+                                    {
+                                        recyclerSelected(tempList)
+                                        isDailyFragment
+                                    },
+                                    getString(R.string.cancel)
+                                )
+                            } else {
+                                if (moveInRecyclerBin) {
+                                    dialog = MaterialAlertDialogUtil.showDialog(
+                                        this,
+                                        getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
+                                        getString(R.string.sure),
+                                        {
+                                            recyclerSelected(tempList)
+                                        },
+                                        getString(R.string.delete),
+                                        {
+                                            deleteSelected(tempList)
+                                        },
+                                        getString(R.string.cancel)
+                                    )
+                                } else {
+                                    dialog = MaterialAlertDialogUtil.showDialog(
+                                        this,
+                                        getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
+                                        getString(R.string.sure),
+                                        {
+                                            deleteSelected(tempList)
+                                        },
+                                        getString(R.string.recycler_bin),
+                                        {
+                                            recyclerSelected(tempList)
+                                        },
+                                        getString(R.string.cancel)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1885,7 +1895,7 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding.contextualToolbar.inflateMenu(R.menu.menu_searchbar_contextual_toolbar)
 
         activityMainBinding.contextualToolbar.setOnMenuItemClickListener { menuItem ->
-            val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+            val currentFragment = getVisibleFragment()
             if (currentFragment is DailyLikeFragment) {
                 val selectedUUIDs = currentFragment.getSelectedItems()
                 val dailyList = currentFragment.getDailyList()
@@ -2011,10 +2021,18 @@ class MainActivity : AppCompatActivity() {
         dialog?.show()
 
         lifecycleScope.launch {
-            dailyViewModel.deleteSelected(selectedList)
-            val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
-            (currentFragment as DailyFragment).getAdapter()
-                .removeItemsByUuid(selectedList.mapNotNull { it.dailyUUID })
+            if (isDailyLikeFragment()) {
+                val dailyLikeFragment = getDailyLikeFragment()
+                if (isDailyFragment) {
+                    dailyViewModel.deleteSelected(selectedList)
+                    (dailyLikeFragment as DailyFragment).getAdapter()
+                        .removeItemsByUuid(selectedList.mapNotNull { it.dailyUUID })
+                } else {
+                    dailyViewModel.deleteSelected(selectedList)
+                    (dailyLikeFragment as RecyclerBinFragment).getAdapter()
+                        .removeItemsByUuid(selectedList.mapNotNull { it.dailyUUID })
+                }
+            }
             dialog?.dismiss()
         }
     }
@@ -2050,5 +2068,35 @@ class MainActivity : AppCompatActivity() {
             activityMainBinding.contextualToolbar.menu.findItem(R.id.item_pinned)?.isVisible =
                 showItem
         }
+    }
+
+    /**
+     * 判断当前 Fragment 是否是 [DailyLikeFragment]
+     *
+     * @return true 是;
+     *         false 不是
+     */
+    private fun isDailyLikeFragment(): Boolean {
+        val currentFragment = getVisibleFragment()
+        return (currentFragment is DailyLikeFragment)
+    }
+
+    /**
+     * 获取 [DailyLikeFragment]
+     *
+     * @return DailyFragment
+     */
+    private fun getDailyLikeFragment(): DailyLikeFragment {
+        val currentFragment = getVisibleFragment()
+        return (currentFragment as DailyLikeFragment)
+    }
+
+    /**
+     * 获取当前可见的 Fragment
+     *
+     * @return 当前显示的 Fragment，如果没有则返回 null
+     */
+    private fun getVisibleFragment(): Fragment? {
+        return navHostFragment.childFragmentManager.fragments.firstOrNull { it.isVisible }
     }
 }

@@ -281,7 +281,7 @@ class RecyclerBinFragment : Fragment(), DailyLikeFragment {
     }
 
     fun getAdapter(): RecyclerBinAdapter = recyclerBinAdapter
-    override fun getDailyList(): List<DailyEntity> = dailyList
+    override fun getDailyList(): List<DailyEntity> = dailyList.filter { it.isDeleted }
     override fun getSelectedItems(): List<String> = recyclerBinAdapter.getSelectedItems()
     override fun clearSection() = recyclerBinAdapter.clearSection()
     override fun selectAllItems() = recyclerBinAdapter.selectAllItems()

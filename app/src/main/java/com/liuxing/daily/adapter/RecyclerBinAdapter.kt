@@ -25,6 +25,8 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.TextUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Date
 
@@ -45,6 +47,23 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var onItemSelectedStateChangedListener: OnItemSelectedStateChangedListener? = null
     private val selectItems = mutableSetOf<String>()
 
+    suspend fun removeItemsByUuid(uuids: List<String>) = withContext(Dispatchers.IO) {
+        val mutableList = categorizedList.toMutableList()
+        uuids.forEach { uuid ->
+            mutableList.removeAll {
+                it is Pair<*, *> && (it.first as? DailyEntity)?.let { dailyEntity ->
+                    dailyEntity.dailyUUID == uuid && dailyEntity.isDeleted
+                } == true
+            }
+        }
+
+        withContext(Dispatchers.Main) {
+            categorizedList = mutableList
+            notifyDataSetChanged()
+        }
+    }
+
+
     fun setDailyList(
         context: Context,
         dailyList: List<DailyEntity>,
@@ -54,7 +73,7 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val currentSortIndex = sharedPreferences.getInt("daily_sort_by", 0)
         this.imageMap = imageMap
 
-        // 过滤被回收的数据
+        // 过滤未回收的数据
         val filteredList = dailyList.filter { it.isDeleted }
         val sortedByDescending =
             filteredList.withIndex().sortedByDescending { it.value.dailyRecyclerDateTime }

@@ -82,6 +82,14 @@
                         android:layout_marginTop="@dimen/dp_8"
                         android:gravity="center" />
 
+                    <com.google.android.material.textview.MaterialTextView
+                        style="?attr/textAppearanceBodyMedium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="正努力做到更好"
+                        android:layout_marginTop="@dimen/dp_8"
+                        android:gravity="center" />
+
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

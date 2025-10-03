@@ -25,6 +25,8 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.TextUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Date
 
@@ -43,18 +45,17 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val selectItems = mutableSetOf<String>()
     var selectMode = false
 
-    fun removeItemsByUuid(uuids: List<String>) {
+    suspend fun removeItemsByUuid(uuids: List<String>) = withContext(Dispatchers.IO) {
         val mutableList = categorizedList.toMutableList()
         uuids.forEach { uuid ->
-            val index = mutableList.indexOfFirst {
+            mutableList.removeAll {
                 it is Pair<*, *> && (it.first as? DailyEntity)?.dailyUUID == uuid
             }
-            if (index != -1) {
-                mutableList.removeAt(index)
-                notifyItemRemoved(index)
-            }
         }
-        categorizedList = mutableList
+        withContext(Dispatchers.Main) {
+            categorizedList = mutableList
+            notifyDataSetChanged()
+        }
     }
 
     fun setDailyList(
