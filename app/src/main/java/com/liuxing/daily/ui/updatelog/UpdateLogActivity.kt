@@ -36,7 +36,6 @@ class UpdateLogActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
         }
-        MarkdownColor.init(this)
         initData()
     }
 
