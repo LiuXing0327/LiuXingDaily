@@ -9,7 +9,6 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
@@ -30,8 +29,10 @@ import com.liuxing.daily.R
 import com.liuxing.daily.ui.audio.PlayAudioActivity
 import com.liuxing.daily.ui.image.LookDailyImageActivity
 import com.liuxing.daily.ui.video.LookDailyVideoActivity
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
+import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
@@ -173,7 +174,7 @@ class DailyTextView : MaterialTextView {
         val newWidth = maxWidth
         val newHeight = (originalHeight * toWidth).toInt()
         val ss = SpannableString(imgTag)
-        val drawable = BitmapDrawable(resources, bitmap).apply {
+        val drawable = bitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
@@ -464,4 +465,11 @@ class DailyTextView : MaterialTextView {
         return sb.toString()
     }
 
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        return if (id == android.R.id.copy) {
+            CopyUtil.copyTextToClipboard(context, TextUtil.replaceTag(text.toString(), ""))
+            clearFocus()
+            true
+        } else super.onTextContextMenuItem(id)
+    }
 }
