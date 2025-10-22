@@ -9,7 +9,6 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
@@ -175,7 +174,7 @@ class DailyTextView : MaterialTextView {
         val newWidth = maxWidth
         val newHeight = (originalHeight * toWidth).toInt()
         val ss = SpannableString(imgTag)
-        val drawable = BitmapDrawable(resources, bitmap).apply {
+        val drawable = bitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
