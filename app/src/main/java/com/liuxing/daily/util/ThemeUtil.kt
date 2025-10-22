@@ -88,6 +88,20 @@ object ThemeUtil {
     }
 }
 
+/**
+ * 主题颜色信息
+ *
+ * - PURPLE 紫色（默认）
+ * - RED 红色
+ * - GREEN 绿色
+ * - BLUE 蓝色
+ * - YELLOW 黄色
+ * - PINK 粉色
+ * - LIGHT_CYAN 浅青色
+ *
+ * @param id 颜色 id
+ * @param themeLabel 主题标签
+ */
 enum class ThemeColor(val id: Int, val themeLabel: Int) {
     PURPLE(0, R.string.color_label_purple),
     RED(1,R.string.color_label_red),
