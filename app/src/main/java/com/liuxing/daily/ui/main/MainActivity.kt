@@ -62,6 +62,7 @@ import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
+import com.liuxing.daily.extension.rotateOnce
 import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
@@ -82,7 +83,6 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -210,6 +210,7 @@ class MainActivity : AppCompatActivity() {
         )
         insertAutoDaily()
         initView()
+        activityMainBinding.floatingActionButton.rotateOnce()
         initData()
         val agreed = sharedPreferences?.getBoolean(termsAndPrivacyAgreedKey, false) ?: false
         if (!agreed) {
@@ -421,6 +422,11 @@ class MainActivity : AppCompatActivity() {
                 )
             )
         }
+
+        activityMainBinding.floatingActionButton.setOnLongClickListener {
+            it.rotateOnce()
+            true
+        }
     }
 
     /**
@@ -627,46 +633,46 @@ class MainActivity : AppCompatActivity() {
                             if (isDeleted) {
                                 dialog = MaterialAlertDialogUtil.showDialog(
                                     this,
-                                    getString(R.string.do_you_want_to_delete_or_restore_the_daily),
-                                    getString(R.string.delete),
-                                    {
+                                    message = getString(R.string.do_you_want_to_delete_or_restore_the_daily),
+                                    positiveText = getString(R.string.delete),
+                                    onPositive = {
                                         deleteSelected(tempList)
                                     },
-                                    getString(R.string.restore),
-                                    {
+                                    negativeText = getString(R.string.restore),
+                                    onNegative = {
                                         recyclerSelected(tempList)
                                         isDailyFragment
                                     },
-                                    getString(R.string.cancel)
+                                    neutralText = getString(R.string.cancel)
                                 )
                             } else {
                                 if (moveInRecyclerBin) {
                                     dialog = MaterialAlertDialogUtil.showDialog(
                                         this,
-                                        getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
-                                        getString(R.string.sure),
-                                        {
+                                        message = getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
+                                        positiveText = getString(R.string.sure),
+                                        onPositive = {
                                             recyclerSelected(tempList)
                                         },
-                                        getString(R.string.delete),
-                                        {
+                                        negativeText = getString(R.string.delete),
+                                        onNegative = {
                                             deleteSelected(tempList)
                                         },
-                                        getString(R.string.cancel)
+                                        neutralText = getString(R.string.cancel)
                                     )
                                 } else {
                                     dialog = MaterialAlertDialogUtil.showDialog(
                                         this,
-                                        getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
-                                        getString(R.string.sure),
-                                        {
+                                        message = getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
+                                        positiveText = getString(R.string.sure),
+                                        onPositive = {
                                             deleteSelected(tempList)
                                         },
-                                        getString(R.string.recycler_bin),
-                                        {
+                                        negativeText = getString(R.string.recycler_bin),
+                                        onNegative = {
                                             recyclerSelected(tempList)
                                         },
-                                        getString(R.string.cancel)
+                                        neutralText = getString(R.string.cancel)
                                     )
                                 }
                             }
@@ -1912,46 +1918,51 @@ class MainActivity : AppCompatActivity() {
                         if (isDeleted) {
                             dialog = MaterialAlertDialogUtil.showDialog(
                                 this,
-                                getString(R.string.do_you_want_to_delete_or_restore_the_daily),
-                                getString(R.string.delete), {
+                                message = getString(R.string.do_you_want_to_delete_or_restore_the_daily),
+                                positiveText = getString(R.string.delete),
+                                onPositive = {
                                     deleteSelected(tempDailyList)
                                     hideContextualToolbar()
                                 },
-                                getString(R.string.restore), {
+                                negativeText = getString(R.string.restore),
+                                onNegative = {
                                     recyclerSelected(tempDailyList)
                                     hideContextualToolbar()
-                                }, getString(R.string.cancel)
+                                },
+                                neutralText = getString(R.string.cancel)
                             )
                         } else {
                             if (moveInRecyclerBin) {
                                 dialog = MaterialAlertDialogUtil.showDialog(
                                     this,
-                                    getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
-                                    getString(R.string.sure),
-                                    {
+                                    message = getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin),
+                                    positiveText = getString(R.string.sure),
+                                    onPositive = {
                                         recyclerSelected(tempDailyList)
                                         hideContextualToolbar()
                                     },
-                                    getString(R.string.delete), {
+                                    negativeText = getString(R.string.delete),
+                                    onNegative = {
                                         deleteSelected(tempDailyList)
                                         hideContextualToolbar()
                                     },
-                                    getString(R.string.cancel)
+                                    neutralText = getString(R.string.cancel)
                                 )
                             } else {
                                 dialog = MaterialAlertDialogUtil.showDialog(
                                     this,
-                                    getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
-                                    getString(R.string.sure),
-                                    {
+                                    message = getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently),
+                                    positiveText = getString(R.string.sure),
+                                    onPositive = {
                                         deleteSelected(tempDailyList)
                                         hideContextualToolbar()
                                     },
-                                    getString(R.string.recycler_bin), {
+                                    negativeText = getString(R.string.recycler_bin),
+                                    onNegative = {
                                         recyclerSelected(tempDailyList)
                                         hideContextualToolbar()
                                     },
-                                    getString(R.string.cancel)
+                                    neutralText = getString(R.string.cancel)
                                 )
                             }
                         }
@@ -1967,12 +1978,12 @@ class MainActivity : AppCompatActivity() {
 
                             dialog = MaterialAlertDialogUtil.showDialog(
                                 this,
-                                getString(
+                                message = getString(
                                     R.string.confirm_pinned_journal_message,
                                     pinnedButtonText
                                 ),
-                                pinnedButtonText,
-                                {
+                                positiveText = pinnedButtonText,
+                                onPositive = {
                                     tempDailyList.forEach { entity ->
                                         dailyViewModel.updateDaily(
                                             entity.copy(isPinned = !isPinned)
@@ -1980,7 +1991,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                     hideContextualToolbar()
                                 },
-                                getString(R.string.cancel)
+                                negativeText = getString(R.string.cancel)
                             )
                         }
                     }
