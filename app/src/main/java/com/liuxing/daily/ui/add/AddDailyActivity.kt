@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -458,10 +457,10 @@ class AddDailyActivity : AppCompatActivity() {
                                 dailyLabel = ""
                                 activityAddDailyBinding.lLabel?.visibility = View.GONE
                             }
-                            setNegativeButton(getString(R.string.cancel), null)
-                            setNeutralButton(getString(R.string.new_label)) { _, _ ->
+                            setNegativeButton(getString(R.string.new_label)) { _, _ ->
                                 showLabelInputDialog()
                             }
+                            setNeutralButton(getString(R.string.cancel), null)
                             val dialog = create()
                             dialog.show()
                             selectDailyLabelAdapter.setOnItemClickListener(object :
@@ -503,7 +502,7 @@ class AddDailyActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
         val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
         val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
-        MaterialAlertDialogBuilder(this).apply {
+        MaterialAlertDialogBuilder(this,R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
             setTitle(getString(R.string.create_label))
             setView(view)
             setPositiveButton(getString(R.string.sure)) { dialog, which ->
@@ -655,7 +654,6 @@ class AddDailyActivity : AppCompatActivity() {
     private val onBackPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                Log.d("TAG", "handleOnBackPressed: ")
                 isDailyNull()
             }
         }

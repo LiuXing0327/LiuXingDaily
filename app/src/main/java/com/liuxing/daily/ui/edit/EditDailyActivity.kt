@@ -718,9 +718,12 @@ class EditDailyActivity : AppCompatActivity() {
                                             }
 
                                         })
+                                    setNegativeButton(getString(R.string.forgot_password)) { dialog, which ->
+                                        singlePassword = ""
+                                    }
                                     setNeutralButton(getString(R.string.cancel), null)
-                                        .setCancelable(false)
-                                        .create()
+                                    setCancelable(false)
+                                    create()
                                     show()
                                 }
                             }
@@ -826,10 +829,10 @@ class EditDailyActivity : AppCompatActivity() {
                                 dailyLabel = ""
                                 activityEditDailyBinding.lLabel?.visibility = View.GONE
                             }
-                            setNegativeButton(getString(R.string.cancel), null)
-                            setNeutralButton(getString(R.string.new_label)) { _, _ ->
+                            setNegativeButton(getString(R.string.new_label)) { _, _ ->
                                 showLabelInputDialog()
                             }
+                            setNeutralButton(getString(R.string.cancel), null)
                             val dialog = create()
                             dialog.show()
                             selectDailyLabelAdapter.setOnItemClickListener(object :
@@ -872,7 +875,7 @@ class EditDailyActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
         val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
         val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
-        MaterialAlertDialogBuilder(this).apply {
+        MaterialAlertDialogBuilder(this,R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
             setTitle(getString(R.string.create_label))
             setView(view)
             setPositiveButton(getString(R.string.sure)) { dialog, which ->
