@@ -197,9 +197,9 @@ class WebDavBackupActivity : AppCompatActivity() {
             ) {
                 dialog = MaterialAlertDialogUtil.showDialog(
                     this@WebDavBackupActivity,
-                    getString(R.string.failed_to_connect),
-                    getString(R.string.sure),
-                    null
+                    message = getString(R.string.failed_to_connect),
+                    positiveText = getString(R.string.sure),
+                    onPositive = null
                 )
                 return@setOnClickListener
             }
@@ -218,18 +218,18 @@ class WebDavBackupActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         dialog = MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
-                            getString(R.string.connection_successful),
-                            getString(R.string.sure),
-                            null
+                            message = getString(R.string.connection_successful),
+                            positiveText = getString(R.string.sure),
+                            onPositive = null
                         )
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         dialog = MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
-                            getString(R.string.failed_to_connect),
-                            getString(R.string.sure),
-                            null
+                            message = getString(R.string.failed_to_connect),
+                            positiveText = getString(R.string.sure),
+                            onPositive = null
                         )
                     }
                 }
