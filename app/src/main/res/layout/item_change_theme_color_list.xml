@@ -8,7 +8,6 @@
     android:clickable="true"
     android:layout_margin="@dimen/dp_6"
     android:contentDescription="@string/appearance"
-    app:cardCornerRadius="@dimen/dp_24"
     android:foreground="?attr/selectableItemBackground">
 
     <com.liuxing.daily.view.RoundTricolorView
