@@ -50,7 +50,6 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -171,6 +170,20 @@ class AddDailyActivity : AppCompatActivity() {
         activityAddDailyBinding.inputContent.addTextChangedListener {
             onEnabledChangedListener?.onEnableChanged(contentIsNotNull())
         }
+
+        loadLabel()
+    }
+
+    /**
+     * 加载标签
+     */
+    private fun loadLabel() {
+        dailyLabel = intent.getStringExtra(DAILY_LABEL) ?: ""
+
+        if (dailyLabel.isEmpty()) return
+
+        activityAddDailyBinding.tvLabel.text = dailyLabel
+        activityAddDailyBinding.lLabel.visibility = View.VISIBLE
     }
 
     /**
