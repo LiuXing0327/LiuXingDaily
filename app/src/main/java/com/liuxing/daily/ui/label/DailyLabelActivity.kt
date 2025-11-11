@@ -1,13 +1,11 @@
 package com.liuxing.daily.ui.label
 
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
@@ -18,8 +16,9 @@ import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityDailyLabelBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.ui.add.AddDailyActivity
+import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 private const val DAILY_LABEL = "daily_label_label"
@@ -56,6 +55,7 @@ class DailyLabelActivity : AppCompatActivity() {
         getDailyLabel()
         this.label?.let { setDailyLabel(it) }
         getDailyData()
+        addDailyWithLabel()
     }
 
     /**
@@ -98,6 +98,15 @@ class DailyLabelActivity : AppCompatActivity() {
             if (savedInstanceState == null) intent.getStringExtra("daily_label_label") else savedInstanceState.getString(
                 DAILY_LABEL
             )
+    }
+
+    /**
+     * 添加带有标签的日记
+     */
+    private fun addDailyWithLabel() {
+        dailyLabelBinding.floatingActionButton.setOnClickListener {
+            IntentUtil.startActivity(this, AddDailyActivity::class.java, mapOf("dailyLabel" to  label))
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -181,7 +190,7 @@ class DailyLabelActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this).apply {
             setTitle(getString(R.string.rename))
             setView(view)
-            setPositiveButton(getString(R.string.sure)) { dialog, which ->
+            setPositiveButton(getString(R.string.sure)) { _, _ ->
                 val label = inputLabel.text.toString()
                 if (label.isNotEmpty()) {
                     val dailyLabelEntity = DailyLabelEntity(id, label)
