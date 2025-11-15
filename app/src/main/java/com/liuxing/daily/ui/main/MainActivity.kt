@@ -27,6 +27,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
@@ -83,6 +84,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
@@ -210,7 +212,6 @@ class MainActivity : AppCompatActivity() {
         )
         insertAutoDaily()
         initView()
-        activityMainBinding.floatingActionButton.rotateOnce()
         initData()
         val agreed = sharedPreferences?.getBoolean(termsAndPrivacyAgreedKey, false) ?: false
         if (!agreed) {
@@ -710,7 +711,7 @@ class MainActivity : AppCompatActivity() {
                                         MaterialAlertDialogBuilder(this@MainActivity)
                                     materialAlertDialogBuilder.setView(
                                         layoutInflater.inflate(
-                                            R.layout.loading_lndicators_dialog_layout,
+                                            R.layout.loading_indicators_dialog_layout,
                                             null
                                         )
                                     )
@@ -989,7 +990,7 @@ class MainActivity : AppCompatActivity() {
                         val materialAlertDialogBuilder =
                             MaterialAlertDialogBuilder(this@MainActivity)
                         materialAlertDialogBuilder.setView(
-                            layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null)
+                            layoutInflater.inflate(R.layout.loading_indicators_dialog_layout, null)
                         )
                         materialAlertDialogBuilder.setCancelable(false)
                         dialog = materialAlertDialogBuilder.create()
@@ -2008,7 +2009,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun recyclerSelected(selectedList: List<DailyEntity>) {
         val builder = MaterialAlertDialogBuilder(this)
-        builder.setView(layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null))
+        builder.setView(layoutInflater.inflate(R.layout.loading_indicators_dialog_layout, null))
         builder.setCancelable(false)
         dialog = builder.create()
         dialog!!.show()
@@ -2026,7 +2027,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun deleteSelected(selectedList: List<DailyEntity>) {
         val builder = MaterialAlertDialogBuilder(this)
-        builder.setView(layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null))
+        builder.setView(layoutInflater.inflate(R.layout.loading_indicators_dialog_layout, null))
         builder.setCancelable(false)
         dialog = builder.create()
         dialog?.show()
