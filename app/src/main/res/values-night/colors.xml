@@ -12,6 +12,7 @@
     <color name="md_theme_primary">#D0BCFF</color>
     <color name="md_theme_primaryFixed">#EADDFF</color>
     <color name="md_theme_inversePrimary">#6750A4</color>
+    <color name="toolbar_outline_icon_color">@color/m3_ref_palette_neutral90</color>
 
     <color name="md_theme_primary_red">#FFB5A0</color>
     <color name="md_theme_onPrimary_red">#561F0F</color>
