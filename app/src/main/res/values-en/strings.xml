@@ -180,4 +180,7 @@
     <string name="app_icon">App icon</string>
     <string name="open_source_libraries">Open Source Libraries</string>
     <string name="color_label_light_cyan">Light cyan</string>
+    <string name="selected">Selected</string>
+    <string name="data">Data</string>
+    <string name="data_management">Data Management</string>
 </resources>

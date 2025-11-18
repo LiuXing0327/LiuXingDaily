@@ -186,4 +186,7 @@
     <string name="app_icon">应用图标</string>
     <string name="open_source_libraries">开源库</string>
     <string name="color_label_light_cyan">浅青色</string>
+    <string name="selected">选中</string>
+    <string name="data">数据</string>
+    <string name="data_management">数据管理</string>
 </resources>
