@@ -217,7 +217,7 @@ class AddDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_add_daily, menu)
-                when {
+/*                when {
                     activityAddDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && dailyTextInputEdit.text!!.trim()
                         .isEmpty() && imageList.isEmpty() -> {
@@ -229,7 +229,7 @@ class AddDailyActivity : AppCompatActivity() {
                         menu.findItem(R.id.item_save).setVisible(true)
                         invalidateOptionsMenu()
                     }
-                }
+                }*/
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {

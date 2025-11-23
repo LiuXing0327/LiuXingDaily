@@ -503,7 +503,7 @@ class EditDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_edit_daily, menu)
-                when {
+/*                when {
                     activityEditDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && dailyTextInputEdit.text!!.trim()
                         .isEmpty() -> {
@@ -515,7 +515,7 @@ class EditDailyActivity : AppCompatActivity() {
                         menu.findItem(R.id.item_save).setVisible(true)
                         invalidateOptionsMenu()
                     }
-                }
+                }*/
                 menu.findItem(R.id.item_lock_to_on_and_un_ed).title = when {
                     singlePassword == "" -> {
                         getString(R.string.locked)
@@ -1089,7 +1089,7 @@ class EditDailyActivity : AppCompatActivity() {
      * 判断日记是否为空
      */
     private fun isDailyNullOrEquals() {
-        // 如果文本都为空，则直接退出
+        // 如果文本都为空或未发生变化，则直接退出
         if (contentIsNull() || originalAllContentEqualsCurrentContent()) {
             isSystemExit = false
             finish()
