@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     tools:context=".ui.daily.DailyFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:layout_weight="1"
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_marginBottom="@dimen/dp_50"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
 
-</LinearLayout>
+    <include
+        android:id="@+id/linear_progress_indicator_container"
+        layout="@layout/linear_progress_indicator_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+</FrameLayout>
