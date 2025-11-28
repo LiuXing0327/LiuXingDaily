@@ -64,7 +64,10 @@ class HeadingSpan(private val proportion: Float, private val lineHeight: Float) 
         paint.color = Color.GRAY
         paint.strokeWidth = lineHeight
 
-        val lineTop = bottom - lineHeight / 2
+        val fm = p?.fontMetrics ?: return
+        val textBottom = baseline + fm.descent
+
+        val lineTop = textBottom + lineHeight / 2
 
         c?.drawLine(
             x.toFloat(), lineTop, (c.width).toFloat(), lineTop, paint
