@@ -8,6 +8,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.text.Layout
 import android.text.style.LeadingMarginSpan
+import com.liuxing.daily.extension.centerYFromBaseLine
 import com.liuxing.daily.markdown.color.MarkdownColor
 
 /**
@@ -44,9 +45,9 @@ class BulletSpan : LeadingMarginSpan {
         if (!first) return
 
         // x偏移40像素
-        val cx = x + dir + 40f
+        val cx = x + dir * 40f
         // 垂直居中
-        val cy = (top + bottom) / 2f
+        val cy = p?.centerYFromBaseLine(baseline) ?: return
         // 以cx、cy，绘制圆
         c?.drawCircle(cx, cy, 8f, paint)
     }
