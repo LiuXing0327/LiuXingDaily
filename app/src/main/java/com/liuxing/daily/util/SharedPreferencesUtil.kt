@@ -144,7 +144,17 @@ object SharedPreferencesUtil {
 
 
     fun getString(content: Context, key: String, defValue: String): String {
-        return getSharedPreferences(content).getString(key, defValue).toString()
+        return getSharedPreferences(content).getString(key, defValue) ?: ""
+    }
+
+    fun putBoolean(context: Context, key: String, value: Boolean) {
+        val editor = getEditor(context) ?: return
+        editor.putBoolean(key, value)
+        editor.apply()
+    }
+
+    fun getBoolean(context: Context, key: String, defValue: Boolean): Boolean {
+        return getSharedPreferences(context).getBoolean(key, defValue)
     }
 
     /**
