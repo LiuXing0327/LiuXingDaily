@@ -18,11 +18,13 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import java.util.Date
@@ -162,7 +164,16 @@ class DailyLabelAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"
             }
-            holder.tvDateTime.text = DateUtil.getDateString(0, Date(dailyEntity.dateTime!!))
+
+            val dateString = DateUtil.getDateString(0, Date(dailyEntity.dateTime!!))
+            holder.tvDateTime.apply {
+                val showWeek = SharedPreferencesUtil.getBoolean(
+                    context,
+                    DailySettingsConst.WEEK_SWITCH_KEY,
+                    true
+                )
+                text = if (showWeek) "$dateString ${DateUtil.getWeek(context,dateString)}" else dateString
+            }
             setBackgroundColor(dailyEntity, holder)
             holder.ivMood.visibility =
                 if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {
