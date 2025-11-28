@@ -1,6 +1,5 @@
 package com.liuxing.daily.ui.settings
 
-import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.SharedPreferences
@@ -36,6 +35,7 @@ import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.OpenSourceActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
+import com.liuxing.daily.ui.datamanagement.DataManagementActivity
 import com.liuxing.daily.ui.privacy.PrivacyActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.ui.webdav.WebDavBackupActivity
@@ -119,6 +119,8 @@ class SettingsActivity : AppCompatActivity() {
             bindPreferenceToActivity<AppearanceSettingsActivity>("appearance_preference")
             bindPreferenceToActivity<WebDavBackupActivity>("webdav_backup_preference")
             bindPreferenceToActivity<PrivacyActivity>("user_agreement_and_privacy_policy_preference")
+            bindPreferenceToActivity<DataManagementActivity>("data_management_preference")
+            bindPreferenceToActivity<DailySettingsActivity>("daily_settings_preference")
 
             bindPreferenceAction("check_update_preference") {
                 CheckAppUpdateUtil.checkUpdate(requireContext())
@@ -474,7 +476,7 @@ class SettingsActivity : AppCompatActivity() {
                 requireContext(),
                 title = requireContext().getString(R.string.key),
                 layoutRes = R.layout.dialog_input_password_layout,
-                onViewCreated = {view, dialog ->
+                onViewCreated = { view, _ ->
                     val inputPasswordLayout =
                         view.findViewById<TextInputLayout>(R.id.input_password_layout)
                     inputPasswordLayout.hint = requireContext().getString(R.string.key)
