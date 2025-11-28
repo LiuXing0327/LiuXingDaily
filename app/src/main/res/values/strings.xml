@@ -189,4 +189,20 @@
     <string name="selected">选中</string>
     <string name="data">数据</string>
     <string name="data_management">数据管理</string>
+    <string name="export">导出</string>
+    <string name="crash_prompt_message">醒悟遇到一个意外错误，是否将错误报告发送给开发者？(仅包含技术信息，不含隐私)</string>
+    <string name="send_report">发送报告</string>
+    <string name="exit_application">退出应用</string>
+    <string name="monday">星期一</string>
+    <string name="tuesday">星期二</string>
+    <string name="wednesday">星期三</string>
+    <string name="thursday">星期四</string>
+    <string name="friday">星期五</string>
+    <string name="saturday">星期六</string>
+    <string name="sunday">星期日</string>
+    <string name="export_txt_description">TXT（仅文本）</string>
+    <string name="export_json_description">JSON（可导入）</string>
+    <string name="daily_settings">日记设置</string>
+    <string name="management_diary_related_functions">管理日记相关功能</string>
+    <string name="week">星期</string>
 </resources>
