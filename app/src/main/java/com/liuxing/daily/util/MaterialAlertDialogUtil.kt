@@ -13,6 +13,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 object MaterialAlertDialogUtil {
 
+    private const val TAG = "MaterialAlertDialogUtil"
+
     /**
      * 显示对话框
      *
@@ -48,7 +50,7 @@ object MaterialAlertDialogUtil {
     ): AlertDialog? {
         val activity = (context as? Activity) ?: return null
         if(activity.isFinishing || activity.isDestroyed){
-            LogUtil.w("showDialog: null activity")
+            LogUtil.w(TAG, "showDialog: null activity")
             return null
         }
 
