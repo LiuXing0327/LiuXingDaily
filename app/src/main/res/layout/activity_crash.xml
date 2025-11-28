@@ -41,19 +41,41 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_send"
-            android:text="@string/send_report"
-            android:layout_marginTop="24dp"
+        <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
+            android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:backgroundTint="@android:color/transparent">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_exit"
-            android:text="@string/exit_application"
-            android:layout_marginTop="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                tools:ignore="PrivateResource">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_send"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:backgroundTint="@color/m3_button_background_color_selector"
+                    android:text="@string/send_report"
+                    android:textColor="@color/m3_button_foreground_color_selector"
+                    app:rippleColor="@color/m3_button_ripple_color_selector" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_exit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="@color/m3_button_background_color_selector"
+                    android:text="@string/exit_application"
+                    android:textColor="@color/m3_button_foreground_color_selector"
+                    app:rippleColor="@color/m3_button_ripple_color_selector" />
+
+            </LinearLayout>
+
+        </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
+
     </LinearLayout>
 
 
