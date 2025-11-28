@@ -22,10 +22,11 @@ import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.main.MainActivity
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
-import com.liuxing.daily.util.LogUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,14 @@ class CalendarQueryDailyFragment : Fragment() {
     private lateinit var dailyViewModel: DailyViewModel
     private lateinit var mainViewModel: MainViewModel
     private var yearMonthDay: String = ""
+
+    /**
+     * 当前“是否显示星期”的开关
+     *
+     * 在 [onResume] 中会再次获取最新设置
+     * 若与当前值不同，则更新为最新值并重新加载数据
+     */
+    private var currentShowWeek = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -163,6 +172,8 @@ class CalendarQueryDailyFragment : Fragment() {
                             dailyViewModel.getImagePathForUuids(uuids)
                         }
                         withContext(Dispatchers.Main) {
+                            dailyList = value
+
                             calendarToDailyAdapter.setDailyList(
                                 requireContext(),
                                 dailyList,
@@ -173,7 +184,6 @@ class CalendarQueryDailyFragment : Fragment() {
                                     ).substring(0, 10)
                                 }, imageMap
                             )
-                            dailyList = value
                         }
                     }
 
@@ -220,6 +230,16 @@ class CalendarQueryDailyFragment : Fragment() {
             || alpha != calendarToDailyAdapter.alpha
             || imageDisplay != calendarToDailyAdapter.imageDisplay
         ) {
+            loadDailyData()
+        }
+
+        val showWeek = SharedPreferencesUtil.getBoolean(
+            requireContext(),
+            DailySettingsConst.WEEK_SWITCH_KEY,
+            true
+        )
+        if (showWeek != currentShowWeek) {
+            currentShowWeek = showWeek
             loadDailyData()
         }
     }
