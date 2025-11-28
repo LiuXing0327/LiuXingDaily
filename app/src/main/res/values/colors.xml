@@ -20,6 +20,7 @@
     <color name="md_theme_primaryFixed">#EADDFF</color>
     <color name="md_theme_inversePrimary">#D0BCFF</color>
     <color name="car_grey_868">#ff282a2d</color>
+    <color name="toolbar_outline_icon_color">@color/m3_ref_palette_neutral10</color>
 
     <color name="md_theme_primary_red">#8F4C38</color>
     <color name="md_theme_onPrimary_red">#FFFFFF</color>

@@ -32,7 +32,9 @@ import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SnackbarUtil
+import com.liuxing.daily.util.StatusBarUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -50,6 +52,7 @@ class LookDailyActivity : AppCompatActivity() {
     private lateinit var originalSignalPasswordMap: MutableMap<Long, String>
     private lateinit var tempSignalPasswordMap: MutableMap<Long, String>
     private var finalList = mutableListOf<DailyEntity>()
+    private val unlockedIdMap = mutableMapOf<Long, String>()// 已解锁的日记 ID
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -171,25 +174,22 @@ class LookDailyActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * 根据 Bitmap 的顶部颜色调整状态栏外观
+     *
+     * @param bitmap 用于分析的壁纸 Bitmap
+     */
     fun setLightStausBarsFromBitmap(bitmap: Bitmap) {
-        Palette.from(bitmap).maximumColorCount(7).setRegion(0, 0, bitmap.width, 100)
-            .generate { palette ->
-                val mostUsed = palette?.swatches?.maxByOrNull { it.population }
-                mostUsed?.let { swatch ->
-                    val isDark = ColorUtils.calculateLuminance(swatch.rgb) < 0.5
-                    val wallpaperAlpha = lookDailyBinding.wallpaper.alpha
-                    val insetsController =
-                        WindowCompat.getInsetsController(window, window.decorView)
-                    insetsController.isAppearanceLightStatusBars = !isDark && wallpaperAlpha > 0.5f
-                }
-            }
+        StatusBarUtil.setLightStausBarsFromBitmap(bitmap,lookDailyBinding.wallpaper,window)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_look_daily, menu)
         if (::originalSignalPasswordMap.isInitialized) {
             menu?.findItem(R.id.item_unlock)?.isVisible =
-                originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() == false
+                originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() == false && !unlockedIdMap.contains(
+                    dailyEntity.id
+                )
         }
         return super.onCreateOptionsMenu(menu)
     }
@@ -203,7 +203,7 @@ class LookDailyActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.item_delete -> {
                 when {
-                    originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
+                    unlockedIdMap.contains(dailyEntity.id) || originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
                         val moveInRecyclerBin =
                             sharedPreferences!!.getBoolean(
                                 "switch_delete_to_recycler_bin_daily",
@@ -288,7 +288,7 @@ class LookDailyActivity : AppCompatActivity() {
 
             R.id.item_edit -> {
                 when {
-                    originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
+                    unlockedIdMap.contains(dailyEntity.id) || originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
                         val intent = Intent()
                         intent.putExtra("daily_id", dailyEntity.id)
                         intent.putExtra("daily_title", dailyEntity.title)
@@ -322,7 +322,7 @@ class LookDailyActivity : AppCompatActivity() {
 
             R.id.item_copy -> {
                 when {
-                    originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
+                    unlockedIdMap.contains(dailyEntity.id) || originalSignalPasswordMap[dailyEntity.id].isNullOrEmpty() -> {
                         dailyEntity.content?.let {
                             CopyUtil.copyTextToClipboard(
                                 this,
@@ -352,7 +352,7 @@ class LookDailyActivity : AppCompatActivity() {
                     inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
                 val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
                 inputPasswordLayout.hint = getString(R.string.unlocked)
-                var singlePassword: String? = ""
+                var singlePassword = ""
                 inputPassword.setText(singlePassword)
                 MaterialAlertDialogBuilder(this@LookDailyActivity).apply {
                     setTitle(getString(R.string.unlocked))
@@ -364,12 +364,13 @@ class LookDailyActivity : AppCompatActivity() {
                                 singlePassword = inputPassword.text.toString()
                                 val lookDailyPagerFragment =
                                     supportFragmentManager.findFragmentByTag("f${currentIndex}") as LookDailyPagerFragment
-                                val hashSHA256 = HashUtil.hashSHA256(singlePassword.toString())
+                                val hashSHA256 = HashUtil.hashSHA256(singlePassword)
                                 when (hashSHA256) {
                                     dailyEntity.singlePassword -> {
                                         originalSignalPasswordMap[dailyEntity.id!!] = ""
                                         tempSignalPasswordMap[dailyEntity.id!!] =
                                             inputPassword.text.toString()
+                                        unlockedIdMap.put(dailyEntity.id!!, singlePassword)
                                         invalidateOptionsMenu()
                                         lookDailyPagerFragment.updateSinglePassword(hashSHA256)
                                     }
@@ -390,59 +391,55 @@ class LookDailyActivity : AppCompatActivity() {
                             override fun onClick(dialog: DialogInterface?, which: Int) {
                                 val inflate1 = LayoutInflater.from(this@LookDailyActivity)
                                     .inflate(R.layout.dialog_input_password_layout, null)
-                                val inputPasswordLayout1 =
+                                val inputPasswordLayout =
+                                    inflate1.findViewById<TextInputLayout>(R.id.input_password_layout)
+                                val inputPassword =
                                     inflate1.findViewById<TextInputEditText>(R.id.input_password)
-                                inputPasswordLayout1.hint = getString(R.string.forgot_password)
+                                inputPasswordLayout.hint = getString(R.string.key)
                                 MaterialAlertDialogBuilder(this@LookDailyActivity).apply {
                                     setTitle(getString(R.string.forgot_password))
                                     setView(inflate1)
-                                    setPositiveButton(getString(R.string.sure),
-                                        object : DialogInterface.OnClickListener {
-                                            override fun onClick(
-                                                dialog: DialogInterface?,
-                                                which: Int
-                                            ) {
-                                                val key = sharedPreferences?.getString(
-                                                    "forget_password_key",
-                                                    ""
-                                                )
-                                                if (key != "") {
-                                                    when {
-                                                        HashUtil.hashSHA256(inputPasswordLayout1.text.toString()) == key -> {
-                                                            dailyViewModel.updateDaily(
-                                                                DailyEntity(
-                                                                    dailyEntity.id,
-                                                                    dailyEntity.title,
-                                                                    dailyEntity.content,
-                                                                    dailyEntity.dateTime,
-                                                                    dailyEntity.backgroundColorIndex,
-                                                                    "",
-                                                                    dailyEntity.moodIndex,
-                                                                    dailyEntity.weatherIndex,
-                                                                    dailyEntity.dailyUUID,
-                                                                    false,
-                                                                    dailyEntity.dailyLabel,
-                                                                    isPinned = dailyEntity.isPinned
-                                                                )
-                                                            )
-                                                            SnackbarUtil.showSnackbarShort(
-                                                                lookDailyBinding.viewPagerDaily.rootView,
-                                                                getString(R.string.the_password_has_been_cleared)
-                                                            )
-                                                        }
-
-                                                        else -> SnackbarUtil.showSnackbarShort(
-                                                            lookDailyBinding.viewPagerDaily.rootView,
-                                                            getString(R.string.the_key_is_incorrect)
+                                    setPositiveButton(
+                                        getString(R.string.sure)
+                                    ) { dialog, which ->
+                                        val key = sharedPreferences?.getString(
+                                            "forget_password_key", ""
+                                        )
+                                        if (key != "") {
+                                            when {
+                                                HashUtil.hashSHA256(inputPassword.text.toString()) == key -> {
+                                                    dailyViewModel.updateDaily(
+                                                        DailyEntity(
+                                                            dailyEntity.id,
+                                                            dailyEntity.title,
+                                                            dailyEntity.content,
+                                                            dailyEntity.dateTime,
+                                                            dailyEntity.backgroundColorIndex,
+                                                            "",
+                                                            dailyEntity.moodIndex,
+                                                            dailyEntity.weatherIndex,
+                                                            dailyEntity.dailyUUID,
+                                                            false,
+                                                            dailyEntity.dailyLabel,
+                                                            isPinned = dailyEntity.isPinned
                                                         )
-                                                    }
-                                                } else SnackbarUtil.showSnackbarShort(
+                                                    )
+                                                    SnackbarUtil.showSnackbarShort(
+                                                        lookDailyBinding.viewPagerDaily.rootView,
+                                                        getString(R.string.the_password_has_been_cleared)
+                                                    )
+                                                }
+
+                                                else -> SnackbarUtil.showSnackbarShort(
                                                     lookDailyBinding.viewPagerDaily.rootView,
-                                                    getString(R.string.please_set_key)
+                                                    getString(R.string.the_key_is_incorrect)
                                                 )
                                             }
-
-                                        })
+                                        } else SnackbarUtil.showSnackbarShort(
+                                            lookDailyBinding.viewPagerDaily.rootView,
+                                            getString(R.string.please_set_key)
+                                        )
+                                    }
                                     setNegativeButton(getString(R.string.cancel), null)
                                     create()
                                     show()
@@ -481,6 +478,19 @@ class LookDailyActivity : AppCompatActivity() {
         }
         val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         lookDailyBinding.wallpaper.alpha = wallpaperAlpha
+
+        verifyPassword()
+    }
+
+    /**
+     * 验证密码
+     */
+    private fun verifyPassword(){
+        if(originalSignalPassword.isEmpty() || unlockedIdMap.isEmpty()) return
+        val dailyId = dailyEntity.id
+        unlockedIdMap.let {
+            if(it[dailyEntity.id] != originalSignalPasswordMap[dailyId]) it.remove(dailyId)
+        }
     }
 
     /**

@@ -43,3 +43,13 @@ fun ExtendedFloatingActionButton.rotateOnce(
 ) {
     (this as View).rotateOnce(duration, endAction)
 }
+
+/**
+ * 根据布尔值设置视图可视性
+ *
+ * @param show true：可见，
+ *             false：隐藏。
+ */
+fun View.setVisibility(show: Boolean) {
+    this.visibility = if(show) View.VISIBLE else View.GONE
+}

@@ -15,12 +15,14 @@ import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.audioRegex
 import com.liuxing.daily.util.ConstUtil.imageRegex
 import com.liuxing.daily.util.ConstUtil.videoRegex
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.view.DailyTextView
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -144,10 +146,17 @@ class LookDailyPagerFragment : Fragment() {
         if (singlePassword != this.singlePassword) {
             this.singlePassword = singlePassword
             binding.tvTitle.text = "***"
-            binding.tvContent.text = "***"
+            dailyTextView.showAllText = false
+            dailyTextView.setDailyText("***")
         } else {
             binding.tvTitle.text = title
-            binding.tvContent.text = content
+            dailyTextView.showAllText = true
+            dailyTextView.setDailyText(
+                content.toString(),
+                imageList.toList(),
+                videoList.toList(),
+                audioList.toList()
+            )
         }
     }
 
@@ -207,12 +216,11 @@ class LookDailyPagerFragment : Fragment() {
         dailyTextView.textSize = textSize
         if (!singlePassword.isNullOrEmpty()) {
             binding.tvTitle.text = "***"
-            dailyTextView.text = "***"
+            dailyTextView.showAllText = false
             binding.ivMood.visibility = View.GONE
             binding.ivWeather.visibility = View.GONE
         } else {
             binding.tvTitle.text = title
-
 
             val updatedContent = StringBuilder(content ?: "")
             CoroutineScope(Dispatchers.IO).launch {
@@ -253,7 +261,14 @@ class LookDailyPagerFragment : Fragment() {
 
                 }
             }
-            dailyTextView.text = content
+
+            //  dailyTextView.text = MarkdownParser.parseMarkdown(content.toString())
+            dailyTextView.setDailyText(
+                content.toString(),
+                imageList.toList(),
+                videoList.toList(),
+                audioList.toList()
+            )
 
             binding.ivMood.visibility = moodIndex.let {
                 if (it == 0 || it == null) View.GONE else {
@@ -431,7 +446,18 @@ class LookDailyPagerFragment : Fragment() {
      * 设置日记的日期时间
      */
     private fun setDailyDateTime() {
-        binding.tvDateTime.text = DateUtil.getDateString(0, Date(dateTime!!))
+        val showWeek = SharedPreferencesUtil.getBoolean(
+            requireContext(),
+            DailySettingsConst.WEEK_SWITCH_KEY,
+            true
+        )
+        val dateString = DateUtil.getDateString(0, Date(dateTime!!))
+        binding.tvDateTime.text = if (showWeek) "$dateString ${
+            DateUtil.getWeek(
+                requireContext(),
+                dateString
+            )
+        }" else dateString
     }
 
     /**
@@ -543,7 +569,7 @@ class LookDailyPagerFragment : Fragment() {
                     deleteAction = { path -> dailyViewModel.deleteSelectPathVideo(path) }
                 )
 
-                dailyTextView.setImagePathList(
+                dailyTextView.setMediaPathList(
                     content!!,
                     this.imageList.toList(),
                     this.videoList.toList(),
@@ -560,7 +586,7 @@ class LookDailyPagerFragment : Fragment() {
                     deleteAction = { path -> dailyViewModel.deleteSelectPathImage(path) }
                 )
 
-                dailyTextView.setImagePathList(
+                dailyTextView.setMediaPathList(
                     content!!,
                     this.imageList.toList(),
                     this.videoList.toList(),
@@ -577,7 +603,7 @@ class LookDailyPagerFragment : Fragment() {
                     deleteAction = { path -> dailyViewModel.deleteSelectPathAudio(path) }
                 )
 
-                dailyTextView.setImagePathList(
+                dailyTextView.setMediaPathList(
                     content!!,
                     this.imageList.toList(),
                     this.videoList.toList(),

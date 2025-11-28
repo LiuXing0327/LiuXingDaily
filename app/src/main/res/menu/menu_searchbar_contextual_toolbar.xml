@@ -4,17 +4,22 @@
 
     <item
         android:id="@+id/item_pinned"
-        android:icon="@drawable/baseline_toolbar_push_pin_24"
+        android:icon="@drawable/outline_toolbar_push_pin_24"
         android:title="@string/pinned"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/item_delete"
-        android:icon="@drawable/baseline_toolbar_delete_24"
+        android:icon="@drawable/outline_toolbar_delete_24"
         android:title="@string/delete"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/item_export_daily"
+        android:icon="@drawable/outline_toolbar_download_24"
+        android:title="@string/export"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/item_select_all"
-        android:icon="@drawable/baseline_toolbar_done_24"
+        android:icon="@drawable/outline_toolbar_select_all_24"
         android:title="@string/select_all"
         app:showAsAction="ifRoom" />
 </menu>

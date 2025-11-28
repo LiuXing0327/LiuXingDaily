@@ -61,7 +61,7 @@ class SpecialThanksAdapter : RecyclerView.Adapter<SpecialThanksAdapter.ViewHolde
                 holder.ivIcon.setImageDrawable(
                     ContextCompat.getDrawable(
                         holder.ivIcon.context,
-                        R.drawable.baseline_public_24
+                        R.drawable.baseline_copyright_24
                     )
                 )
             }

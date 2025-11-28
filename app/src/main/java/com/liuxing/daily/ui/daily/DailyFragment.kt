@@ -8,27 +8,24 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailyAdapter
 import com.liuxing.daily.databinding.FragmentDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnItemClickListener
-import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
 import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.main.MainActivity
-import com.liuxing.daily.util.BitmapUtil
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
-import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,6 +54,14 @@ class DailyFragment : Fragment(),DailyLikeFragment {
     private var dailyList: List<DailyEntity> = ArrayList()
     private var sharedPreferences: SharedPreferences? = null
     private lateinit var mainActivity: MainActivity
+
+    /**
+     * 当前“是否显示星期”的开关
+     *
+     * 在 [onResume] 中会再次获取最新设置
+     * 若与当前值不同，则更新为最新值并重新加载数据
+     */
+    private var currentShowWeek = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,6 +140,7 @@ class DailyFragment : Fragment(),DailyLikeFragment {
                     mainActivity.collapseContextualToolbar()
                     mainActivity.enableLightStatusBarWithAppBar()
                     mainActivity.enableOnBack(false)
+                    mainActivity.selectAllDailies()
                 }
             }
 
@@ -165,25 +171,37 @@ class DailyFragment : Fragment(),DailyLikeFragment {
     /**
      * 加载日记数据
      */
-    private fun loadDailyData(){
+    private fun loadDailyData() {
         queryAllDaily = dailyViewModel.queryAllDaily()
-        queryAllDaily.observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
-            override fun onChanged(value: List<DailyEntity>) {
+        queryAllDaily
+            .distinctUntilChanged()
+            .observe(viewLifecycleOwner) { value ->
                 lifecycleScope.launch {
-                    val uuids = withContext(Dispatchers.Default) {
-                        value.mapNotNull { it.dailyUUID }
+                    fragmentDailyBinding.linearProgressIndicatorContainer.root.visibility =
+                        View.VISIBLE
+
+                    if (value.isEmpty()) {
+                        dailyAdapter.setDailyList(requireContext(), emptyList(), emptyMap())
+                        dailyList = emptyList()
+
+                        fragmentDailyBinding.linearProgressIndicatorContainer.root.visibility =
+                            View.GONE
+                        return@launch
                     }
+
+                    val uuids = value.mapNotNull { it.dailyUUID }
                     val imageMap = withContext(Dispatchers.IO) {
                         dailyViewModel.getImagePathForUuids(uuids)
                     }
-                    withContext(Dispatchers.Main) {
-                        dailyAdapter.setDailyList(requireContext(), value, imageMap)
-                        dailyList = value
-                    }
+                    dailyAdapter.setDailyList(requireContext(), value, imageMap)
+                    dailyList = value
+
+                    fragmentDailyBinding.linearProgressIndicatorContainer.root.visibility =
+                        View.GONE
                 }
             }
-        })
     }
+
 
     /**
      * 设置列表点击事件
@@ -230,6 +248,17 @@ class DailyFragment : Fragment(),DailyLikeFragment {
             || textSize != dailyAdapter.textSize || alpha != dailyAdapter.alpha
             || imageDisplay != dailyAdapter.imageDisplay
         ) {
+            loadDailyData()
+        }
+
+        val showWeek = SharedPreferencesUtil.getBoolean(
+            requireContext(),
+            DailySettingsConst.WEEK_SWITCH_KEY,
+            true
+        )
+
+        if (showWeek != currentShowWeek) {
+            currentShowWeek = showWeek
             loadDailyData()
         }
     }

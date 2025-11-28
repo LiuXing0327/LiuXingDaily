@@ -1,7 +1,6 @@
 package com.liuxing.daily.ui.webdav
 
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
@@ -64,6 +63,10 @@ class WebDavBackupActivity : AppCompatActivity() {
     private var dailyList: List<DailyEntity> = ArrayList()
     private var dialog: AlertDialog? = null
     private var isSardineInit = false
+
+    companion object {
+        private const val TAG = "WebDavBackupActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -197,9 +200,9 @@ class WebDavBackupActivity : AppCompatActivity() {
             ) {
                 dialog = MaterialAlertDialogUtil.showDialog(
                     this@WebDavBackupActivity,
-                    getString(R.string.failed_to_connect),
-                    getString(R.string.sure),
-                    null
+                    message = getString(R.string.failed_to_connect),
+                    positiveText = getString(R.string.sure),
+                    onPositive = null
                 )
                 return@setOnClickListener
             }
@@ -218,18 +221,18 @@ class WebDavBackupActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         dialog = MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
-                            getString(R.string.connection_successful),
-                            getString(R.string.sure),
-                            null
+                            message = getString(R.string.connection_successful),
+                            positiveText = getString(R.string.sure),
+                            onPositive = null
                         )
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         dialog = MaterialAlertDialogUtil.showDialog(
                             this@WebDavBackupActivity,
-                            getString(R.string.failed_to_connect),
-                            getString(R.string.sure),
-                            null
+                            message = getString(R.string.failed_to_connect),
+                            positiveText = getString(R.string.sure),
+                            onPositive = null
                         )
                     }
                 }
@@ -353,7 +356,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                             MaterialAlertDialogBuilder(this@WebDavBackupActivity)
                         materialAlertDialogBuilder.setView(
                             layoutInflater.inflate(
-                                R.layout.loading_lndicators_dialog_layout, null
+                                R.layout.loading_indicators_dialog_layout, null
                             )
                         )
                         materialAlertDialogBuilder.setCancelable(false)
@@ -463,7 +466,9 @@ class WebDavBackupActivity : AppCompatActivity() {
                                 username = webDavBackupBinding.inputAccountNumber.text.toString(),
                                 password = webDavBackupBinding.inputPassword.text.toString()
                             ) { sent, total ->
-                                LogUtil.d("Batch ${batchIndex + 1} uploaded $sent / $total")
+                                LogUtil.d(
+                                    TAG, "Batch ${batchIndex + 1} uploaded $sent / $total"
+                                )
                             }
                             // 上传成功后删除本地 zip
                             if (zipFilePath.exists()) zipFilePath.delete()
@@ -487,7 +492,7 @@ class WebDavBackupActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         if (dialog != null && dialog!!.isShowing) dialog!!.dismiss()
-                        LogUtil.e("Backup Failed -> ${e.message}", e)
+                        LogUtil.e(TAG, "Backup Failed -> ${e.message}", e)
                         MaterialAlertDialogBuilder(this@WebDavBackupActivity).apply {
                             setMessage(getString(R.string.failed_to_backup_data))
                             setPositiveButton(getString(R.string.sure), null)
@@ -545,7 +550,7 @@ class WebDavBackupActivity : AppCompatActivity() {
     private suspend fun importAllDailyParts(password: String) {
         withContext(Dispatchers.Main) {
             val builder = MaterialAlertDialogBuilder(this@WebDavBackupActivity)
-            builder.setView(layoutInflater.inflate(R.layout.loading_lndicators_dialog_layout, null))
+            builder.setView(layoutInflater.inflate(R.layout.loading_indicators_dialog_layout, null))
             builder.setCancelable(false)
             dialog = builder.create()
             dialog!!.show()
@@ -590,7 +595,7 @@ class WebDavBackupActivity : AppCompatActivity() {
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 dialog?.dismiss()
-                LogUtil.e("Failed to restore batch $batchIndex", e)
+                LogUtil.e(message = "Failed to restore batch $batchIndex", throwable = e)
                 MaterialAlertDialogBuilder(this@WebDavBackupActivity)
                     .setMessage(getString(R.string.recovery_failed))
                     .setPositiveButton(getString(R.string.sure), null)

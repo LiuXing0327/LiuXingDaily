@@ -88,7 +88,11 @@ object CheckAppUpdateUtil {
      */
     fun checkFailedOrNoVersionDialog(context: Context,message:String){
         Handler(Looper.getMainLooper()).post {
-            MaterialAlertDialogUtil.showDialog(context, message, context.getString(R.string.sure))
+            MaterialAlertDialogUtil.showDialog(
+                context,
+                message = message,
+                positiveText = context.getString(R.string.sure)
+            )
         }
     }
 }

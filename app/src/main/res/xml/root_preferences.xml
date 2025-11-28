@@ -77,6 +77,12 @@
             app:icon="@drawable/outline_text_increase_24"
             app:title="@string/text_font_size"/>
 
+        <Preference
+            app:key="daily_settings_preference"
+            app:icon="@drawable/baseline_notes_preference_24"
+            app:title="@string/daily_settings"
+            app:summary="@string/management_diary_related_functions"/>
+
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -99,7 +105,13 @@
 
     <PreferenceCategory
         app:iconSpaceReserved="true"
-        app:title="@string/webdav_backup">
+        app:title="@string/data">
+
+<!--        <Preference
+            app:icon="@drawable/outline_sd_storage_24"
+            app:key="data_management_preference"
+            app:iconSpaceReserved="true"
+            app:title="@string/data_management"/>-->
 
         <Preference
             app:icon="@drawable/outline_cloud_upload_preference_24"
@@ -118,6 +130,12 @@
             app:icon="@drawable/outline_lock_24"
             app:iconSpaceReserved="true"
             app:title="@string/app_lock" />
+
+<!--        <Preference
+            app:icon="@drawable/outline_key_off_24"
+            app:iconSpaceReserved="true"
+            app:key="daily_lock_key_preference"
+            app:title="@string/key" />-->
     </PreferenceCategory>
 
 </PreferenceScreen>

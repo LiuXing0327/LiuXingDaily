@@ -20,6 +20,7 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/input_title_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -86,6 +87,7 @@
             android:visibility="gone">
 
             <ImageView
+                android:contentDescription="@string/label"
                 android:id="@+id/iv_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

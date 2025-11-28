@@ -17,11 +17,13 @@
             android:orientation="horizontal">
 
             <ImageView
+                android:contentDescription="@string/image"
                 android:id="@+id/iv_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
             <com.google.android.material.textview.MaterialTextView
+                android:layout_marginStart="@dimen/dp_5"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:ellipsize="marquee"
                 android:id="@+id/tv_special_thanks_name"

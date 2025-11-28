@@ -43,14 +43,17 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -106,6 +109,13 @@ class EditDailyActivity : AppCompatActivity() {
     private var drawImageName = ""
     private lateinit var onEnabledChangedListener: OnEnabledChangedListener
     private var isPinned = false
+    private val sharedPreferences by lazy {
+        PreferenceManager.getDefaultSharedPreferences(this)
+    }
+
+    private val autoSave by lazy {
+        sharedPreferences.getBoolean("switch_preference_auto_save", true)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,8 +157,6 @@ class EditDailyActivity : AppCompatActivity() {
             }
         })
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-
         val textLineSpacingValue = sharedPreferences.getFloat("text_line_spacing_preference", 0F)
         dailyTextInputEdit.setLineSpacing(textLineSpacingValue, 1F)
 
@@ -164,6 +172,15 @@ class EditDailyActivity : AppCompatActivity() {
         activityEditDailyBinding.inputContent.addTextChangedListener {
             onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
         }
+
+        // 默认隐藏标题输入框
+        val showTitle =
+            SharedPreferencesUtil.getBoolean(
+                this,
+                DailySettingsConst.TITLE_SWITCH_KEY,
+                false
+            ) || !getDailyTitle().isNullOrEmpty()
+        activityEditDailyBinding.inputTitleContainer?.setVisibility(showTitle)
     }
 
     /**
@@ -242,14 +259,22 @@ class EditDailyActivity : AppCompatActivity() {
      * 设置日记日期时间
      */
     private fun setDailyDateTime() {
-        activityEditDailyBinding.tvDateTime.text = getDailyDateTime()
+        val showWeek =
+            SharedPreferencesUtil.getBoolean(this, DailySettingsConst.WEEK_SWITCH_KEY, true)
+        val dailyDateTime = getDailyDateTime()
+        activityEditDailyBinding.tvDateTime.text = if (showWeek) "$dailyDateTime ${
+            DateUtil.getWeek(
+                this,
+                dailyDateTime
+            )
+        }" else dailyDateTime
     }
 
     /**
      * 设置日记字数
      */
     private fun setDailyCount() {
-        "${activityEditDailyBinding.inputTitle.text!!.length.plus(dailyTextInputEdit.getWordCount())}字".also {
+        "${activityEditDailyBinding.inputTitle.text!!.length.plus(dailyTextInputEdit.getWordCount())}${getString(R.string.word)}".also {
             activityEditDailyBinding.tvDailyCount.text = it
         }
     }
@@ -498,7 +523,7 @@ class EditDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_edit_daily, menu)
-                when {
+/*                when {
                     activityEditDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && dailyTextInputEdit.text!!.trim()
                         .isEmpty() -> {
@@ -510,7 +535,7 @@ class EditDailyActivity : AppCompatActivity() {
                         menu.findItem(R.id.item_save).setVisible(true)
                         invalidateOptionsMenu()
                     }
-                }
+                }*/
                 menu.findItem(R.id.item_lock_to_on_and_un_ed).title = when {
                     singlePassword == "" -> {
                         getString(R.string.locked)
@@ -621,8 +646,7 @@ class EditDailyActivity : AppCompatActivity() {
                     }
 
                     R.id.item_lock_to_on_and_un_ed -> {
-                        val sharedPreferences =
-                            PreferenceManager.getDefaultSharedPreferences(this@EditDailyActivity)
+
                         when {
                             sharedPreferences.getString("forget_password_key", "") == "" -> {
                                 val inflate =
@@ -718,9 +742,12 @@ class EditDailyActivity : AppCompatActivity() {
                                             }
 
                                         })
+                                    setNegativeButton(getString(R.string.forgot_password)) { dialog, which ->
+                                        singlePassword = ""
+                                    }
                                     setNeutralButton(getString(R.string.cancel), null)
-                                        .setCancelable(false)
-                                        .create()
+                                    setCancelable(false)
+                                    create()
                                     show()
                                 }
                             }
@@ -826,10 +853,10 @@ class EditDailyActivity : AppCompatActivity() {
                                 dailyLabel = ""
                                 activityEditDailyBinding.lLabel?.visibility = View.GONE
                             }
-                            setNegativeButton(getString(R.string.cancel), null)
-                            setNeutralButton(getString(R.string.new_label)) { _, _ ->
+                            setNegativeButton(getString(R.string.new_label)) { _, _ ->
                                 showLabelInputDialog()
                             }
+                            setNeutralButton(getString(R.string.cancel), null)
                             val dialog = create()
                             dialog.show()
                             selectDailyLabelAdapter.setOnItemClickListener(object :
@@ -872,7 +899,7 @@ class EditDailyActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
         val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
         val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
-        MaterialAlertDialogBuilder(this).apply {
+        MaterialAlertDialogBuilder(this,R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
             setTitle(getString(R.string.create_label))
             setView(view)
             setPositiveButton(getString(R.string.sure)) { dialog, which ->
@@ -938,6 +965,7 @@ class EditDailyActivity : AppCompatActivity() {
                     ConstUtil.moodList[position]
                 )
             )
+            activityEditDailyBinding.ivMood.contentDescription = getString(ConstUtil.moodLabelList[position])
             moodIndex = position + 1
             tempMoodIndex = 1
             activityEditDailyBinding.ivMood.visibility = View.VISIBLE
@@ -961,6 +989,7 @@ class EditDailyActivity : AppCompatActivity() {
                     ConstUtil.weatherList[position]
                 )
             )
+            activityEditDailyBinding.ivWeather.contentDescription = getString(ConstUtil.weatherLabelList[position])
             weatherIndex = position + 1
             tempWeatherIndex = 1
         }
@@ -1047,6 +1076,7 @@ class EditDailyActivity : AppCompatActivity() {
             CopyUtil.copyImageToMyAppDir(this@EditDailyActivity, uri)
         imageList.add(copyImageToMyAppDir)
         tempImageList.add(copyImageToMyAppDir)
+        tempImageList2.add(copyImageToMyAppDir)
     }
 
     /**
@@ -1055,10 +1085,11 @@ class EditDailyActivity : AppCompatActivity() {
      * @param uri 视频
      */
     private fun addVideo(uri: Uri) {
-        val copyImageToMyAppDir =
+        val copyVideoToMyAppDir =
             CopyUtil.copyVideoToMyAppDir(this@EditDailyActivity, uri)
-        videoList.add(copyImageToMyAppDir)
-        tempVideoList.add(copyImageToMyAppDir)
+        videoList.add(copyVideoToMyAppDir)
+        tempVideoList.add(copyVideoToMyAppDir)
+        tempVideoList2.add(copyVideoToMyAppDir)
     }
 
     /**
@@ -1070,6 +1101,7 @@ class EditDailyActivity : AppCompatActivity() {
         val copyAudioToMyAppDir = CopyUtil.copyAudioToMyAppDir(this, uri)
         audioList.add(copyAudioToMyAppDir)
         tempAudioList.add(copyAudioToMyAppDir)
+        tempAudioList2.add(copyAudioToMyAppDir)
     }
 
 
@@ -1077,34 +1109,32 @@ class EditDailyActivity : AppCompatActivity() {
      * 判断日记是否为空
      */
     private fun isDailyNullOrEquals() {
-        // 如果文本都为空，则直接退出
-        if (contentIsNull()) {
+        // 如果文本都为空或未发生变化，则直接退出
+        if (contentIsNull() || originalAllContentEqualsCurrentContent()) {
             isSystemExit = false
             finish()
-        } else {
-            if (originalAllContentEqualsCurrentContent()) {
-                isSystemExit = false
-                finish()
-            } else {
-                MaterialAlertDialogBuilder(this@EditDailyActivity)
-                    .setMessage(getString(R.string.do_you_save_this_diary))
-                    .setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                        isSystemExit = false
-                        saveDaily()
-                    }
-                    .setNegativeButton(getString(R.string.cancel)) { dialog, which ->
-                        isSystemExit = false
-                        notSaveToDeleteAppImage()
-                        notSaveToDeleteAppVideos()
-                        notSaveToDeleteAppAudios()
-                        finish()
-                    }
-                    .create()
-                    .show()
-
-            }
+            return
         }
 
+        if (autoSave) {
+            saveDaily()
+            return
+        }
+
+        MaterialAlertDialogBuilder(this@EditDailyActivity)
+            .setMessage(getString(R.string.do_you_save_this_diary))
+            .setPositiveButton(getString(R.string.sure)) { _, _ ->
+                saveDaily()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                isSystemExit = false
+                notSaveToDeleteAppImage()
+                notSaveToDeleteAppVideos()
+                notSaveToDeleteAppAudios()
+                finish()
+            }
+            .create()
+            .show()
     }
 
     /**
@@ -1115,6 +1145,7 @@ class EditDailyActivity : AppCompatActivity() {
         getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE).edit {
             putString("daily_update_content_$dailyUuid", dailyTextInputEdit.text.toString())
         }
+        isSystemExit = false
         dailyViewModel.updateDaily(
             DailyEntity(
                 id = getDailyId(),
@@ -1299,8 +1330,6 @@ class EditDailyActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        val autoSave = sharedPreferences.getBoolean("switch_preference_auto_save", true)
         if (isSystemExit && autoSave && !contentIsNull() && !originalAllContentEqualsCurrentContent()) {
             val fileUtil = FileUtil()
             if (findMissingElements().isNotEmpty()) {

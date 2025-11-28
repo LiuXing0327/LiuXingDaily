@@ -9,7 +9,6 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
@@ -27,11 +26,14 @@ import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
+import com.liuxing.daily.markdown.MarkdownParser
 import com.liuxing.daily.ui.audio.PlayAudioActivity
 import com.liuxing.daily.ui.image.LookDailyImageActivity
 import com.liuxing.daily.ui.video.LookDailyVideoActivity
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
+import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
@@ -44,6 +46,59 @@ class DailyTextView : MaterialTextView {
     private var videoPathList: MutableSet<String> = mutableSetOf()
     private var audioPathList: MutableSet<String> = mutableSetOf()
     private var dailyUuid: String = ""
+
+    private val privateText = "***" // 日记被锁时显示的文本
+
+    /**
+     * 是否显示全文内容
+     *
+     * 设置为 false 时，文字和媒体都会被隐藏，仅显示 "***"。
+     */
+    var showAllText = true
+        set(value) {
+            field = value
+            refreshIfNeeded()
+        }
+
+    /**
+     * 是否显示图片
+     *
+     * 设置为 false 时，所有图片都会被替换为 "***"。
+     */
+    var showImages = true
+        set(value) {
+            field = value
+            refreshIfNeeded()
+        }
+
+    /**
+     * 是否显示视频
+     *
+     * 设置为 false 时，所有视频都会被替换为 "***"。
+     */
+    var showVideos = true
+        set(value) {
+            field = value
+            refreshIfNeeded()
+        }
+
+    /**
+     * 是否显示音频
+     *
+     * 设置为 false 时，所有音频都会被替换为 "***"。
+     */
+    var showAudios = true
+        set(value) {
+            field = value
+            refreshIfNeeded()
+        }
+
+    private var originalText = "" // 原始日记文本
+
+    // 原始媒体路径
+    private var originalImageList: List<String> = emptyList()
+    private var originalVideoList: List<String> = emptyList()
+    private var originalAudioList: List<String> = emptyList()
 
     constructor(context: Context) : super(context) {
         this.context = context
@@ -73,12 +128,50 @@ class DailyTextView : MaterialTextView {
     }
 
     /**
-     * 设置图片路径集合
+     *  设置日记文本和媒体路径
+     *
+     *  @param text 日记文本
+     *  @param imagePaths 图片路径
+     *  @param videoPaths 视频路径
+     *  @param audioPaths 音频路径
+     */
+    fun setDailyText(
+        text: String,
+        imagePaths: List<String> = emptyList(),
+        videoPaths: List<String> = emptyList(),
+        audioPaths: List<String> = emptyList()
+    ) {
+        originalText = text
+        originalImageList = imagePaths.toList()
+        originalVideoList = videoPaths.toList()
+        originalAudioList = audioPaths.toList()
+
+        refreshIfNeeded()
+    }
+
+    /**
+     *  根据当前锁定/显示状态刷新文本显示
+     */
+    private fun refreshIfNeeded() {
+        if (!showAllText || !showImages || !showVideos || !showAudios) {
+            text = privateText
+            return
+        }
+
+        setFormattedText(
+            originalText, originalImageList, originalVideoList, originalAudioList
+        )
+    }
+
+    /**
+     * 设置媒体路径集合
      *
      * @param text 日记内容
      * @param newImagePathList 新的图片路径集合
+     * @param newVideoPathList 新的视频路径集合
+     * @param newAudioPathList 新的音频路径集合
      */
-    fun setImagePathList(
+    fun setMediaPathList(
         text: String,
         newImagePathList: List<String>,
         newVideoPathList: List<String>,
@@ -90,7 +183,13 @@ class DailyTextView : MaterialTextView {
         this.imagePathList.addAll(newImagePathList)
         this.videoPathList.addAll(newVideoPathList)
         this.audioPathList.addAll(newAudioPathList)
-        setFormattedText(text, newImagePathList, newVideoPathList, newAudioPathList)
+
+        // 如果被锁，显示 ***，未被锁则渲染原文和媒体
+        if (!showAllText || !showImages || !showVideos || !showAudios) {
+            setText(privateText)
+        } else {
+            setFormattedText(text, newImagePathList, newVideoPathList, newAudioPathList)
+        }
     }
 
     /**
@@ -133,7 +232,11 @@ class DailyTextView : MaterialTextView {
         tags.sortBy { it.first }
         tags.forEach { (tagIndex, replacementSpan) ->
             if (tagIndex > currentIndex) {
-                spannableString.append(text.substring(currentIndex, tagIndex))
+                spannableString.append(
+                    text.substring(
+                        currentIndex, tagIndex
+                    )
+                )
             }
             spannableString.append(replacementSpan)
             currentIndex = tagIndex + replacementSpan.length
@@ -144,7 +247,6 @@ class DailyTextView : MaterialTextView {
         setText(spannableString)
         invalidate()
     }
-
 
     /**
      * 创建图片
@@ -173,7 +275,7 @@ class DailyTextView : MaterialTextView {
         val newWidth = maxWidth
         val newHeight = (originalHeight * toWidth).toInt()
         val ss = SpannableString(imgTag)
-        val drawable = BitmapDrawable(resources, bitmap).apply {
+        val drawable = bitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
@@ -464,4 +566,11 @@ class DailyTextView : MaterialTextView {
         return sb.toString()
     }
 
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        return if (id == android.R.id.copy) {
+            CopyUtil.copyTextToClipboard(context, TextUtil.replaceTag(text.toString(), ""))
+            clearFocus()
+            true
+        } else super.onTextContextMenuItem(id)
+    }
 }

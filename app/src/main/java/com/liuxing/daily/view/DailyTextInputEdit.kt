@@ -5,12 +5,9 @@
 package com.liuxing.daily.view
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
 import android.text.Editable
 import android.text.Spannable
 import android.text.SpannableString
@@ -27,8 +24,10 @@ import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
 import com.liuxing.daily.R
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
+import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
 /**
@@ -612,7 +611,6 @@ class DailyTextInputEdit : TextInputEditText {
         return ss
     }
 
-
     /**
      * 创建视频占位符
      *
@@ -684,5 +682,16 @@ class DailyTextInputEdit : TextInputEditText {
      * 获取插入的视频路径集合
      */
     fun getInsertedVideos(): List<String> = videoPathList.filter { text?.contains(it) == true }
+
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        return if (id == android.R.id.copy) {
+            CopyUtil.copyTextToClipboard(
+                context,
+                TextUtil.replaceTag(text?.substring(selectionStart, selectionEnd) ?: "", "")
+            )
+            clearFocus()
+            true
+        } else super.onTextContextMenuItem(id)
+    }
 
 }

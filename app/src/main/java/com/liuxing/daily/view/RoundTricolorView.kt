@@ -4,13 +4,13 @@
 
 package com.liuxing.daily.view
 
-import android.R
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
+import com.liuxing.daily.R
 import kotlin.math.min
 
 class RoundTricolorView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
@@ -21,13 +21,13 @@ class RoundTricolorView(context: Context?, attrs: AttributeSet?) : View(context,
 
     init {
         // 初始化颜色
-        topPaint.color = ContextCompat.getColor(context!!, R.color.holo_blue_dark)
+        topPaint.color = ContextCompat.getColor(context!!, R.color.md_theme_primaryFixed)
         topPaint.style = Paint.Style.FILL
 
-        leftPaint.color = ContextCompat.getColor(context, R.color.darker_gray)
+        leftPaint.color = ContextCompat.getColor(context, R.color.md_theme_primary)
         leftPaint.style = Paint.Style.FILL
 
-        rightPaint.color = ContextCompat.getColor(context, R.color.holo_red_dark)
+        rightPaint.color = ContextCompat.getColor(context, R.color.md_theme_inversePrimary)
         rightPaint.style = Paint.Style.FILL
     }
 

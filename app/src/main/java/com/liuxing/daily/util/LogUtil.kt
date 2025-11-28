@@ -21,22 +21,30 @@ object LogUtil {
      */
     private fun getTag(): String {
         val stackTrace = Throwable().stackTrace
-        return stackTrace.getOrNull(2)?.className?.substringAfterLast(".") ?: "com.liuxing.daily"
+        return stackTrace.getOrNull(4)?.className?.substringAfterLast(".") ?: "com.liuxing.daily"
     }
 
     /**
      * 调试日志
+     *
+     * @param tag 标签。
+     * @param message 消息。
      */
-    fun d(message: String, tag: String? = null) {
+    fun d(tag: String? = null, message: String) {
         if (DEBUG) {
             Log.d(tag ?: getTag(), message)
         }
     }
 
+
     /**
      * 错误日志
+     *
+     * @param tag 标签。
+     * @param message 消息。
+     * @param throwable 异常。
      */
-    fun e(message: String, throwable: Throwable, tag: String? = null) {
+    fun e(tag: String? = null, message: String, throwable: Throwable? = null) {
         if (DEBUG) {
             Log.e(tag ?: getTag(), message, throwable)
         }
@@ -44,10 +52,26 @@ object LogUtil {
 
     /**
      * 警告日志
+     *
+     * @param tag 标签。
+     * @param message 消息。
      */
-    fun w(message: String, tag: String? = null) {
+    fun w(tag: String? = null, message: String) {
         if (DEBUG) {
             Log.w(tag ?: getTag(), message)
         }
+    }
+
+    /**
+     * 从 Throwable 对象中获取可记录的堆栈跟踪
+     *
+     * @param throwable 异常。
+     */
+    fun getStackTraceString(throwable: Throwable): String {
+        if (DEBUG) {
+            return Log.getStackTraceString(throwable)
+        }
+
+        return ""
     }
 }

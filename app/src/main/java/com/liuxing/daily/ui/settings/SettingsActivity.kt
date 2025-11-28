@@ -25,6 +25,7 @@ import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
@@ -34,6 +35,7 @@ import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.OpenSourceActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
+import com.liuxing.daily.ui.datamanagement.DataManagementActivity
 import com.liuxing.daily.ui.privacy.PrivacyActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.ui.webdav.WebDavBackupActivity
@@ -117,6 +119,8 @@ class SettingsActivity : AppCompatActivity() {
             bindPreferenceToActivity<AppearanceSettingsActivity>("appearance_preference")
             bindPreferenceToActivity<WebDavBackupActivity>("webdav_backup_preference")
             bindPreferenceToActivity<PrivacyActivity>("user_agreement_and_privacy_policy_preference")
+            bindPreferenceToActivity<DataManagementActivity>("data_management_preference")
+            bindPreferenceToActivity<DailySettingsActivity>("daily_settings_preference")
 
             bindPreferenceAction("check_update_preference") {
                 CheckAppUpdateUtil.checkUpdate(requireContext())
@@ -156,6 +160,10 @@ class SettingsActivity : AppCompatActivity() {
             textFontSizePreference?.setOnPreferenceClickListener {
                 showTextFontSizeDialog(it,textSize)
                 true
+            }
+
+            bindPreferenceAction("daily_lock_key_preference") {
+                showDailyLockKeyDialog()
             }
         }
 
@@ -203,8 +211,8 @@ class SettingsActivity : AppCompatActivity() {
                         sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
                     if(!imageDisplay && File(ConstUtil.WALLPAPER_PATH).exists()){
                         MaterialAlertDialogUtil.showDialog(requireContext(),
-                            getString(R.string.for_a_better_experience_do_you_want_to_turn_off_the_diary_list_image_display),getString(R.string.sure),
-                            {
+                            message = getString(R.string.for_a_better_experience_do_you_want_to_turn_off_the_diary_list_image_display), positiveText = getString(R.string.sure),
+                            onPositive = {
                                 sharedPreferences.edit {
                                     putBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, true)
                                     apply()
@@ -214,7 +222,7 @@ class SettingsActivity : AppCompatActivity() {
                                 val options = ActivityOptions.makeCustomAnimation(requireActivity(), R.anim.fade_in, R.anim.fade_out)
                                 startActivity(intent, options.toBundle())
                             },
-                            getString(R.string.cancel))
+                            negativeText = getString(R.string.cancel))
                     }
                 }
                 setNegativeButton(getString(R.string.add_image)) { _, _ ->
@@ -268,8 +276,8 @@ class SettingsActivity : AppCompatActivity() {
                                 withContext(Dispatchers.Main) {
                                     MaterialAlertDialogUtil.showDialog(
                                         requireContext(),
-                                        getString(R.string.add_failed),
-                                        getString(R.string.sure)
+                                        message = getString(R.string.add_failed),
+                                        positiveText = getString(R.string.sure)
                                     )
                                 }
                             }
@@ -325,7 +333,7 @@ class SettingsActivity : AppCompatActivity() {
          *
          * @param preference Preference
          */
-        fun showTextLineSpacingDialog(preference: Preference) {
+        private fun showTextLineSpacingDialog(preference: Preference) {
             MaterialAlertDialogBuilder(
                 requireContext(),
                 R.style.ThemeOverlay_App_MaterialAlertDialog
@@ -369,7 +377,7 @@ class SettingsActivity : AppCompatActivity() {
          * @param preference Preference
          * @param options 对话框的选项
          */
-        fun showLockDialog(preference: Preference, options: Array<String>) {
+        private fun showLockDialog(preference: Preference, options: Array<String>) {
             MaterialAlertDialogBuilder(requireContext()).apply {
                 setTitle(R.string.app_lock)
                 setSingleChoiceItems(options, appLockOptionsIndex) { dialog, which ->
@@ -417,7 +425,7 @@ class SettingsActivity : AppCompatActivity() {
          * @param preference Preference
          * @param textSize 未修改前的字体大小
          */
-        fun showTextFontSizeDialog(preference: Preference, textSize: Float) {
+        private fun showTextFontSizeDialog(preference: Preference, textSize: Float) {
             MaterialAlertDialogBuilder(
                 requireContext(),
                 R.style.ThemeOverlay_App_MaterialAlertDialog
@@ -461,6 +469,20 @@ class SettingsActivity : AppCompatActivity() {
                 create()
                 show()
             }
+        }
+
+        private fun showDailyLockKeyDialog() {
+            MaterialAlertDialogUtil.showDialog(
+                requireContext(),
+                title = requireContext().getString(R.string.key),
+                layoutRes = R.layout.dialog_input_password_layout,
+                onViewCreated = { view, _ ->
+                    val inputPasswordLayout =
+                        view.findViewById<TextInputLayout>(R.id.input_password_layout)
+                    inputPasswordLayout.hint = requireContext().getString(R.string.key)
+                }
+
+            )
         }
     }
 }

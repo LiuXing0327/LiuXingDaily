@@ -5,7 +5,6 @@
 package com.liuxing.daily.util
 
 import java.security.MessageDigest
-import java.util.Objects
 
 object HashUtil {
 

@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -133,6 +134,7 @@ class RecyclerBinFragment : Fragment(), DailyLikeFragment {
                     mainActivity.collapseContextualToolbar()
                     mainActivity.enableLightStatusBarWithAppBar()
                     mainActivity.enableOnBack(false)
+                    mainActivity.selectAllDailies()
                 }
             }
 
@@ -156,22 +158,31 @@ class RecyclerBinFragment : Fragment(), DailyLikeFragment {
      * 设置回收的日记
      */
     private fun setRecyclerDaily() {
-        dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { recyclerBinDailyList ->
+        dailyViewModel.queryAllDaily().distinctUntilChanged().observe(viewLifecycleOwner) { recyclerBinDailyList ->
             lifecycleScope.launch {
+                recyclerBinBinding.linearProgressIndicatorContainer.root.visibility = View.VISIBLE
+                if (recyclerBinDailyList.isEmpty()) {
+                    recyclerBinAdapter.setDailyList(requireContext(), emptyList(), emptyMap())
+                    dailyList = emptyList()
+
+                    recyclerBinBinding.linearProgressIndicatorContainer.root.visibility = View.GONE
+                    return@launch
+                }
+
                 val uuids = withContext(Dispatchers.Default) {
-                    dailyList.mapNotNull { it.dailyUUID }
+                    recyclerBinDailyList.mapNotNull { it.dailyUUID }
                 }
                 val imageMap = withContext(Dispatchers.IO) {
                     dailyViewModel.getImagePathForUuids(uuids)
                 }
-                withContext(Dispatchers.Main) {
-                    recyclerBinAdapter.setDailyList(
-                        requireContext(),
-                        recyclerBinDailyList,
-                        imageMap
-                    )
-                    dailyList = recyclerBinDailyList
-                }
+                recyclerBinAdapter.setDailyList(
+                    requireContext(),
+                    recyclerBinDailyList,
+                    imageMap
+                )
+                dailyList = recyclerBinDailyList
+
+                recyclerBinBinding.linearProgressIndicatorContainer.root.visibility = View.GONE
             }
         }
     }

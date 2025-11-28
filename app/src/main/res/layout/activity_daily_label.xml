@@ -33,4 +33,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <com.liuxing.daily.view.ExtendedFloatingActionButton
+        android:id="@+id/floating_action_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/dp_16"
+        style="?attr/extendedFloatingActionButtonStyle"
+        android:text="@string/add"
+        app:icon="@drawable/outline_mode_24" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
