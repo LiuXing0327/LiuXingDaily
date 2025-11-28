@@ -7,13 +7,14 @@ package com.liuxing.daily.markdown
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import com.liuxing.daily.markdown.span.HeadingSpan
+import com.liuxing.daily.markdown.span.HorizontalRuleSpan
 
 /**
  * Markdown 解析器
  *
  * 使用示例：
  * ```
- * val markdown = "# 标题\n- 列表项\n普通文本"
+ * val markdown = "# 标题\n- 列表项\n---\n普通文本"
  * val parsed = MarkdownParser.parseMarkdown(markdown)
  * textView.text = parsed
  * ```
@@ -39,6 +40,10 @@ object MarkdownParser {
 
                 LineType.LIST_ITEM -> {
                     parseListItem(line, builder)
+                }
+
+                LineType.HORIZONTAL_RULE -> {
+                    parseHorizontalRule(line, builder)
                 }
 
                 LineType.NORMAL -> {
@@ -85,6 +90,27 @@ object MarkdownParser {
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
     }
+
+    /**
+     * 解析 Markdown 分割线
+     *
+     * @param line 分割行
+     * @param builder 追加解析结果
+     */
+    private fun parseHorizontalRule(line: String, builder: SpannableStringBuilder) {
+        val content = line.replaceFirst(Regex("^\\s*-{3,}\\s*$"), "")
+        val start = builder.length
+        builder.append(content).append("\n")
+        builder.setSpan(
+            HorizontalRuleSpan(4f),
+            start,
+            builder.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+    }
+
+
 }
 
 /**
@@ -92,10 +118,11 @@ object MarkdownParser {
  *
  * - HEADING 标题
  * - LIST_ITEM 列表项
+ * - HORIZONTAL_RULE 分割线
  * - NORMAL 普通文本
  */
 private enum class LineType {
-    HEADING, LIST_ITEM, NORMAL
+    HEADING, LIST_ITEM, HORIZONTAL_RULE, NORMAL
 }
 
 /**
@@ -109,6 +136,8 @@ private fun String.checkLineType(): LineType {
 
         this.matches(Regex("^\\s*-\\s+.*")) -> LineType.LIST_ITEM
 
+        this.matches(Regex("^\\s*-{3,}\\s*$")) -> LineType.HORIZONTAL_RULE
+
         else -> LineType.NORMAL
-    }
+     }
 }

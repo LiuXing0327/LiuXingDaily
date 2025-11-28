@@ -13,17 +13,20 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -172,22 +175,27 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             val daysBetween = DateUtil.getDaysBetween(startDate)
             autoDeleteDays = sharedPreferences.getInt("auto_delete_recycler_bin_daily", 7)
             val dateString = DateUtil.getDateString(0, Date(dailyEntity.dailyRecyclerDateTime!!))
-            if (autoDeleteDays != 0) {
-                val remainingDays = autoDeleteDays - daysBetween
-                holder.tvDateTime.text = holder.tvDateTime.context.getString(
-                    R.string.auto_delete_message,
-                    dateString,
-                    remainingDays
-                )
-                holder.tvDateTime.setTextColor(
-                    ContextCompat.getColor(
-                        holder.tvDateTime.context,
-                        R.color.md_theme_error_red
+
+            holder.tvDateTime.apply {
+                if (autoDeleteDays != 0) {
+                    val remainingDays = autoDeleteDays - daysBetween
+                    text = context.getString(
+                        R.string.auto_delete_message,
+                        dateString,
+                        remainingDays
                     )
-                )
-            } else {
-                holder.tvDateTime.text = dateString
+
+                    setTextColor(
+                        MaterialColors.getColor(
+                            holder.tvDateTime,
+                            androidx.appcompat.R.attr.colorError
+                        )
+                    )
+                } else {
+                    text = dateString
+                }
             }
+
             setBackgroundColor(dailyEntity, holder)
             holder.ivMood.visibility =
                 if (dailyEntity.moodIndex == 0 || dailyEntity.moodIndex == null) {
@@ -228,7 +236,7 @@ class RecyclerBinAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             imageDisplay =
                 sharedPreferences.getBoolean(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY, false)
             val imagePath = imageMap[dailyEntity.dailyUUID]
-            if (!imageDisplay && !imagePath.isNullOrEmpty() && FileUtil().checkFileExists(imagePath)) {
+            if (!imageDisplay && !imagePath.isNullOrEmpty() && FileUtil().checkFileExists(imagePath) && dailyEntity.singlePassword.isNullOrEmpty()) {
                 Glide.with(holder.imageView.context)
                     .load(imagePath)
                     .into(holder.imageView)

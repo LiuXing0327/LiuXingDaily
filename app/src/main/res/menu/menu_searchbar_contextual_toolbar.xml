@@ -13,6 +13,11 @@
         android:title="@string/delete"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/item_export_daily"
+        android:icon="@drawable/outline_toolbar_download_24"
+        android:title="@string/export"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/item_select_all"
         android:icon="@drawable/outline_toolbar_select_all_24"
         android:title="@string/select_all"
