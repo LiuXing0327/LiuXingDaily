@@ -19,6 +19,17 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="33">
         <activity
+            android:name=".ui.settings.DailySettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".crash.CrashActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.datamanagement.DataManagementActivity"
+            android:exported="false"
+            android:label="@string/data_management"
+            android:theme="@style/Theme.流星日记" />
+        <activity
             android:name=".ui.about.OpenSourceActivity"
             android:exported="false" />
         <activity
@@ -82,6 +93,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
