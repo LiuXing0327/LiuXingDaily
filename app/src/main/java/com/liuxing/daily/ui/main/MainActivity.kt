@@ -44,9 +44,11 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
-import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.search.SearchView
@@ -82,12 +84,16 @@ import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.DateUtil.getCurrentDateTime
+import com.liuxing.daily.util.DateUtil.getDateString
+import com.liuxing.daily.util.DateUtil.getWeek
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SnackbarUtil
+import com.liuxing.daily.util.StatusBarUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
@@ -148,6 +154,42 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bitmap: Bitmap
     private var wallpaperFileMD5 = ""
     private val termsAndPrivacyAgreedKey = ConstUtil.TERMS_AND_PRIVACY_AGREED_KEY
+    private val bottomSheetDialog by lazy {
+        BottomSheetDialog(this)
+    }
+
+    /**
+     * 已选中的日记项列表。
+     *
+     * 选择说明：
+     * - 在应用首次，或从多选模式退出时，应调用 [selectAllDailies] 将所有日记加入列表。
+     * - 这样可以确保在未进行选择操作时，“导出全部”能够正常执行。
+     *
+     * 注意：
+     * - 当多选模式开启时，此列表仅反映用户实际选择的日记
+     * - 当多选模式关闭时，此列表应始终选中所有日记。
+     */
+    private var selectedDailyList: List<DailyEntity> = ArrayList()
+
+    /**
+     * 当已选中的日记列表发生变化时触发的回调。
+     */
+    private var onSelectedDailyListListener: SelectedDailyListListener? = null
+
+    /**
+     * 当前导出格式。
+     */
+    private var exportFormat = ExportFormat.JSON
+
+    /**
+     * 日记数据导出格式。
+     *
+     * - JSON JSON格式。
+     * - TXT 纯文本格式。
+     */
+    private enum class ExportFormat {
+        JSON, TXT
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -333,6 +375,12 @@ class MainActivity : AppCompatActivity() {
         getDailyLabel()
         checkContentNotInDatabase()
         setUpContextualToolbar()
+        refreshSelectedDailyList()
+
+        lifecycleScope.launch {
+            delay(300)
+            selectAllDailies()
+        }
     }
 
     /**
@@ -581,45 +629,16 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.item_import_daily -> {
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                        setType("application/zip")
+                        type = "application/zip"
                         addCategory(Intent.CATEGORY_OPENABLE)
                     }
                     importDailyLauncher.launch(intent)
                 }
 
                 R.id.item_export_all_daily -> {
-                    if (dailyList.isNotEmpty()) {
-                        val inflate =
-                            layoutInflater.inflate(
-                                R.layout.dialog_input_password_layout,
-                                null
-                            )
-                        val inputPasswordLayout =
-                            inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
-                        val inputPassword =
-                            inflate.findViewById<TextInputEditText>(R.id.input_password)
-                        inputPasswordLayout.hint =
-                            getString(R.string.encryption_no_encryption_no_input)
-                        inputPassword.setText(dailyPassword)
-                        MaterialAlertDialogBuilder(this@MainActivity).apply {
-                            setTitle(getString(R.string.locked))
-                            setView(inflate)
-                            setPositiveButton(
-                                getString(R.string.sure)
-                            ) { dialog, which ->
-                                dailyPassword = inputPassword.text.toString()
-                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                                    setType("application/zip")
-                                    putExtra(Intent.EXTRA_TITLE, "daily.zip")
-                                }
-                                exportAllDailyLauncher.launch(intent)
-                            }
-                            setNeutralButton(getString(R.string.cancel), null)
-                                .setCancelable(false)
-                                .create()
-                            show()
-                        }
-                    }
+                    showExportBottomSheet()
+                    // exportDailyBackup()
+                    LogUtil.d(message = "selectedDailyList size=${selectedDailyList.size}")
                 }
 
                 R.id.item_clear -> {
@@ -686,6 +705,41 @@ class MainActivity : AppCompatActivity() {
                 R.id.item_old_to_new -> sortBy(1)
             }
             true
+        }
+    }
+
+    /**
+     * 导出日记备份
+     */
+    private fun exportDailyBackup() {
+        if (selectedDailyList.isNotEmpty()) {
+            val inflate = layoutInflater.inflate(
+                R.layout.dialog_input_password_layout, null
+            )
+            val inputPasswordLayout =
+                inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+            val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
+            inputPasswordLayout.hint = getString(R.string.encryption_no_encryption_no_input)
+            inputPassword.setText(dailyPassword)
+            MaterialAlertDialogBuilder(this@MainActivity).apply {
+                setTitle(getString(R.string.locked))
+                setView(inflate)
+                setPositiveButton(
+                    getString(R.string.sure)
+                ) { _, _ ->
+
+                    dailyPassword = inputPassword.text.toString()
+                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                        type = "application/zip"
+                        val backFileName =
+                            if (exportFormat == ExportFormat.JSON) "daily.zip" else "daily_text.zip"
+                        putExtra(Intent.EXTRA_TITLE, backFileName)
+                    }
+                    exportAllDailyLauncher.launch(intent)
+                }
+                setNeutralButton(getString(R.string.cancel), null).setCancelable(false).create()
+                show()
+            }
         }
     }
 
@@ -998,7 +1052,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     val dailyWithMediaList = mutableListOf<DailyWithMedia>()
-                    dailyList.forEach { dailyEntity ->
+                    selectedDailyList.forEach { dailyEntity ->
                         if (!processedFileList.contains(dailyEntity.dailyUUID)) {
                             processedFileList.add(dailyEntity.dailyUUID.toString())
                             val queryImageList = dailyViewModel.queryDailyImageByUuidToList(dailyEntity.dailyUUID.toString())
@@ -1037,70 +1091,130 @@ class MainActivity : AppCompatActivity() {
 
                     // 遍历每个每日条目并将其添加到 ZIP 文件中
                     dailyWithMediaList.forEach { dailyWithMedia ->
-                        // 将日记导出为 JSON 文件
-                        val jsonFile = File(tempDir, "${dailyWithMedia.dailyEntity.dailyUUID}.json")
-                        val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-                        jsonFile.writeText(gson.toJson(dailyWithMedia))
-                        val jsonParams = net.lingala.zip4j.model.ZipParameters().apply {
-                            isEncryptFiles = baseZipParameters.isEncryptFiles
-                            encryptionMethod = baseZipParameters.encryptionMethod
-                            aesKeyStrength = baseZipParameters.aesKeyStrength
-                            fileNameInZip = "${dailyWithMedia.dailyEntity.dailyUUID}.json"
-                        }
-                        zipFile.addFile(jsonFile, jsonParams)
+                        if (exportFormat == ExportFormat.JSON) {
+                            // 将日记导出为 JSON 文件
+                            val jsonFile =
+                                File(tempDir, "${dailyWithMedia.dailyEntity.dailyUUID}.json")
+                            val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+                            jsonFile.writeText(gson.toJson(dailyWithMedia))
+                            val jsonParams = net.lingala.zip4j.model.ZipParameters().apply {
+                                isEncryptFiles = baseZipParameters.isEncryptFiles
+                                encryptionMethod = baseZipParameters.encryptionMethod
+                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                                fileNameInZip = "${dailyWithMedia.dailyEntity.dailyUUID}.json"
+                            }
+                            zipFile.addFile(jsonFile, jsonParams)
 
-                        // 将关联图像导出到 ZIP 文件中的 Pictures 目录
-                        dailyWithMedia.imageList?.forEach { dailyImageEntity ->
-                            dailyImageEntity?.imagePath?.let { imagePath ->
-                                val imageFile = File(imagePath)
-                                if (imageFile.exists() && !processedImageFileList.contains(imageFile.name)) {
-                                    processedImageFileList.add(imageFile.name)
-                                    val imageParams =
-                                        net.lingala.zip4j.model.ZipParameters().apply {
-                                            isEncryptFiles = baseZipParameters.isEncryptFiles
-                                            encryptionMethod = baseZipParameters.encryptionMethod
-                                            aesKeyStrength = baseZipParameters.aesKeyStrength
-                                            fileNameInZip = "Pictures/${imageFile.name}"
-                                        }
-                                    zipFile.addFile(imageFile, imageParams)
+                            // 将关联图像导出到 ZIP 文件中的 Pictures 目录
+                            dailyWithMedia.imageList?.forEach { dailyImageEntity ->
+                                dailyImageEntity?.imagePath?.let { imagePath ->
+                                    val imageFile = File(imagePath)
+                                    if (imageFile.exists() && !processedImageFileList.contains(
+                                            imageFile.name
+                                        )
+                                    ) {
+                                        processedImageFileList.add(imageFile.name)
+                                        val imageParams =
+                                            net.lingala.zip4j.model.ZipParameters().apply {
+                                                isEncryptFiles = baseZipParameters.isEncryptFiles
+                                                encryptionMethod =
+                                                    baseZipParameters.encryptionMethod
+                                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                                                fileNameInZip = "Pictures/${imageFile.name}"
+                                            }
+                                        zipFile.addFile(imageFile, imageParams)
+                                    }
                                 }
                             }
-                        }
 
-                        // 将关联视频导出到 ZIP 文件中的 Movies 目录
-                        dailyWithMedia.videoList?.forEach { dailyVideoEntity ->
-                            dailyVideoEntity?.videoPath?.let { videoPath ->
-                                val videoFile = File(videoPath)
-                                if (videoFile.exists() && !processedVideoFileList.contains(videoFile.name)) {
-                                    processedVideoFileList.add(videoFile.name)
-                                    val videoParams =
-                                        net.lingala.zip4j.model.ZipParameters().apply {
-                                            isEncryptFiles = baseZipParameters.isEncryptFiles
-                                            encryptionMethod = baseZipParameters.encryptionMethod
-                                            aesKeyStrength = baseZipParameters.aesKeyStrength
-                                            fileNameInZip = "Movies/${videoFile.name}"
-                                        }
-                                    zipFile.addFile(videoFile, videoParams)
+                            // 将关联视频导出到 ZIP 文件中的 Movies 目录
+                            dailyWithMedia.videoList?.forEach { dailyVideoEntity ->
+                                dailyVideoEntity?.videoPath?.let { videoPath ->
+                                    val videoFile = File(videoPath)
+                                    if (videoFile.exists() && !processedVideoFileList.contains(
+                                            videoFile.name
+                                        )
+                                    ) {
+                                        processedVideoFileList.add(videoFile.name)
+                                        val videoParams =
+                                            net.lingala.zip4j.model.ZipParameters().apply {
+                                                isEncryptFiles = baseZipParameters.isEncryptFiles
+                                                encryptionMethod =
+                                                    baseZipParameters.encryptionMethod
+                                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                                                fileNameInZip = "Movies/${videoFile.name}"
+                                            }
+                                        zipFile.addFile(videoFile, videoParams)
+                                    }
                                 }
                             }
-                        }
 
-                        // 将关联音频导出到 ZIP 文件中的 Music 目录
-                        dailyWithMedia.audioList?.forEach { dailyAudioEntity ->
-                            dailyAudioEntity?.audioPath?.let { audioPath ->
-                                val audioFile = File(audioPath)
-                                if (audioFile.exists() && !processedAudioFileList.contains(audioFile.name)) {
-                                    processedAudioFileList.add(audioFile.name)
-                                    val audioParams =
-                                        net.lingala.zip4j.model.ZipParameters().apply {
-                                            isEncryptFiles = baseZipParameters.isEncryptFiles
-                                            encryptionMethod = baseZipParameters.encryptionMethod
-                                            aesKeyStrength = baseZipParameters.aesKeyStrength
-                                            fileNameInZip = "Music/${audioFile.name}"
-                                        }
-                                    zipFile.addFile(audioFile, audioParams)
+                            // 将关联音频导出到 ZIP 文件中的 Music 目录
+                            dailyWithMedia.audioList?.forEach { dailyAudioEntity ->
+                                dailyAudioEntity?.audioPath?.let { audioPath ->
+                                    val audioFile = File(audioPath)
+                                    if (audioFile.exists() && !processedAudioFileList.contains(
+                                            audioFile.name
+                                        )
+                                    ) {
+                                        processedAudioFileList.add(audioFile.name)
+                                        val audioParams =
+                                            net.lingala.zip4j.model.ZipParameters().apply {
+                                                isEncryptFiles = baseZipParameters.isEncryptFiles
+                                                encryptionMethod =
+                                                    baseZipParameters.encryptionMethod
+                                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                                                fileNameInZip = "Music/${audioFile.name}"
+                                            }
+                                        zipFile.addFile(audioFile, audioParams)
+                                    }
                                 }
                             }
+                        } else {
+                            val dailyEntity = dailyWithMedia.dailyEntity
+                            val dateTime =
+                                dailyEntity.dateTime ?: getCurrentDateTime()
+                            val dateString = getDateString(3, Date(dateTime))
+                            val txtFile = File(tempDir, "${dateString}.txt")
+                            val title = dailyEntity.title ?: ""
+                            val moodIndex = dailyEntity.moodIndex ?: 0
+                            val moodString =
+                                if (moodIndex <= 0) "" else getString(ConstUtil.moodLabelList[moodIndex - 1])
+                            val weatherIndex = dailyEntity.weatherIndex ?: 0
+                            val weatherString =
+                                if (weatherIndex <= 0) "" else getString(ConstUtil.weatherLabelList[weatherIndex - 1])
+
+                            val parts =
+                                listOf(dateString, getWeek(this@MainActivity, dateString, 3))
+                            val moodPart = moodString.takeIf { it.isNotBlank() }
+                            val weatherPart = weatherString.takeIf { it.isNotBlank() }
+
+                            val txtContent = buildString {
+                                if (title != "") appendLine(title)
+                                appendLine(
+                                    (parts + listOfNotNull(
+                                        moodPart,
+                                        weatherPart
+                                    )).joinToString(" ")
+                                )
+                                appendLine()
+                                appendLine("-----------------------------")
+                                appendLine()
+                                appendLine(dailyEntity.content)
+                                appendLine()
+                                appendLine("-----------------------------")
+                                appendLine()
+                            }
+
+                            txtFile.writeText(txtContent)
+                            val txtParams = net.lingala.zip4j.model.ZipParameters().apply {
+                                isEncryptFiles = baseZipParameters.isEncryptFiles
+                                encryptionMethod = baseZipParameters.encryptionMethod
+                                aesKeyStrength = baseZipParameters.aesKeyStrength
+                                fileNameInZip = "Text/${dateString}.txt"
+                            }
+
+                            zipFile.addFile(txtFile, txtParams)
                         }
                     }
 
@@ -1548,18 +1662,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 根据 Bitmap 的顶部颜色调整状态栏外观
+     *
+     * @param bitmap 用于分析的壁纸 Bitmap
+     */
     fun setLightStausBarsFromBitmap(bitmap: Bitmap) {
-        Palette.from(bitmap).maximumColorCount(7).setRegion(0, 0, bitmap.width, 100)
-            .generate { palette ->
-                val mostUsed = palette?.swatches?.maxByOrNull { it.population }
-                mostUsed?.let { swatch ->
-                    val isDark = ColorUtils.calculateLuminance(swatch.rgb) < 0.5
-                    val wallpaperAlpha = activityMainBinding.wallpaper.alpha
-                    val insetsController =
-                        WindowCompat.getInsetsController(window, window.decorView)
-                    insetsController.isAppearanceLightStatusBars = !isDark && wallpaperAlpha > 0.5f
-                }
-            }
+        StatusBarUtil.setLightStausBarsFromBitmap(bitmap, activityMainBinding.wallpaper, window)
     }
 
     companion object {
@@ -1870,6 +1979,7 @@ class MainActivity : AppCompatActivity() {
             if (currentFragment is DailyLikeFragment) {
                 currentFragment.clearSection()
                 enableLightStatusBarWithAppBar()
+                selectAllDailies()
             }
         }
     }
@@ -1910,6 +2020,10 @@ class MainActivity : AppCompatActivity() {
 
                 when (menuItem.itemId) {
                     R.id.item_select_all -> currentFragment.selectAllItems()
+
+                    R.id.item_export_daily -> {
+                        showExportBottomSheet()
+                    }
 
                     R.id.item_delete -> {
                         val moveInRecyclerBin = sharedPreferences!!
@@ -2076,9 +2190,18 @@ class MainActivity : AppCompatActivity() {
             val showItem =
                 if (currentFragment.isPinnedDisplay()) tempDailyList.isNotEmpty() &&
                         (onlyPinned || onlyUnpinned) else false
+            val pinned = tempDailyList.first().isPinned
 
-            activityMainBinding.contextualToolbar.menu.findItem(R.id.item_pinned)?.isVisible =
-                showItem
+            activityMainBinding.contextualToolbar.menu.findItem(R.id.item_pinned)
+                ?.let { itemPinned ->
+                    itemPinned.isVisible = showItem
+
+                    itemPinned.icon = if (pinned) ContextCompat.getDrawable(
+                        this, R.drawable.outline_toolbar_push_pin_off_24
+                    ) else ContextCompat.getDrawable(this, R.drawable.outline_toolbar_push_pin_24)
+                }
+
+            onSelectedDailyListListener?.onSelectedDailyListChanged(tempDailyList)
         }
     }
 
@@ -2106,9 +2229,77 @@ class MainActivity : AppCompatActivity() {
     /**
      * 获取当前可见的 Fragment
      *
-     * @return 当前显示的 Fragment，如果没有则返回 null
+     * @return 当前显示的 Fragment，如果没有则返回 null 刷新
      */
     private fun getVisibleFragment(): Fragment? {
         return navHostFragment.childFragmentManager.fragments.firstOrNull { it.isVisible }
+    }
+
+    /**
+     * 刷新已选中的日记列表
+     */
+    private fun refreshSelectedDailyList() {
+        setOnSelectedDailyListListener(object : SelectedDailyListListener {
+            override fun onSelectedDailyListChanged(selectedList: List<DailyEntity>) {
+                selectedDailyList = selectedList
+            }
+        })
+    }
+
+    /**
+     * 选择所有日记
+     */
+    fun selectAllDailies() {
+        onSelectedDailyListListener?.onSelectedDailyListChanged(dailyList)
+    }
+
+    /**
+     * 用于监听“已选中日记列表”变化的回调接口。
+     *
+     * 当选中状态发生更新（如添加、移除，或多选模式变化）时，该接口会被触发。
+     */
+    private interface SelectedDailyListListener {
+
+        /**
+         * 当已选中的日记列表发生变化时调用。
+         *
+         * @param selectedList 更新后的选中日记列表
+         */
+        fun onSelectedDailyListChanged(selectedList: List<DailyEntity>)
+    }
+
+    /**
+     * 注册一个用于监听“选中日记列表变化”的监听器。
+     *
+     * @param listener 要注册的监听器实例。
+     */
+    private fun setOnSelectedDailyListListener(listener: SelectedDailyListListener) {
+        onSelectedDailyListListener = listener
+    }
+
+    /**
+     * 显示导出的底部弹窗
+     */
+    private fun showExportBottomSheet() {
+        exportFormat = ExportFormat.JSON
+
+        bottomSheetDialog.setContentView(R.layout.bottomsheet_export_content)
+        bottomSheetDialog.show()
+
+        bottomSheetDialog.findViewById<MaterialButton>(R.id.btn_close)?.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.findViewById<MaterialButtonToggleGroup>(R.id.btn_toggle_group)
+            ?.addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (!isChecked) return@addOnButtonCheckedListener
+
+                exportFormat =
+                    if (checkedId == R.id.btn_export_txt) ExportFormat.TXT else ExportFormat.JSON
+            }
+
+        bottomSheetDialog.findViewById<MaterialButton>(R.id.btn_export)?.setOnClickListener {
+            exportDailyBackup()
+        }
     }
 }
