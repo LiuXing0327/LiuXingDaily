@@ -1,116 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     tools:context=".ui.look.LookDailyPagerFragment">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_view"
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/dp_8">
+        android:layout_height="wrap_content">
 
-        <ScrollView
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="@dimen/dp_16"
-            android:scrollbars="none">
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/dp_8">
 
-            <LinearLayout
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <com.google.android.material.textview.MaterialTextView
-                    style="?attr/textAppearanceHeadline5"
-                    android:id="@+id/tv_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/app_name"
-                    android:textStyle="bold"
-                    android:textSize="@dimen/sp_20" />
+                android:layout_height="match_parent"
+                android:padding="@dimen/dp_16"
+                android:scrollbars="none">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center">
+                    android:orientation="vertical">
 
                     <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tv_date_time"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/tv_title"
+                        style="?attr/textAppearanceHeadline5"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
+                        android:gravity="center"
                         android:text="@string/app_name"
-                        android:layout_marginEnd="@dimen/dp_8"
-                        android:textSize="@dimen/sp_14" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tv_daily_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_marginStart="@dimen/dp_8"
-                        android:layout_marginEnd="@dimen/dp_8"
-                        android:text="@string/app_name"
-                        android:textSize="@dimen/sp_14" />
-
-                    <ImageView
-                        android:contentDescription="@string/mood"
-                        android:id="@+id/iv_mood"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginStart="@dimen/dp_8"
-                        app:srcCompat="@drawable/ic_happy" />
-
-                    <ImageView
-                        android:contentDescription="@string/weather"
-                        android:id="@+id/iv_weather"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginStart="@dimen/dp_8"
-                        app:srcCompat="@drawable/baseline_wb_sunny_24" />
+                        android:textSize="@dimen/sp_20"
+                        android:textStyle="bold" />
 
                     <LinearLayout
-                        android:id="@+id/l_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:id="@+id/iv_label"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/dp_8"
-                            android:contentDescription="@string/label"
-                            android:src="@drawable/outline_label_24" />
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center">
 
                         <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/tv_label"
+                            android:id="@+id/tv_date_time"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:text="@string/label" />
+                            android:layout_gravity="center"
+                            android:layout_marginEnd="@dimen/dp_8"
+                            android:text="@string/app_name"
+                            android:textSize="@dimen/sp_14" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tv_daily_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="@dimen/dp_8"
+                            android:layout_marginEnd="@dimen/dp_8"
+                            android:text="@string/app_name"
+                            android:textSize="@dimen/sp_14" />
+
+                        <ImageView
+                            android:id="@+id/iv_mood"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="@dimen/dp_8"
+                            android:contentDescription="@string/mood"
+                            app:srcCompat="@drawable/ic_happy" />
+
+                        <ImageView
+                            android:id="@+id/iv_weather"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="@dimen/dp_8"
+                            android:contentDescription="@string/weather"
+                            app:srcCompat="@drawable/baseline_wb_sunny_24" />
+
+                        <LinearLayout
+                            android:id="@+id/l_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/iv_label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/dp_8"
+                                android:contentDescription="@string/label"
+                                android:src="@drawable/outline_label_24" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/tv_label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:text="@string/label" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
+                    <com.liuxing.daily.view.DailyTextView
+                        android:id="@+id/tv_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/dp_16"
+                        android:gravity="center_vertical"
+                        android:text="@string/app_name"
+                        android:textIsSelectable="true"
+                        android:textSize="@dimen/sp_16" />
+
                 </LinearLayout>
+            </ScrollView>
+        </com.google.android.material.card.MaterialCardView>
 
-                <com.liuxing.daily.view.DailyTextView
-                    android:id="@+id/tv_content"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/dp_16"
-                    android:text="@string/app_name"
-                    android:textSize="@dimen/sp_16" />
+    </androidx.core.widget.NestedScrollView>
 
-            </LinearLayout>
-        </ScrollView>
-    </com.google.android.material.card.MaterialCardView>
-
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
