@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.listitem.ListItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/dp_8">
+
+    <com.google.android.material.listitem.ListItemCardView
+        android:id="@+id/list_item_card_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:checkable="true"
+        android:clickable="true"
+        android:focusable="true"
+        app:swipeToPrimaryActionEnabled="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            tools:ignore="UseCompoundDrawables">
+
+            <ImageView
+                android:id="@+id/list_item_start_icon"
+                style="@style/Widget.Material3.ImageView.ListItem.LeadingIcon"
+                android:layout_width="@dimen/dp_40"
+                android:layout_height="@dimen/dp_40"
+                android:contentDescription="@string/image"
+                android:src="@drawable/baseline_notes_24" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/list_item_text"
+                    style="@style/Widget.Material3.TextView.ListItem.LabelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/list_item_supporting_Text"
+                    style="@style/Widget.Material3.TextView.ListItem.SupportingText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Supporting Text"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                app:thumbIcon="@drawable/baseline_toolbar_done_24"
+                android:id="@+id/list_item_switch"
+                style="@style/Widget.Material3.Switch.ListItem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.listitem.ListItemCardView>
+
+</com.google.android.material.listitem.ListItemLayout>
