@@ -23,6 +23,7 @@
                 android:layout_height="wrap_content" />
 
             <com.google.android.material.textview.MaterialTextView
+                android:layout_marginStart="@dimen/dp_5"
                 android:textAppearance="?attr/textAppearanceListItem"
                 android:ellipsize="marquee"
                 android:id="@+id/tv_special_thanks_name"
