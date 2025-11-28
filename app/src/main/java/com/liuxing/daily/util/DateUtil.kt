@@ -1,9 +1,13 @@
 package com.liuxing.daily.util
 
+import android.content.Context
 import com.liuxing.daily.MyApplication
 import com.liuxing.daily.R
 import java.text.SimpleDateFormat
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
@@ -14,7 +18,8 @@ object DateUtil {
         arrayOf(
             if (MyApplication.appContext.getString(R.string.daily) == "日记") "yyyy/MM/dd HH:mm" else "yyyy-MM-dd HH:mm",
             "yyyy-MM-dd",
-            "HH:mm"
+            "HH:mm",
+            "yyyy-MM-dd HH:mm"
         )
 
     // 获取当前日期
@@ -52,5 +57,42 @@ object DateUtil {
         val startLocalDate = LocalDate.parse(startDate)
         val endLocalDate = LocalDate.parse(endDate)
         return ChronoUnit.DAYS.between(startLocalDate, endLocalDate)
+    }
+
+    /**
+     * 获取星期
+     *
+     * @param context 上下文
+     * @return 星期
+     */
+    fun getWeek(context: Context, dateString: String, dateFormatIndex: Int = 0): String {
+        val (year, month, dayOfMonth) = parserDateString(dateString, dateFormatIndex)
+        val today = LocalDate.of(year, month, dayOfMonth)
+
+        return when (today.dayOfWeek) {
+            DayOfWeek.MONDAY -> context.getString(R.string.monday)
+            DayOfWeek.TUESDAY -> context.getString(R.string.tuesday)
+            DayOfWeek.WEDNESDAY -> context.getString(R.string.wednesday)
+            DayOfWeek.THURSDAY -> context.getString(R.string.thursday)
+            DayOfWeek.FRIDAY -> context.getString(R.string.friday)
+            DayOfWeek.SATURDAY -> context.getString(R.string.saturday)
+            DayOfWeek.SUNDAY -> context.getString(R.string.sunday)
+        }
+    }
+
+    /**
+     * 日期字符串解析
+     *
+     * @param dateString 日期字符串
+     * @param dateFormatIndex 日期格式索引
+     */
+    fun parserDateString(dateString: String, dateFormatIndex: Int): Triple<Int, Int, Int> {
+        val dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat[dateFormatIndex])
+        val dateTime = LocalDateTime.parse(dateString, dateTimeFormatter)
+
+        val year = dateTime.year
+        val month = dateTime.monthValue
+        val dayOfMonth = dateTime.dayOfMonth
+        return Triple(year, month, dayOfMonth)
     }
 }
