@@ -4,22 +4,17 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.TypedValue
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
-import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityUnlockBinding
 import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.util.HashUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.WindowUtil
 
 class UnlockActivity : AppCompatActivity() {
 
