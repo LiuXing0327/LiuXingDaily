@@ -43,14 +43,17 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -169,6 +172,15 @@ class EditDailyActivity : AppCompatActivity() {
         activityEditDailyBinding.inputContent.addTextChangedListener {
             onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
         }
+
+        // 默认隐藏标题输入框
+        val showTitle =
+            SharedPreferencesUtil.getBoolean(
+                this,
+                DailySettingsConst.TITLE_SWITCH_KEY,
+                false
+            ) || !getDailyTitle().isNullOrEmpty()
+        activityEditDailyBinding.inputTitleContainer?.setVisibility(showTitle)
     }
 
     /**
@@ -247,14 +259,22 @@ class EditDailyActivity : AppCompatActivity() {
      * 设置日记日期时间
      */
     private fun setDailyDateTime() {
-        activityEditDailyBinding.tvDateTime.text = getDailyDateTime()
+        val showWeek =
+            SharedPreferencesUtil.getBoolean(this, DailySettingsConst.WEEK_SWITCH_KEY, true)
+        val dailyDateTime = getDailyDateTime()
+        activityEditDailyBinding.tvDateTime.text = if (showWeek) "$dailyDateTime ${
+            DateUtil.getWeek(
+                this,
+                dailyDateTime
+            )
+        }" else dailyDateTime
     }
 
     /**
      * 设置日记字数
      */
     private fun setDailyCount() {
-        "${activityEditDailyBinding.inputTitle.text!!.length.plus(dailyTextInputEdit.getWordCount())}字".also {
+        "${activityEditDailyBinding.inputTitle.text!!.length.plus(dailyTextInputEdit.getWordCount())}${getString(R.string.word)}".also {
             activityEditDailyBinding.tvDailyCount.text = it
         }
     }

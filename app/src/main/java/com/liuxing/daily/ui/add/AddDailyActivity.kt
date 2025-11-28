@@ -42,14 +42,17 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
+import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
@@ -170,6 +173,11 @@ class AddDailyActivity : AppCompatActivity() {
         activityAddDailyBinding.inputContent.addTextChangedListener {
             onEnabledChangedListener?.onEnableChanged(contentIsNotNull())
         }
+
+        // 默认隐藏标题输入框
+        val showTitle =
+            SharedPreferencesUtil.getBoolean(this, DailySettingsConst.TITLE_SWITCH_KEY, false)
+        activityAddDailyBinding.inputTitleContainer?.setVisibility(showTitle)
 
         loadLabel()
     }
@@ -688,12 +696,31 @@ class AddDailyActivity : AppCompatActivity() {
     private fun setDateTime() {
         val isDailyFragment = intent.getBooleanExtra("isDailyFragment", true)
         val selectedYearMonthDay = intent.getStringExtra("selectedYearMonthDay")
-        activityAddDailyBinding.tvDateTime.text =
-            if (isDailyFragment || selectedYearMonthDay.isNullOrEmpty()) DateUtil.getDateString(
-                0,
+
+        val dateString = DateUtil.getDateString(
+            0,
+            DateUtil.getCurrentDate()
+        )
+
+        val selectedDateString = "$selectedYearMonthDay ${
+            DateUtil.getDateString(
+                2,
                 DateUtil.getCurrentDate()
             )
-            else "$selectedYearMonthDay ${DateUtil.getDateString(2, DateUtil.getCurrentDate())}"
+        }"
+        activityAddDailyBinding.tvDateTime.text =
+            if (isDailyFragment || selectedYearMonthDay.isNullOrEmpty()) "$dateString ${
+                DateUtil.getWeek(
+                    this,
+                    dateString
+                )
+            }"
+            else "$selectedYearMonthDay ${
+                DateUtil.getDateString(
+                    2,
+                    DateUtil.getCurrentDate()
+                )
+            }  ${DateUtil.getWeek(this, selectedDateString)}"
     }
 
     /**
