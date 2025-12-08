@@ -4,4 +4,18 @@
         <attr name="fullscreenTextColor" format="color" />
     </declare-styleable>
     <attr name="toolbarWithCloseButtonStyle" format="reference" />
+
+    <declare-styleable name="DailyMaterialSwitch">
+        <!-- 切换开关图标 -->
+        <attr name="toggle_switch_icon" format="boolean" />
+
+        <!-- 已勾选图标 -->
+        <attr name="checked_icon" format="reference" />
+
+        <!-- 未勾选图标 -->
+        <attr name="unchecked_icon" format="reference" />
+
+        <!-- 固定图标（不随选中状态变化） -->
+        <attr name="static_icon" format="reference" />
+    </declare-styleable>
 </resources>
