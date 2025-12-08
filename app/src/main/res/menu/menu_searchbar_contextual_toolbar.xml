@@ -18,6 +18,11 @@
         android:title="@string/export"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/item_label"
+        android:icon="@drawable/outline_toolbar_label_24"
+        android:title="@string/label"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/item_select_all"
         android:icon="@drawable/outline_toolbar_select_all_24"
         android:title="@string/select_all"
