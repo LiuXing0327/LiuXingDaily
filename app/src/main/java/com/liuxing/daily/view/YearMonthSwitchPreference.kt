@@ -11,8 +11,8 @@ import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
+import com.liuxing.daily.material.widget.DailyMaterialSwitch
 
 class YearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
     Preference(context, attrs) {
@@ -26,7 +26,7 @@ class YearMonthSwitchPreference(context: Context, attrs: AttributeSet) :
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
         val switchYearMonthDisplay =
-            holder.findViewById(R.id.switch_year_month_display) as MaterialSwitch
+            holder.findViewById(R.id.switch_year_month_display) as DailyMaterialSwitch
         val switchYearMonthPreference =
             holder.findViewById(R.id.switch_year_month_preference) as LinearLayout
 

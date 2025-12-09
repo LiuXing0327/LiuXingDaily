@@ -6,15 +6,13 @@ package com.liuxing.daily.view
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.widget.LinearLayout
+import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
-import androidx.preference.SwitchPreference
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
-import androidx.core.content.edit
+import com.liuxing.daily.material.widget.DailyMaterialSwitch
 
 /**
  * 自定义自动保存开关偏好
@@ -36,7 +34,7 @@ class AutoSaveDailySwitchPreference(context: Context, attrs: AttributeSet) :
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
         val switchAutoSaveDaily =
-            holder.findViewById(R.id.switch_auto_save_daily) as MaterialSwitch
+            holder.findViewById(R.id.switch_auto_save_daily) as DailyMaterialSwitch
 
         val switchAutoSavePreference =
             holder.findViewById(R.id.switch_auto_save_daily_preference) as LinearLayout
