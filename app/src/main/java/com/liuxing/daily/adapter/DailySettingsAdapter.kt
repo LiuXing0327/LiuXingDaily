@@ -17,6 +17,8 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.data.DailySettingsData
+import com.liuxing.daily.extension.toggleSwitchIcon
+import com.liuxing.daily.material.widget.DailyMaterialSwitch
 import com.liuxing.daily.util.LogUtil
 
 class DailySettingsAdapter(
@@ -32,10 +34,12 @@ class DailySettingsAdapter(
     class ViewHolder(itemView: View) : ListItemViewHolder(itemView) {
         private val textView: MaterialTextView = itemView.findViewById(R.id.list_item_text)
         private val cardView: MaterialCardView = itemView.findViewById(R.id.list_item_card_view)
-        private val switch: MaterialSwitch = itemView.findViewById(R.id.list_item_switch)
+        private val switch: DailyMaterialSwitch = itemView.findViewById(R.id.list_item_switch)
         private val startIcon: ImageView = itemView.findViewById(R.id.list_item_start_icon)
 
-        fun bind(data: DailySettingsData, onCheckedChange: (DailySettingsData, Boolean) -> Unit) {
+        fun bind(
+            data: DailySettingsData, onCheckedChange: (DailySettingsData, Boolean) -> Unit
+        ) {
             textView.text = data.text
             startIcon.setImageResource(data.iconResource)
 
