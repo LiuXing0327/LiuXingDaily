@@ -10,6 +10,7 @@ import com.liuxing.daily.entity.DailyAudioEntity
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.entity.DailyVideoEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DailyDao {
@@ -89,4 +90,6 @@ interface DailyDao {
     @Query("UPDATE DAILY_INFO SET IS_DELETED = NOT IS_DELETED WHERE DAILY_UUID IN (:uuids)")
     suspend fun toggleIsDelete(uuids: List<String>)
 
+    @Query("SELECT * FROM DAILY_INFO WHERE DATE_TIME BETWEEN :start AND :end ORDER BY ID DESC")
+    fun getByDateRange(start: Long, end: Long): Flow<List<DailyEntity>>
 }
