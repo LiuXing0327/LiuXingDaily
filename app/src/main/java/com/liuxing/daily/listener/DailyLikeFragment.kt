@@ -19,4 +19,6 @@ interface DailyLikeFragment {
     fun getSelectMode(): Boolean
 
     fun isPinnedDisplay(): Boolean
+
+    fun isLabelDisplay(): Boolean
 }
