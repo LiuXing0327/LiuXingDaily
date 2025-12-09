@@ -53,9 +53,9 @@
 
             </LinearLayout>
 
-            <com.google.android.material.materialswitch.MaterialSwitch
-                app:thumbIcon="@drawable/baseline_toolbar_done_24"
+            <com.liuxing.daily.material.widget.DailyMaterialSwitch
                 android:id="@+id/list_item_switch"
+                app:static_icon="@drawable/baseline_toolbar_done_24"
                 style="@style/Widget.Material3.Switch.ListItem"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
