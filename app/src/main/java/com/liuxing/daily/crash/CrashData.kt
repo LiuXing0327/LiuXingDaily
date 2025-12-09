@@ -39,14 +39,14 @@ fun parseCrashData(cause: Throwable): String {
     val crashData =
         CrashData(errorMessage = cause.message, stackTrace = LogUtil.getStackTraceString(cause))
 
-    return """
-        VERSION_CODE: ${crashData.versionCode}
-        VERSION_NAME: ${crashData.versionName}
-        MODEL: ${crashData.deviceData.model}
-        VERSION_RELEASE: ${crashData.deviceData.versionRelease}
-        VERSION_SDK: ${crashData.deviceData.versionSdk}
-        ERROR_MESSAGE: ${crashData.errorMessage}
-        STACK_TRACE:
-        ${crashData.stackTrace}
+    return """ 
+VERSION_CODE: ${crashData.versionCode}
+VERSION_NAME: ${crashData.versionName}
+MODEL: ${crashData.deviceData.model}
+VERSION_RELEASE: ${crashData.deviceData.versionRelease}
+VERSION_SDK: ${crashData.deviceData.versionSdk}
+ERROR_MESSAGE: ${crashData.errorMessage}
+STACK_TRACE:
+${crashData.stackTrace}
     """.trimIndent()
 }
