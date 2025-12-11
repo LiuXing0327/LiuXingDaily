@@ -8,7 +8,6 @@ import android.content.Context
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
-import com.google.android.material.R
 import com.google.android.material.color.MaterialColors
 
 /**
@@ -33,7 +32,8 @@ object HighlightUtil {
         var beginIndex = lowerText.indexOf(lowerKey)
         if (beginIndex == -1) return spannableString
 
-        val highlightBgColor = MaterialColors.getColor(context, R.attr.colorSecondaryContainer, 0)
+        val highlightBgColor =
+            MaterialColors.getColor(context, android.R.attr.textColorHighlight, 0)
 
         while (beginIndex != -1) {
             val endIndex = beginIndex + keyword.length
