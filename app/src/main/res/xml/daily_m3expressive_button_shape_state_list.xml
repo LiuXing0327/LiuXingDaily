@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:state_pressed="true"
+        app:shapeAppearance="@macro/m3_comp_icon_button_large_pressed_container_shape"/>
+    <item android:state_checkable="true" android:state_checked="true"
+        app:shapeAppearance="?attr/containerShapeChecked"/>
+    <item app:shapeAppearance="?attr/containerShapeDefault"/>
+</selector>
