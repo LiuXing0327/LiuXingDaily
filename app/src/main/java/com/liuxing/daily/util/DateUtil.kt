@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
@@ -21,6 +22,11 @@ object DateUtil {
             "HH:mm",
             "yyyy-MM-dd HH:mm"
         )
+
+    /**
+     * 年月日的起始索引和结束索引
+     */
+    val YMD_INDEX = 0 to 10
 
     // 获取当前日期
     fun getCurrentDate(): Date = Date()
@@ -94,5 +100,30 @@ object DateUtil {
         val month = dateTime.monthValue
         val dayOfMonth = dateTime.dayOfMonth
         return Triple(year, month, dayOfMonth)
+    }
+
+    /**
+     * yyyy-MM-dd 格式日期字符串转换为当前的起止时间戳（毫秒）。
+     *
+     * @param dateString 日期字符串。
+     * @return Pair(startMillis,endMillis)
+     */
+    fun dateStringToDayRangeMillis(dateString: String): Pair<Long, Long> {
+        val localDate = LocalDate.parse(dateString)
+        val zoneId = ZoneId.systemDefault()
+
+        // 当天 00:00 的 ZonedDateTime
+        val startOfDay = localDate.atStartOfDay(zoneId)
+        // 第二天 00:00 的 ZonedDateTime
+        val startOfNextDay = localDate.plusDays(1).atStartOfDay(zoneId)
+
+        // 转成 EpochMilli
+        val startMillis = startOfDay.toInstant().toEpochMilli()
+        val startNextMillis = startOfNextDay.toInstant().toEpochMilli()
+
+        // 第二天 00:00 - 1 毫秒，得到当天最后一毫秒
+        val endMillis = startNextMillis - 1L
+
+        return startMillis to endMillis
     }
 }
