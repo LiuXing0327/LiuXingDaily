@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/btn_number"
+    style="@style/Widget.流星日记.Material3Expressive.Button"
+    android:layout_width="@dimen/dp_70"
+    android:layout_height="@dimen/dp_70"
+    android:insetTop="@dimen/dp_0"
+    android:insetBottom="@dimen/dp_0"
+    android:text="n"
+    android:textSize="@dimen/sp_18"
+    app:backgroundTint="@color/lock_num_btn_bg_tint_color"
+    app:iconGravity="textStart" />
