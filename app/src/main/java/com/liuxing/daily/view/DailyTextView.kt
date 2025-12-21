@@ -31,6 +31,7 @@ import com.liuxing.daily.ui.image.LookDailyImageActivity
 import com.liuxing.daily.ui.video.LookDailyVideoActivity
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.HighlightUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
@@ -99,6 +100,11 @@ class DailyTextView : MaterialTextView {
     private var originalVideoList: List<String> = emptyList()
     private var originalAudioList: List<String> = emptyList()
 
+    /**
+     * 搜索关键词
+     */
+    private var keyword = ""
+
     constructor(context: Context) : super(context) {
         this.context = context
         initialize()
@@ -138,12 +144,14 @@ class DailyTextView : MaterialTextView {
         text: SpannableString,
         imagePaths: List<String> = emptyList(),
         videoPaths: List<String> = emptyList(),
-        audioPaths: List<String> = emptyList()
+        audioPaths: List<String> = emptyList(),
+        keyword: String = ""
     ) {
         originalText = text
         originalImageList = imagePaths.toList()
         originalVideoList = videoPaths.toList()
         originalAudioList = audioPaths.toList()
+        this.keyword = keyword
 
         refreshIfNeeded()
     }
@@ -204,7 +212,14 @@ class DailyTextView : MaterialTextView {
         newVideoPathList: List<String>,
         newAudioPathList: List<String>
     ) {
-        val spannableString = SpannableStringBuilder(text)
+        val spannableString =
+            SpannableStringBuilder(
+                HighlightUtil.highlightKeyword(
+                    context,
+                    text.toString(),
+                    keyword
+                )
+            )
         val replacements = mutableListOf<Triple<Int, Int, SpannableString>>()
 
         newImagePathList.forEachIndexed { index, path ->
