@@ -13,11 +13,9 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.listitem.ListItemViewHolder
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.data.DailySettingsData
-import com.liuxing.daily.extension.toggleSwitchIcon
 import com.liuxing.daily.material.widget.DailyMaterialSwitch
 import com.liuxing.daily.util.LogUtil
 
