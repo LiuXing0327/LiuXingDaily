@@ -2,25 +2,32 @@ package com.liuxing.daily.ui.lock
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.findNavController
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityUnlockBinding
-import com.liuxing.daily.ui.main.MainActivity
-import com.liuxing.daily.util.HashUtil
-import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.ui.lock.UnlockActivity.Companion.sharedPreferences
+import com.liuxing.daily.ui.settings.SettingsConst
 import com.liuxing.daily.util.ThemeUtil
 
 class UnlockActivity : AppCompatActivity() {
 
     private lateinit var unlockBinding: ActivityUnlockBinding
-    private var sharedPreferences: SharedPreferences? = null
-    private var appPassword: String = ""
+
+    val appLockIndex by lazy {
+        sharedPreferences?.getInt(SettingsConst.APP_LOCK_OPTIONS_INDEX_KEY, 0)
+    }
+
+    companion object {
+        private var sharedPreferences: SharedPreferences? = null
+        val appPassword by lazy {
+            sharedPreferences?.getString("app_password", "").toString()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,9 +48,6 @@ class UnlockActivity : AppCompatActivity() {
      */
     private fun initData() {
         initSharePreference()
-        getAppPassword()
-        changeButtonState()
-        unlock()
     }
 
     /**
@@ -53,39 +57,18 @@ class UnlockActivity : AppCompatActivity() {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
     }
 
-    /**
-     * 获取应用密码
-     */
-    private fun getAppPassword() {
-        appPassword = sharedPreferences?.getString("app_password", "").toString()
+    override fun onStart() {
+        super.onStart()
+        changeFragmentWithIndex()
     }
 
-    /**
-     * 通过监听文本更改，设置按钮是否启用
-     */
-    private fun changeButtonState() {
-        unlockBinding.passwordLayout.inputPassword.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                unlockBinding.btnUnlock.isEnabled = HashUtil.hashSHA256(s.toString()) == appPassword
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-
-            }
-
-        })
-    }
-
-    /**
-     * 解除锁定
-     */
-    private fun unlock() {
-        unlockBinding.btnUnlock.setOnClickListener {
-            IntentUtil.startActivity(this, MainActivity::class.java, mapOf("lock" to false))
-            finish()
+    private fun changeFragmentWithIndex() {
+        val navController = findNavController(R.id.fragmentContainerView)
+        if (appLockIndex == 1) {
+            navController.navigate(R.id.passwordFragment)
+        } else {
+            navController.navigate(R.id.pinFragment)
         }
     }
+
 }
