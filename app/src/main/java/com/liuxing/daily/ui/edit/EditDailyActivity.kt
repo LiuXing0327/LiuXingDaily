@@ -1141,9 +1141,14 @@ class EditDailyActivity : AppCompatActivity() {
      * 保存日记
      */
     private fun saveDaily() {
+        val singlePasswordSha256 = HashUtil.hashSHA256(singlePassword.toString())
         // 保存更新后日记内容到SharedPreferences
         getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE).edit {
             putString("daily_update_content_$dailyUuid", dailyTextInputEdit.text.toString())
+            if (getDailySinglePassword() != singlePasswordSha256) putString(
+                "daily_update_single_password_$dailyUuid",
+                singlePasswordSha256
+            )
         }
         isSystemExit = false
         dailyViewModel.updateDaily(
@@ -1153,7 +1158,7 @@ class EditDailyActivity : AppCompatActivity() {
                 content = dailyTextInputEdit.text.toString(),
                 dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 0),
                 backgroundColorIndex = backgroundColorIndex,
-                singlePassword = HashUtil.hashSHA256(singlePassword.toString()),
+                singlePassword = singlePasswordSha256,
                 moodIndex = moodIndex,
                 weatherIndex = weatherIndex,
                 dailyUUID = dailyUuid,
