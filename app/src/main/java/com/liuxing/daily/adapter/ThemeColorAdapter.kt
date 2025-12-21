@@ -19,6 +19,7 @@ import com.google.android.material.color.MaterialColors
 import com.liuxing.daily.R
 import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.extension.setVisibility
+import com.liuxing.daily.ui.appearance.AppearanceConst
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeColor
@@ -48,6 +49,11 @@ class ThemeColorAdapter(
         holder: ThemeColorAdapter.ViewHolder,
         @SuppressLint("RecyclerView") position: Int
     ) {
+        val dynamicColorChecked = SharedPreferencesUtil.getBoolean(
+            context, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false
+        )
+        holder.themeColorCard.isEnabled = !dynamicColorChecked
+
         val themeColorData = themeColorList[position]
         selectedPosition = SharedPreferencesUtil.getInt(context, "theme_color_id", 0)
 
