@@ -6,7 +6,7 @@
 ## Screenshot
 <div>
 <img src="screenshot/2.9.1/V2.9.1V.gif" width="30%"/>
- <img src="screenshot/2.9.1/V2.9.1V.gif2" width="30%"/>
+ <img src="screenshot/2.9.1/V2.9.1V2.gif" width="30%"/>
  <img src="screenshot/2.1/V2.1Screenshot_20241106_220455.png" width="30%"/>
 </div>
 
