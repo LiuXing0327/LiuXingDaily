@@ -298,4 +298,5 @@ class RecyclerBinFragment : Fragment(), DailyLikeFragment {
     override fun selectAllItems() = recyclerBinAdapter.selectAllItems()
     override fun getSelectMode(): Boolean = recyclerBinAdapter.selectMode
     override fun isPinnedDisplay(): Boolean = false
+    override fun isLabelDisplay(): Boolean = false
 }
