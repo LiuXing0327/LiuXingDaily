@@ -3,6 +3,7 @@ package com.liuxing.daily.ui.look
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.SpannableString
 import android.text.util.Linkify
 import android.view.LayoutInflater
 import android.view.View
@@ -22,6 +23,7 @@ import com.liuxing.daily.util.ConstUtil.imageRegex
 import com.liuxing.daily.util.ConstUtil.videoRegex
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.HighlightUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.view.DailyTextView
@@ -60,6 +62,7 @@ class LookDailyPagerFragment : Fragment() {
     private lateinit var binding: FragmentLookDailyPagerBinding
     private var backgroundColorIndex: Int? = 0
     private var singlePassword: String? = ""
+    private var tempSinglePassword: String? = ""
     private var moodIndex: Int? = 0
     private var weatherIndex: Int? = 0
     private var dailyUuid: String? = ""
@@ -145,18 +148,25 @@ class LookDailyPagerFragment : Fragment() {
     fun updateSinglePassword(singlePassword: String?) {
         if (singlePassword != this.singlePassword) {
             this.singlePassword = singlePassword
+            this.tempSinglePassword = singlePassword
             binding.tvTitle.text = "***"
+            dailyTextView.setDailyText(SpannableString("***"))
             dailyTextView.showAllText = false
-            dailyTextView.setDailyText("***")
         } else {
+            this.singlePassword = ""
+            this.tempSinglePassword = ""
             binding.tvTitle.text = title
-            dailyTextView.showAllText = true
             dailyTextView.setDailyText(
-                content.toString(),
+                HighlightUtil.highlightKeyword(
+                    requireContext(), content.toString(),
+                    LookDailyActivity.searchQuery
+                ),
                 imageList.toList(),
                 videoList.toList(),
-                audioList.toList()
+                audioList.toList(),
+                LookDailyActivity.searchQuery
             )
+            dailyTextView.showAllText = true
         }
     }
 
@@ -214,7 +224,7 @@ class LookDailyPagerFragment : Fragment() {
         val textSize = sharedPreferences!!.getFloat("text_font_size_preference", 16F)
         binding.tvTitle.textSize = textSize + 4
         dailyTextView.textSize = textSize
-        if (!singlePassword.isNullOrEmpty()) {
+        if (!singlePassword.isNullOrEmpty() && singlePassword != tempSinglePassword) {
             binding.tvTitle.text = "***"
             dailyTextView.showAllText = false
             binding.ivMood.visibility = View.GONE
@@ -264,10 +274,15 @@ class LookDailyPagerFragment : Fragment() {
 
             //  dailyTextView.text = MarkdownParser.parseMarkdown(content.toString())
             dailyTextView.setDailyText(
-                content.toString(),
+                HighlightUtil.highlightKeyword(
+                    requireContext(),
+                    content.toString(),
+                    LookDailyActivity.searchQuery
+                ),
                 imageList.toList(),
                 videoList.toList(),
-                audioList.toList()
+                audioList.toList(),
+                LookDailyActivity.searchQuery
             )
 
             binding.ivMood.visibility = moodIndex.let {
@@ -570,7 +585,7 @@ class LookDailyPagerFragment : Fragment() {
                 )
 
                 dailyTextView.setMediaPathList(
-                    content!!,
+                    SpannableString(content!!),
                     this.imageList.toList(),
                     this.videoList.toList(),
                     this.audioList.toList()
@@ -587,7 +602,7 @@ class LookDailyPagerFragment : Fragment() {
                 )
 
                 dailyTextView.setMediaPathList(
-                    content!!,
+                    SpannableString(content!!),
                     this.imageList.toList(),
                     this.videoList.toList(),
                     this.audioList.toList()
@@ -604,7 +619,7 @@ class LookDailyPagerFragment : Fragment() {
                 )
 
                 dailyTextView.setMediaPathList(
-                    content!!,
+                    SpannableString(content!!),
                     this.imageList.toList(),
                     this.videoList.toList(),
                     this.audioList.toList()

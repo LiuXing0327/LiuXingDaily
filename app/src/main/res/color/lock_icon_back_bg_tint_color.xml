@@ -1,0 +1,10 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_pressed="true"
+        android:color="?attr/colorError"/>
+
+    <item
+        android:state_pressed="false"
+        android:color="?attr/colorErrorContainer"/>
+
+</selector>

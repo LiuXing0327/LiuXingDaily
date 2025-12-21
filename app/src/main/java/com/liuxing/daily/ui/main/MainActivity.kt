@@ -46,6 +46,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -61,6 +62,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.DailySearchAdapter
+import com.liuxing.daily.adapter.SelectDailyLabelAdapter
 import com.liuxing.daily.databinding.ActivityMainBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
@@ -72,11 +74,14 @@ import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.markdown.color.MarkdownColor
 import com.liuxing.daily.ui.add.AddDailyActivity
+import com.liuxing.daily.ui.appearance.AppearanceConst
 import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.daily.DailyFragment
 import com.liuxing.daily.ui.label.DailyLabelActivity
 import com.liuxing.daily.ui.lock.UnlockActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.main.MainActivity.Companion.isCalendarQueryDailyFragment
+import com.liuxing.daily.ui.main.MainActivity.Companion.isDailyFragment
 import com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.BitmapUtil
@@ -139,6 +144,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var createLabel: MenuItem
     private var dailyLabelList: List<DailyLabelEntity> = ArrayList()
     private var currentThemeColorId: Int = 0
+
+    /**
+     * 当前动态取色开关值，默认为 false.
+     *
+     * 在 [onCreate] 获取存储的值。
+     *
+     * 当执行 [onRestart] 时 配合 [currentThemeColorId] 来决定是否重新应用主题，并使用 [recreate] 重建 Activity。
+     */
+    private var currentDynamicColorChecked = false
     private var dialog: AlertDialog? = null
     private lateinit var navHostFragment: NavHostFragment
 
@@ -191,6 +205,11 @@ class MainActivity : AppCompatActivity() {
         JSON, TXT
     }
 
+    /**
+     * 搜索关键词
+     */
+    private var searchQuery = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -208,6 +227,8 @@ class MainActivity : AppCompatActivity() {
             insets
         }
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
+        currentDynamicColorChecked =
+            SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
         MarkdownColor.init(this)
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
@@ -518,6 +539,7 @@ class MainActivity : AppCompatActivity() {
                 val intent = Intent()
                 intent.setClass(this@MainActivity, LookDailyActivity::class.java)
                 intent.putExtra("POSITION", position)
+                intent.putExtra("search_query", searchQuery)
                 startActivity(intent)
             }
 
@@ -561,6 +583,7 @@ class MainActivity : AppCompatActivity() {
 
         activityMainBinding.searchView.editText.addTextChangedListener {
             loadSearchDailyData(it.toString())
+            searchQuery = it.toString()
         }
 
         // 点击搜索视图菜单搜索事件
@@ -1242,6 +1265,8 @@ class MainActivity : AppCompatActivity() {
 
                     withContext(Dispatchers.Main) {
                         dialog.dismiss()
+                        bottomSheetDialog.dismiss()
+                        hideContextualToolbar()
                         SnackbarUtil.showSnackbarShort(
                             activityMainBinding.fragmentContainerView,
                             getString(R.string.export_success)
@@ -1269,6 +1294,8 @@ class MainActivity : AppCompatActivity() {
                     R.id.dailyFragment -> {
                         isDailyFragment = true
                         isRecyclerBinFragment = false
+                        isCalendarQueryDailyFragment = false
+                        showAddDailyButton()
                         onEnabledChangedListener?.onEnableChanged(false)
                         View.VISIBLE
                     }
@@ -1276,6 +1303,8 @@ class MainActivity : AppCompatActivity() {
                     R.id.calendarQueryDailyFragment -> {
                         isDailyFragment = false
                         isRecyclerBinFragment = false
+                        isCalendarQueryDailyFragment = true
+                        showAddDailyButton()
                         onEnabledChangedListener?.onEnableChanged(true)
                         View.VISIBLE
                     }
@@ -1283,6 +1312,7 @@ class MainActivity : AppCompatActivity() {
                     R.id.recyclerBinFragment -> {
                         isDailyFragment = false
                         isRecyclerBinFragment = true
+                        isCalendarQueryDailyFragment = false
                         onEnabledChangedListener?.onEnableChanged(true)
                         View.GONE
                     }
@@ -1290,9 +1320,11 @@ class MainActivity : AppCompatActivity() {
                     else -> {
                         isDailyFragment = false
                         isRecyclerBinFragment = false
+                        isCalendarQueryDailyFragment = false
                         View.GONE
                     }
                 }
+            hideContextualToolbar()
         }
     }
 
@@ -1340,6 +1372,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 检查状态栏颜色
+     */
     fun checkStatusBarColor() {
         val background = activityMainBinding.appBarLayout.background
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
@@ -1358,6 +1393,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 获取壁纸的 Bitmap，并使用 [BitmapUtil.check] 检测是否有效。
+     *
+     * @return 有效时返回 bitmap，
+     *         无效时返回 null。
+     */
     fun getBitmap(): Bitmap? {
         BitmapUtil.check { bitmap }.let {
             return if (it) {
@@ -1368,6 +1409,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 显示隐私政策的对话框。
+     */
     private fun showPolicyDialog() {
         val webLayout = layoutInflater.inflate(R.layout.web_view_layout, null)
         val webView = webLayout.findViewById<WebView>(R.id.web_view)
@@ -1526,6 +1570,9 @@ class MainActivity : AppCompatActivity() {
         dailyViewModel.queryAllDaily().observe(this, object : Observer<List<DailyEntity>> {
             override fun onChanged(value: List<DailyEntity>) {
                 dailyList = value
+
+                mainViewModel.setDailyList(dailyList)
+
                 loadSearchDailyData(activityMainBinding.searchView.text.toString())
                 var dailyTextSize = 0
                 if (isUpdating) return
@@ -1654,6 +1701,9 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding.wallpaper.alpha = wallpaperAlpha
     }
 
+    /**
+     * 设置壁纸和状态栏。
+     */
     private fun setWallpaperAndStausBar() {
         if (File(ConstUtil.WALLPAPER_PATH).exists()) {
             bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
@@ -1672,8 +1722,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        /**
+         * 是否是 [DailyFragment]，默认是。
+         */
         private var isDailyFragment: Boolean = true
+
+        /**
+         * 是否是 [RecyclerBinFragment]，默认不是。
+         */
         private var isRecyclerBinFragment: Boolean = false
+
+        /**
+         * 是否是 [com.liuxing.daily.ui.calendar.CalendarQueryDailyFragment]，默认不是。
+         */
+        private var isCalendarQueryDailyFragment = false
     }
 
     /**
@@ -1931,7 +1993,9 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         val themeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
-        if (themeColorId == currentThemeColorId) return
+        val dynamicColorChecked =
+            SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
+        if (themeColorId == currentThemeColorId && dynamicColorChecked == currentDynamicColorChecked) return
         ThemeUtil.applyTheme(this)
         recreate()
     }
@@ -1943,6 +2007,8 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding.searchBar.expand(
             activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
         )
+
+        activityMainBinding.floatingActionButton.hide()
 
         lifecycleScope.launch {
             delay(300)
@@ -1981,6 +2047,7 @@ class MainActivity : AppCompatActivity() {
                 enableLightStatusBarWithAppBar()
                 selectAllDailies()
             }
+            showAddDailyButton()
         }
     }
 
@@ -2110,6 +2177,10 @@ class MainActivity : AppCompatActivity() {
                             )
                         }
                     }
+
+                    R.id.item_label -> {
+                        setSelectedDailiesLabel()
+                    }
                 }
             }
             true
@@ -2187,14 +2258,14 @@ class MainActivity : AppCompatActivity() {
 
             val onlyPinned = tempDailyList.all { it.isPinned }
             val onlyUnpinned = tempDailyList.all { !it.isPinned }
-            val showItem =
+            val showPinnedItem =
                 if (currentFragment.isPinnedDisplay()) tempDailyList.isNotEmpty() &&
                         (onlyPinned || onlyUnpinned) else false
             val pinned = tempDailyList.first().isPinned
 
             activityMainBinding.contextualToolbar.menu.findItem(R.id.item_pinned)
                 ?.let { itemPinned ->
-                    itemPinned.isVisible = showItem
+                    itemPinned.isVisible = showPinnedItem
 
                     itemPinned.icon = if (pinned) ContextCompat.getDrawable(
                         this, R.drawable.outline_toolbar_push_pin_off_24
@@ -2202,6 +2273,10 @@ class MainActivity : AppCompatActivity() {
                 }
 
             onSelectedDailyListListener?.onSelectedDailyListChanged(tempDailyList)
+
+            val showLabelItem = currentFragment.isLabelDisplay()
+            val itemLabel = activityMainBinding.contextualToolbar.menu.findItem(R.id.item_label)
+            itemLabel.isVisible = showLabelItem
         }
     }
 
@@ -2300,6 +2375,98 @@ class MainActivity : AppCompatActivity() {
 
         bottomSheetDialog.findViewById<MaterialButton>(R.id.btn_export)?.setOnClickListener {
             exportDailyBackup()
+        }
+    }
+
+    /**
+     * 设置选中日记的标签。
+     */
+    private fun setSelectedDailiesLabel() {
+        // 如果不是 DailyFragment ，则不执行任何操作。
+        if (!isDailyFragment) {
+            return
+        }
+
+        showSelectDailyLabelDialog(selectedDailyList)
+    }
+
+    /**
+     * 显示选择日记标签的对话框。
+     *
+     * 当 onPositive/onViewCreated 执行时，会调用 [updateDailiesLabel] 更新日记标签。
+     *
+     * @param selectedItems 已选中的日记项列表。
+     */
+    private fun showSelectDailyLabelDialog(selectedItems: List<DailyEntity>) {
+        // 当前选中的标签
+        var currentSelectedLabel = ""
+
+        dialog = MaterialAlertDialogUtil.showDialog(
+            this,
+            getString(R.string.label),
+            layoutRes = R.layout.dialog_select_daily_label_layout,
+            positiveText = getString(R.string.not_add),
+            onPositive = {
+                updateDailiesLabel(selectedItems, currentSelectedLabel)
+
+                hideContextualToolbar()
+            },
+            negativeText = getString(R.string.new_label),
+            onNegative = {
+                showLabelInputDialog()
+            },
+            neutralText = getString(R.string.cancel),
+            onViewCreated = { view, _ ->
+                val labelListView = view.findViewById<RecyclerView>(R.id.recycler_view)
+
+                labelListView.layoutManager = LinearLayoutManager(this)
+
+                val labelMap = dailyLabelList.mapNotNull {
+                    it.label
+                }
+                val selectDailyLabelAdapter = SelectDailyLabelAdapter(labelMap)
+                labelListView.adapter = selectDailyLabelAdapter
+
+                selectDailyLabelAdapter.setOnItemClickListener(object : OnItemClickListener {
+                    override fun onItemClick(position: Int) {
+                        currentSelectedLabel = labelMap[position]
+                        updateDailiesLabel(selectedItems, currentSelectedLabel)
+
+                        dialog?.dismiss()
+
+                        hideContextualToolbar()
+                    }
+                })
+            })
+    }
+
+    /**
+     * 更新选中日记的标签。
+     *
+     * @param selectedItems 已选中的日记项列表。
+     * @param currentSelectedLabel 当前选中的标签
+     */
+    private fun updateDailiesLabel(
+        selectedItems: List<DailyEntity>, currentSelectedLabel: String
+    ) {
+        selectedItems.forEach { entity ->
+            dailyViewModel.updateDaily(
+                entity.copy(
+                    dailyLabel = currentSelectedLabel
+                )
+            )
+
+        }
+    }
+
+    /**
+     * 显示添加日记的按钮。
+     *
+     * 仅在当前 Fragment 是 [isDailyFragment] 和 [isCalendarQueryDailyFragment] 时，显示按钮。
+     */
+    fun showAddDailyButton() {
+        if (isDailyFragment || isCalendarQueryDailyFragment) {
+            activityMainBinding.floatingActionButton.show()
         }
     }
 }

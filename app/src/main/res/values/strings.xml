@@ -205,4 +205,10 @@
     <string name="daily_settings">日记设置</string>
     <string name="management_diary_related_functions">管理日记相关功能</string>
     <string name="week">星期</string>
+    <string name="dynamic_color">动态取色</string>
+    <string name="pin">PIN 码</string>
+    <string name="the_pin_is_empty">PIN 码为空</string>
+    <string name="at_least_4_digits">至少4位数</string>
+    <string name="enter_pin">输入 PIN 码</string>
+    <string name="dynamic_color_supporting_string">根据壁纸色调或所选颜色自动配色</string>
 </resources>

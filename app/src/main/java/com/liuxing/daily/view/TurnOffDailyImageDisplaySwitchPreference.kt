@@ -6,16 +6,14 @@ package com.liuxing.daily.view
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.widget.LinearLayout
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
-import androidx.preference.SwitchPreference
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
 import androidx.core.content.edit
 import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.material.widget.DailyMaterialSwitch
 
 /**
  * 关闭日记列表图像显示，使用自定义壁纸时获取更好的体验
@@ -37,7 +35,7 @@ class TurnOffDailyImageDisplaySwitchPreference(context: Context, attrs: Attribut
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
         val switchTurnoffDailyImageDisplay =
-            holder.findViewById(R.id.switch_daily_image_display) as MaterialSwitch
+            holder.findViewById(R.id.switch_daily_image_display) as DailyMaterialSwitch
 
         val switchImageDisplayPreference =
             holder.findViewById(R.id.turn_off_daily_image_display_preference) as LinearLayout

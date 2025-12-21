@@ -11,8 +11,8 @@ import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceViewHolder
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.liuxing.daily.R
+import com.liuxing.daily.material.widget.DailyMaterialSwitch
 
 class DeleteToRecyclerBinSwitchPreference(
     context: Context,
@@ -27,7 +27,7 @@ class DeleteToRecyclerBinSwitchPreference(
         super.onBindViewHolder(holder)
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val switchDeleteToRecyclerBin =
-            holder.findViewById(R.id.switch_delete_to_recycler_bin_daily) as MaterialSwitch
+            holder.findViewById(R.id.switch_delete_to_recycler_bin_daily) as DailyMaterialSwitch
         val switchDeleteToRecyclerBinDailyPreference =
             holder.findViewById(R.id.switch_delete_to_recycler_bin_daily_preference) as LinearLayout
 

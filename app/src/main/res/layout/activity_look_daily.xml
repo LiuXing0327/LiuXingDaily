@@ -45,4 +45,64 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
+        style="?attr/floatingToolbarVibrantStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/floating_toolbar_layout"
+        android:layout_gravity="center|bottom"
+        android:layout_margin="@dimen/dp_16"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior">
+
+        <com.google.android.material.overflow.OverflowLinearLayout
+            android:id="@+id/floating_toolbar_child"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_delete"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/delete"
+                app:icon="@drawable/outline_delete_24"
+                app:layout_overflowIcon="@drawable/outline_delete_24"
+                app:layout_overflowText="@string/delete" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_edit"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/edit"
+                app:icon="@drawable/outline_edit_vd_24"
+                app:layout_overflowIcon="@drawable/outline_edit_vd_24"
+                app:layout_overflowText="@string/edit" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_copy"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/m_copy"
+                app:icon="@drawable/outline_content_copy_24"
+                app:layout_overflowIcon="@drawable/outline_content_copy_24"
+                app:layout_overflowText="@string/m_copy" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/floating_toolbar_button_unlock"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/unlocked"
+                app:icon="@drawable/outline_lock_24"
+                app:layout_overflowIcon="@drawable/outline_lock_24"
+                app:layout_overflowText="@string/unlocked" />
+
+        </com.google.android.material.overflow.OverflowLinearLayout>
+
+    </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

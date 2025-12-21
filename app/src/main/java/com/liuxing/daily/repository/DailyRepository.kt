@@ -8,6 +8,8 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyImageEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyVideoEntity
+import com.liuxing.daily.util.DateUtil
+import kotlinx.coroutines.flow.Flow
 
 class DailyRepository(application: Application) {
 
@@ -111,5 +113,10 @@ class DailyRepository(application: Application) {
 
     suspend fun toggleIsDelete(uuids: List<String>) {
         dailyDao.toggleIsDelete(uuids)
+    }
+
+    fun getByDateRange(dateString: String): Flow<List<DailyEntity>> {
+        val (start, end) = DateUtil.dateStringToDayRangeMillis(dateString)
+        return dailyDao.getByDateRange(start, end)
     }
 }

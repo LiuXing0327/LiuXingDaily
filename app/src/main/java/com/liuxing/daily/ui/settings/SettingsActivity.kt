@@ -1,12 +1,14 @@
 package com.liuxing.daily.ui.settings
 
 import android.app.ActivityOptions
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.view.MenuItem
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -34,6 +37,7 @@ import com.liuxing.daily.extension.bindPreferenceToActivity
 import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.OpenSourceActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
+import com.liuxing.daily.ui.appearance.AppearanceConst
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
 import com.liuxing.daily.ui.datamanagement.DataManagementActivity
 import com.liuxing.daily.ui.privacy.PrivacyActivity
@@ -58,6 +62,15 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var activityBinding: SettingsActivityBinding
     private var currentThemeColorId: Int = 0
+
+    /**
+     * 当前动态取色开关值，默认为 false.
+     *
+     * 在 [onCreate] 获取存储的值。
+     *
+     * 当执行 [onRestart] 时 配合 [currentThemeColorId] 来决定是否重新应用主题，并使用 [recreate] 重建 Activity。
+     */
+    private var currentDynamicColorChecked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,12 +97,16 @@ class SettingsActivity : AppCompatActivity() {
         setSupportActionBar(activityBinding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
+        currentDynamicColorChecked =
+            SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
     }
 
     override fun onRestart() {
         super.onRestart()
         val themeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
-        if (themeColorId == currentThemeColorId) return
+        val dynamicColorChecked =
+            SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
+        if (themeColorId == currentThemeColorId && currentDynamicColorChecked == dynamicColorChecked) return
         ThemeUtil.applyTheme(this)
         recreate()
     }
@@ -142,7 +159,11 @@ class SettingsActivity : AppCompatActivity() {
 
             val appLockPreference = findPreference<Preference>("app_lock_preference")
             appLockOptionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
-            val options = arrayOf(getString(R.string.close), getString(R.string.enabled))
+            val options = arrayOf(
+                getString(R.string.close),
+                getString(R.string.password),
+                getString(R.string.pin)
+            )
             appLockPreference?.summary = options[appLockOptionsIndex]
             appLockPreference?.setOnPreferenceClickListener {
                 appLockOptionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
@@ -381,32 +402,96 @@ class SettingsActivity : AppCompatActivity() {
             MaterialAlertDialogBuilder(requireContext()).apply {
                 setTitle(R.string.app_lock)
                 setSingleChoiceItems(options, appLockOptionsIndex) { dialog, which ->
-                    if (which == 1) {
-                        MaterialAlertDialogBuilder(requireContext()).apply {
-                            val view = layoutInflater.inflate(
-                                R.layout.dialog_input_password_layout,
-                                null
-                            )
-                            val inputPassword =
-                                view.findViewById<TextInputEditText>(R.id.input_password)
-                            setTitle(getString(R.string.password))
-                            setView(view)
-                            setPositiveButton(
-                                getString(R.string.sure)
-                            ) { _, _ ->
-                                if (!inputPassword.text.isNullOrEmpty()) {
-                                    putLockInfo(
-                                        sharedPreferences,
-                                        which,
-                                        inputPassword.text.toString()
-                                    )
-                                    preference.summary = getString(R.string.enabled)
+                    if (which != 0) {
+                        val isPassword = which == 1
+                        val title =
+                            if (isPassword) getString(R.string.password) else getString(R.string.pin)
+
+                        var inputPassword: TextInputEditText? = null
+                        var inputPasswordLayout: TextInputLayout? = null
+
+
+                        val showDialog = MaterialAlertDialogUtil.showDialog(
+                            requireContext(),
+                            title,
+                            layoutRes = R.layout.dialog_input_password_layout,
+                            positiveText = getString(R.string.sure),
+                            onPositive = {
+                                if (inputPassword?.text.isNullOrEmpty()) {
+                                    return@showDialog
+                                }
+                                putLockInfo(
+                                    sharedPreferences,
+                                    which,
+                                    inputPassword?.text.toString()
+                                )
+
+                                preference.summary = options[which]
+
+                                dialog.dismiss()
+                            },
+                            neutralText = getString(R.string.cancel),
+                            onViewCreated = { view, _ ->
+                                inputPassword = view.findViewById(R.id.input_password)
+
+                                inputPasswordLayout = view.findViewById(R.id.input_password_layout)
+                            }
+                        )
+
+                        if (isPassword) return@setSingleChoiceItems
+
+                        inputPasswordLayout?.apply {
+                            hint = ""
+                            error = getString(R.string.the_pin_is_empty)
+                        }
+
+                        inputPassword?.inputType = InputType.TYPE_CLASS_NUMBER
+
+                        val positiveButton = showDialog?.getButton(AlertDialog.BUTTON_POSITIVE)
+                        positiveButton?.apply {
+                            isEnabled = false
+                            inputPassword?.addTextChangedListener {
+                                val inputContext = it.toString()
+
+                                isEnabled = inputContext.length >= 4
+
+                                inputPasswordLayout?.error = when {
+
+                                    inputContext.isEmpty() -> getString(R.string.the_pin_is_empty)
+
+                                    inputContext.length < 4 -> getString(R.string.at_least_4_digits)
+
+                                    else -> null
                                 }
                             }
-                            setNeutralButton(getString(R.string.cancel), null)
-                            create()
-                            show()
                         }
+
+
+                        /*                        MaterialAlertDialogBuilder(requireContext()).apply {
+                                                    val view = layoutInflater.inflate(
+                                                        R.layout.dialog_input_password_layout,
+                                                        null
+                                                    )
+                                                    val inputPassword =
+                                                        view.findViewById<TextInputEditText>(R.id.input_password)
+                                                    setTitle(title)
+                                                    setView(view)
+                                                    setPositiveButton(
+                                                        getString(R.string.sure)
+                                                    ) { _, _ ->
+                                                        if (!inputPassword.text.isNullOrEmpty()) {
+                                                            putLockInfo(
+                                                                sharedPreferences,
+                                                                which,
+                                                                inputPassword.text.toString()
+                                                            )
+                                                            preference.summary = getString(R.string.enabled)
+                                                        }
+                                                    }
+                                                    setNeutralButton(getString(R.string.cancel), null)
+                                                    create()
+                                                    show()
+                                                }*/
                     } else {
                         putLockInfo(sharedPreferences, which)
                         preference.summary = getString(R.string.close)

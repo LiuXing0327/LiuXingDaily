@@ -200,4 +200,10 @@
     <string name="daily_settings">Daily settings</string>
     <string name="management_diary_related_functions">Management diary related functions</string>
     <string name="week">Week</string>
+    <string name="dynamic_color">Dynamic color</string>
+    <string name="pin">PIN</string>
+    <string name="the_pin_is_empty">The pin is empty</string>
+    <string name="at_least_4_digits">At least 4 digits</string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="dynamic_color_supporting_string">Automatically adapts to the wallpaper or selected color</string>
 </resources>

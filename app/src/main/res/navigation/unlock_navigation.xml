@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/unlock_navigation"
+    app:startDestination="@id/pinFragment">
+
+    <fragment
+        android:id="@+id/pinFragment"
+        android:name="com.liuxing.daily.ui.lock.PinFragment"
+        android:label="fragment_pin"
+        tools:layout="@layout/fragment_pin" />
+    <fragment
+        android:id="@+id/passwordFragment"
+        android:name="com.liuxing.daily.ui.lock.PasswordFragment"
+        android:label="fragment_password"
+        tools:layout="@layout/fragment_password" />
+</navigation>

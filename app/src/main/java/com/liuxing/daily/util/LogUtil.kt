@@ -68,10 +68,6 @@ object LogUtil {
      * @param throwable 异常。
      */
     fun getStackTraceString(throwable: Throwable): String {
-        if (DEBUG) {
-            return Log.getStackTraceString(throwable)
-        }
-
-        return ""
+        return Log.getStackTraceString(throwable)
     }
 }

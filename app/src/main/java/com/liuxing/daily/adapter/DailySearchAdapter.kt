@@ -22,6 +22,7 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.HighlightUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil.replaceTag
 import java.util.Date
@@ -170,8 +171,13 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             holder.tvTitle.textSize = textSize + 4
             holder.tvContent.textSize = textSize
             if (dailyEntity.singlePassword.isNullOrEmpty()) {
-                holder.tvTitle.text = dailyEntity.title
-                holder.tvContent.text = replaceTag(dailyEntity.content!!)
+                holder.tvTitle.text = HighlightUtil.highlightKeyword(
+                    holder.tvTitle.context, dailyEntity.title ?: "", searchQuery
+                )
+                holder.tvContent.text = HighlightUtil.highlightKeyword(
+                    holder.tvContent.context, replaceTag(dailyEntity.content ?: ""), searchQuery
+                )
+
             } else {
                 holder.tvTitle.text = "***"
                 holder.tvContent.text = "***"

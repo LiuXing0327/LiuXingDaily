@@ -4,12 +4,15 @@
 
 package com.liuxing.daily.util
 
+import android.app.Activity
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode
+import com.google.android.material.color.DynamicColors
 import com.liuxing.daily.R
+import com.liuxing.daily.ui.appearance.AppearanceConst
 
 object ThemeUtil {
 
@@ -35,6 +38,16 @@ object ThemeUtil {
      * @param context 上下文
      */
     fun applyTheme(context: Context) {
+        val dynamicColor = SharedPreferencesUtil.getBoolean(
+            context,
+            AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY,
+            false
+        )
+        if (dynamicColor) {
+            DynamicColors.applyToActivityIfAvailable(context as Activity)
+            return
+        }
+
         val themeColorId = SharedPreferencesUtil.getInt(context, "theme_color_id", 0)
         when (themeColorId) {
             ThemeColor.RED.id -> setThemeToRed(context)

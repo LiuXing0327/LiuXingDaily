@@ -12,7 +12,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_close"
-        style="?attr/materialIconButtonFilledTonalStyle"
+        style="@style/Widget.流星日记.Material3Expressive.Button.IconButtonFilledTonal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"

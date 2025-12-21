@@ -15,10 +15,12 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 import com.liuxing.daily.R
 import com.liuxing.daily.data.ThemeColorData
+import com.liuxing.daily.extension.setVisibility
+import com.liuxing.daily.ui.appearance.AppearanceConst
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
-import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeColor
 import com.liuxing.daily.view.RoundTricolorView
@@ -47,10 +49,27 @@ class ThemeColorAdapter(
         holder: ThemeColorAdapter.ViewHolder,
         @SuppressLint("RecyclerView") position: Int
     ) {
+        val dynamicColorChecked = SharedPreferencesUtil.getBoolean(
+            context, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false
+        )
+        holder.themeColorCard.isEnabled = !dynamicColorChecked
+
         val themeColorData = themeColorList[position]
         selectedPosition = SharedPreferencesUtil.getInt(context, "theme_color_id", 0)
 
-        holder.icSelected.visibility = if (themeColorData.isSelected) View.VISIBLE else View.GONE
+        val selected = themeColorData.isSelected
+
+        holder.icSelected.setVisibility(selected)
+
+        val themeStrokeColor =
+            if (selected) com.google.android.material.R.attr.colorOutline
+            else com.google.android.material.R.attr.colorOutlineVariant
+        holder.themeColorCard.apply {
+            strokeColor = MaterialColors.getColor(
+                this,
+                themeStrokeColor
+            )
+        }
 
         holder.roundTricolor.setColors(
             themeColorData.topColor,

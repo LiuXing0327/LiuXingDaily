@@ -40,6 +40,7 @@ class PrivacyActivity : AppCompatActivity() {
         binding.toolbar.title = getString(R.string.user_agreement_and_privacy_Policy)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         onBackPressedDispatcher.addCallback(onBackPressedCallback)
+        onBackPressedCallback.isEnabled = false
 
         binding.webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(

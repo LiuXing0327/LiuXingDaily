@@ -156,14 +156,13 @@ class OnThisDayFragment : Fragment() {
                 val imageMap = withContext(Dispatchers.IO) {
                     dailyViewModel.getImagePathForUuids(uuids)
                 }
-                withContext(Dispatchers.Main) {
-                    onThisDayAdapter.setDailyList(
-                        requireContext(),
-                        dailyList,
-                        DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
-                        imageMap
-                    )
-                }
+
+                onThisDayAdapter.setDailyList(
+                    requireContext(),
+                    dailyList,
+                    DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
+                    imageMap
+                )
             }
         }
     }
