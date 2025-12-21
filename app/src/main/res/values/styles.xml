@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:ns1="http://schemas.android.com/apk/res-auto">
 
     <style name="Widget.Theme.流星日记.ActionBar.Fullscreen" parent="Widget.AppCompat.ActionBar">
         <item name="android:background">@color/black_overlay</item>
@@ -16,5 +16,13 @@
 
     <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="buttonBarPositiveButtonStyle">?attr/colorPrimary</item>
+    </style>
+
+    <style name="Widget.流星日记.Material3Expressive.Button" parent="Widget.Material3Expressive.Button">
+        <item name="shapeAppearance">@xml/daily_m3expressive_button_shape_state_list</item>
+    </style>
+    <style name="Widget.流星日记.Material3Expressive.Button.IconButton" parent="Widget.Material3Expressive.Button.IconButton">
+        <item name="shapeAppearance">@xml/daily_m3expressive_button_shape_state_list</item>
+        <item name="materialSizeOverlay">@style/SizeOverlay.Material3Expressive.Button.IconButton.Medium</item>
     </style>
 </resources>
