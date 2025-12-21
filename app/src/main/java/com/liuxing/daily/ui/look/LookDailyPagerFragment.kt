@@ -163,7 +163,8 @@ class LookDailyPagerFragment : Fragment() {
                 ),
                 imageList.toList(),
                 videoList.toList(),
-                audioList.toList()
+                audioList.toList(),
+                LookDailyActivity.searchQuery
             )
             dailyTextView.showAllText = true
         }
@@ -280,7 +281,8 @@ class LookDailyPagerFragment : Fragment() {
                 ),
                 imageList.toList(),
                 videoList.toList(),
-                audioList.toList()
+                audioList.toList(),
+                LookDailyActivity.searchQuery
             )
 
             binding.ivMood.visibility = moodIndex.let {
