@@ -6,6 +6,7 @@ package com.liuxing.daily.viewmodel
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.liuxing.daily.entity.DailyEntity
 
 /**
  * 主界面的ViewModel
@@ -17,8 +18,18 @@ class MainViewModel : ViewModel() {
      */
     private val _selectedYearMonthDay = MutableLiveData<String>()
     val selectedYearMonthDay = _selectedYearMonthDay
+
+    /**
+     * 是否启用应用栏偏移更改，默认启用。
+     */
     private val _enableAppBarOffsetChange = MutableLiveData(true)
     val enableAppBarOffsetChange = _enableAppBarOffsetChange
+
+    /**
+     * 包含所有数据的日记列表。
+     */
+    private val _dailyList = MutableLiveData<List<DailyEntity>>()
+    val dailyList = _dailyList
 
     /**
      * 设置年月日
@@ -37,5 +48,14 @@ class MainViewModel : ViewModel() {
      */
     fun setEnableAppBarOffsetChange(enable: Boolean) {
         this._enableAppBarOffsetChange.value = enable
+    }
+
+    /**
+     * 设置日记列表
+     *
+     * @param value 日记列表
+     */
+    fun setDailyList(value: List<DailyEntity>){
+        this._dailyList.value = value
     }
 }
