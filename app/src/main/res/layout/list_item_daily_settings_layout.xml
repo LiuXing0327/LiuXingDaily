@@ -12,8 +12,7 @@
         android:layout_height="match_parent"
         android:checkable="true"
         android:clickable="true"
-        android:focusable="true"
-        app:swipeToPrimaryActionEnabled="true">
+        android:focusable="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -25,8 +24,8 @@
             <ImageView
                 android:id="@+id/list_item_start_icon"
                 style="@style/Widget.Material3.ImageView.ListItem.LeadingIcon"
-                android:layout_width="@dimen/dp_40"
-                android:layout_height="@dimen/dp_40"
+                android:layout_width="@dimen/dp_24"
+                android:layout_height="@dimen/dp_24"
                 android:contentDescription="@string/image"
                 android:src="@drawable/baseline_notes_24" />
 
