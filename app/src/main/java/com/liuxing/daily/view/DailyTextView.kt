@@ -26,7 +26,6 @@ import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
-import com.liuxing.daily.markdown.MarkdownParser
 import com.liuxing.daily.ui.audio.PlayAudioActivity
 import com.liuxing.daily.ui.image.LookDailyImageActivity
 import com.liuxing.daily.ui.video.LookDailyVideoActivity
@@ -93,7 +92,7 @@ class DailyTextView : MaterialTextView {
             refreshIfNeeded()
         }
 
-    private var originalText = "" // 原始日记文本
+    private lateinit var originalText: SpannableString // 原始日记文本
 
     // 原始媒体路径
     private var originalImageList: List<String> = emptyList()
@@ -136,7 +135,7 @@ class DailyTextView : MaterialTextView {
      *  @param audioPaths 音频路径
      */
     fun setDailyText(
-        text: String,
+        text: SpannableString,
         imagePaths: List<String> = emptyList(),
         videoPaths: List<String> = emptyList(),
         audioPaths: List<String> = emptyList()
@@ -172,7 +171,7 @@ class DailyTextView : MaterialTextView {
      * @param newAudioPathList 新的音频路径集合
      */
     fun setMediaPathList(
-        text: String,
+        text: SpannableString,
         newImagePathList: List<String>,
         newVideoPathList: List<String>,
         newAudioPathList: List<String>
@@ -200,53 +199,47 @@ class DailyTextView : MaterialTextView {
      * @param newVideoPathList 新的视频路径集合
      */
     private fun setFormattedText(
-        text: String,
+        text: SpannableString,
         newImagePathList: List<String>,
         newVideoPathList: List<String>,
         newAudioPathList: List<String>
     ) {
-        val spannableString = SpannableStringBuilder()
-        var currentIndex = 0
-        val tags = mutableListOf<Pair<Int, SpannableString>>()
-        newImagePathList.forEachIndexed { imageIndex, imagePath ->
-            val imgTag = "<img src=\"$imagePath\"/>"
-            val imgTagIndex = text.indexOf(imgTag, currentIndex)
-            if (imgTagIndex != -1) {
-                tags.add(imgTagIndex to createImageSpannable(imagePath, imageIndex))
+        val spannableString = SpannableStringBuilder(text)
+        val replacements = mutableListOf<Triple<Int, Int, SpannableString>>()
+
+        newImagePathList.forEachIndexed { index, path ->
+            val tag = "<img src=\"$path\"/>"
+            val start = spannableString.indexOf(tag)
+            if (start != -1) {
+                val end = start + tag.length
+                replacements.add(Triple(start, end, createImageSpannable(path, index)))
             }
         }
-        newVideoPathList.forEachIndexed { videoIndex, videoPath ->
-            val videoTag = "<video src=\"$videoPath\"/>"
-            val videoTagIndex = text.indexOf(videoTag, currentIndex)
-            if (videoTagIndex != -1) {
-                tags.add(videoTagIndex to createVideoSpannable(videoPath, videoIndex))
+        newVideoPathList.forEachIndexed { index, path ->
+            val tag = "<video src=\"$path\"/>"
+            val start = spannableString.indexOf(tag)
+            if (start != -1) {
+                val end = start + tag.length
+                replacements.add(Triple(start, end, createVideoSpannable(path, index)))
             }
         }
-        newAudioPathList.forEachIndexed { audioIndex, audioPath ->
-            val audioTag = "<audio src=\"$audioPath\"/>"
-            val audioTagIndex = text.indexOf(audioTag, currentIndex)
-            if (audioTagIndex != -1) {
-                tags.add((audioTagIndex to createAudioSpannable(audioPath, audioIndex)))
+        newAudioPathList.forEachIndexed { index, path ->
+            val tag = "<audio src=\"$path\"/>"
+            val start = spannableString.indexOf(tag)
+            if (start != -1) {
+                val end = start + tag.length
+                replacements.add(Triple(start, end, createAudioSpannable(path, index)))
             }
         }
-        tags.sortBy { it.first }
-        tags.forEach { (tagIndex, replacementSpan) ->
-            if (tagIndex > currentIndex) {
-                spannableString.append(
-                    text.substring(
-                        currentIndex, tagIndex
-                    )
-                )
-            }
-            spannableString.append(replacementSpan)
-            currentIndex = tagIndex + replacementSpan.length
+        replacements.sortByDescending { it.first }
+        for ((start, end, span) in replacements) {
+            spannableString.replace(start, end, span)
         }
-        if (currentIndex < text.length) {
-            spannableString.append(text.substring(currentIndex))
-        }
+
         setText(spannableString)
         invalidate()
     }
+
 
     /**
      * 创建图片
@@ -341,52 +334,49 @@ class DailyTextView : MaterialTextView {
      */
     private fun createVideoSpannable(videoPath: String, videoPathIndex: Int): SpannableString {
         val videoTag = "<video src=\"$videoPath\"/>"
-        val bitmap = createVideoThumbnail(videoPath) ?: return SpannableString(
-            ContextCompat.getDrawable(
-                context,
-                android.R.color.transparent
-            )?.let {
-                SpannableString("").apply {
-                    setSpan(ImageSpan(it), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                }
-            } ?: SpannableString("")
-        )
+        val bitmap = createVideoThumbnail(videoPath)
+        if (bitmap == null) {
+            val drawable = ContextCompat.getDrawable(context, android.R.color.transparent)
+            val placeholder = SpannableString(" ")
+            drawable?.let {
+                placeholder.setSpan(ImageSpan(it), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            return placeholder
+        }
         val originalWidth = bitmap.width
         val originalHeight = bitmap.height
         val maxWidth = resources.displayMetrics.widthPixels - 40
-        val toWidth = maxWidth.toFloat() / originalWidth
         val scaleFactor = maxWidth.toFloat() / originalWidth
         val newWidth = maxWidth
-        val newHeight = (originalHeight * toWidth).toInt()
-        val ss = SpannableString(videoTag)
-        val createBitmap = createBitmap(newWidth, newHeight)
-        val canvas = Canvas(createBitmap)
-        val matrix = Matrix()
-        matrix.setScale(scaleFactor, scaleFactor)
+        val newHeight = (originalHeight * scaleFactor).toInt()
+        val scaledBitmap = createBitmap(newWidth, newHeight)
+        val canvas = Canvas(scaledBitmap)
+        val matrix = Matrix().apply { setScale(scaleFactor, scaleFactor) }
         canvas.drawBitmap(bitmap, matrix, null)
         val playDrawable =
             ContextCompat.getDrawable(context, R.drawable.baseline_play_circle_filled_24)
-        val playBitmap = playDrawable?.let {
+        playDrawable?.let {
             val width = it.intrinsicWidth
             val height = it.intrinsicHeight
-            val bitmap = createBitmap(width, height)
-            val canvas = Canvas(bitmap)
+            val playBitmap = createBitmap(width, height)
+            val playCanvas = Canvas(playBitmap)
             it.setBounds(0, 0, width, height)
-            it.draw(canvas)
-            bitmap
-        }
-        playBitmap?.let {
+            it.draw(playCanvas)
             // 获取 @dimen/dp_16 的像素值
             val parentPaddingPx = resources.getDimensionPixelSize(R.dimen.dp_16)
-            val extraRightPadding =
-                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics)
-                    .toInt()
+            val extraRightPadding = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                8f,
+                resources.displayMetrics
+            ).toInt()
             val rightPadding = parentPaddingPx + extraRightPadding
-            val centerX = ((newWidth - rightPadding) - it.width) / 2f
-            val centerY = (newHeight - it.height) / 2f
-            canvas.drawBitmap(it, centerX, centerY, null)
+            val centerX = ((newWidth - rightPadding) - width) / 2f
+            val centerY = (newHeight - height) / 2f
+            canvas.drawBitmap(playBitmap, centerX, centerY, null)
         }
-        val drawable = createBitmap.toDrawable(resources).apply {
+
+        val ss = SpannableString(videoTag.ifEmpty { " " })
+        val drawable = scaledBitmap.toDrawable(resources).apply {
             setBounds(0, 0, newWidth, newHeight)
         }
         val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BASELINE)
@@ -568,7 +558,10 @@ class DailyTextView : MaterialTextView {
 
     override fun onTextContextMenuItem(id: Int): Boolean {
         return if (id == android.R.id.copy) {
-            CopyUtil.copyTextToClipboard(context, TextUtil.replaceTag(text.toString(), ""))
+            CopyUtil.copyTextToClipboard(
+                context,
+                TextUtil.replaceTag(text.substring(selectionStart, selectionEnd), "")
+            )
             clearFocus()
             true
         } else super.onTextContextMenuItem(id)

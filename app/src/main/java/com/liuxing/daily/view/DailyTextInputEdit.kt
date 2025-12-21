@@ -11,6 +11,7 @@ import android.graphics.Paint
 import android.text.Editable
 import android.text.Spannable
 import android.text.SpannableString
+import android.text.SpannableStringBuilder
 import android.text.TextWatcher
 import android.text.style.ImageSpan
 import android.util.AttributeSet
@@ -27,6 +28,7 @@ import com.liuxing.daily.R
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.ImageUtil.createImageThumbnail
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
 
@@ -144,45 +146,64 @@ class DailyTextInputEdit : TextInputEditText {
         val videoPaths = extractVideoPaths(content)
         val audioPaths = extractAudioPaths(content)
 
-        this.imagePathList = imagePaths.toMutableSet()
-        this.videoPathList = videoPaths.toMutableSet()
-        this.audioPathList = audioPaths.toMutableSet()
+        val ssb = SpannableStringBuilder(content)
+        val replacements = mutableListOf<Triple<Int, Int, CharSequence>>()
 
-        val editableContent = Editable.Factory.getInstance().newEditable(content)
-        imagePaths.forEach { imagePath ->
-            val imgTag = "<img src=\"$imagePath\"/>"
-            val startIndex = editableContent.indexOf(imgTag)
-            if (startIndex != -1) {
-                editableContent.replace(
-                    startIndex, startIndex + imgTag.length, createImageSpannable(imagePath)
+        imagePaths.forEach { path ->
+            val tag = "<img src=\"$path\"/>"
+            var index = content.indexOf(tag)
+            while (index != -1) {
+                replacements.add(
+                    Triple(
+                        index,
+                        index + tag.length,
+                        createImageSpannable(path)
+                    )
                 )
+                index = content.indexOf(tag, index + 1)
             }
         }
 
-        videoPaths.forEach { videoPath ->
-            val videoTag = "<video src=\"$videoPath\"/>"
-            val startIndex = editableContent.indexOf(videoTag)
-            if (startIndex != -1) {
-                editableContent.replace(
-                    startIndex, startIndex + videoTag.length, createVideoSpannable(videoPath)
+        videoPaths.forEach { path ->
+            val tag = "<video src=\"$path\"/>"
+            var index = content.indexOf(tag)
+            while (index != -1) {
+                replacements.add(
+                    Triple(
+                        index,
+                        index + tag.length,
+                        createVideoSpannable(path)
+                    )
                 )
+                index = content.indexOf(tag, index + 1)
             }
         }
 
-        audioPaths.forEach { audioPath ->
-            val audioTag = "<audio src=\"$audioPath\"/>"
-            val startIndex = editableContent.indexOf(audioTag)
-            if (startIndex != -1) {
-                editableContent.replace(
-                    startIndex,
-                    startIndex + audioTag.length,
-                    createAudioSpannable(audioPath)
+        audioPaths.forEach { path ->
+            val tag = "<audio src=\"$path\"/>"
+            var index = content.indexOf(tag)
+            while (index != -1) {
+                replacements.add(
+                    Triple(
+                        index,
+                        index + tag.length,
+                        createAudioSpannable(path)
+                    )
                 )
+                index = content.indexOf(tag, index + 1)
             }
         }
 
-        text = editableContent
+        replacements.sortByDescending { it.first }
+
+        replacements.forEach { (start, end, replacement) ->
+            ssb.replace(start, end, replacement)
+        }
+
+        setText(ssb)
+        setSelection(ssb.length)
     }
+
 
     /**
      * 解析视频路径
