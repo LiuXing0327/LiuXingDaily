@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/btn_icon"
+    style="@style/Widget.流星日记.Material3Expressive.Button.IconButton"
+    android:layout_width="@dimen/dp_70"
+    android:layout_height="@dimen/dp_70"
+    app:iconGravity="textStart"
+    app:icon="@drawable/baseline_toolbar_close_24"
+    android:textSize="@dimen/sp_18"
+    app:backgroundTint="@color/lock_icon_enter_bg_tint_color" />
