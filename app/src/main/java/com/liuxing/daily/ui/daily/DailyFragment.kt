@@ -141,6 +141,7 @@ class DailyFragment : Fragment(),DailyLikeFragment {
                     mainActivity.enableLightStatusBarWithAppBar()
                     mainActivity.enableOnBack(false)
                     mainActivity.selectAllDailies()
+                    mainActivity.showAddDailyButton()
                 }
             }
 
@@ -270,4 +271,5 @@ class DailyFragment : Fragment(),DailyLikeFragment {
     override fun selectAllItems() = dailyAdapter.selectAllItems()
     override fun getSelectMode(): Boolean = dailyAdapter.selectMode
     override fun isPinnedDisplay(): Boolean = true
+    override fun isLabelDisplay(): Boolean = true
 }
