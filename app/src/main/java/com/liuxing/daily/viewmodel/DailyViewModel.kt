@@ -3,6 +3,7 @@ package com.liuxing.daily.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.liuxing.daily.entity.DailyAudioEntity
 import com.liuxing.daily.entity.DailyEntity
@@ -173,5 +174,9 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
 
                 deleteDaily(dailyEntity)
             }
+    }
+
+    fun getByDateRange(dateString: String): LiveData<List<DailyEntity>> {
+        return dailyRepository.getByDateRange(dateString).asLiveData()
     }
 }
