@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -24,7 +23,9 @@ import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
-import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.DateUtil.YMD_INDEX
+import com.liuxing.daily.util.DateUtil.getCurrentDate
+import com.liuxing.daily.util.DateUtil.getDateString
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
@@ -32,7 +33,6 @@ import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Date
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -111,6 +111,7 @@ class CalendarQueryDailyFragment : Fragment() {
      */
     private fun initData() {
         initViewModel()
+        initYearMonthDay()
         initRecyclerView()
     }
 
@@ -161,57 +162,97 @@ class CalendarQueryDailyFragment : Fragment() {
      * 加载日记数据
      */
     private fun loadDailyData() {
-        dailyViewModel.queryAllDaily()
-            .observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
-                override fun onChanged(value: List<DailyEntity>) {
-                    lifecycleScope.launch {
-                        val uuids = withContext(Dispatchers.Default) {
-                            value.mapNotNull { it.dailyUUID }
-                        }
-                        val imageMap = withContext(Dispatchers.IO) {
-                            dailyViewModel.getImagePathForUuids(uuids)
-                        }
-                        withContext(Dispatchers.Main) {
-                            dailyList = value
+        /*        dailyViewModel.queryAllDaily()
+                    .observe(viewLifecycleOwner, object : Observer<List<DailyEntity>> {
+                        override fun onChanged(value: List<DailyEntity>) {
+                            lifecycleScope.launch {
+                                val uuids = withContext(Dispatchers.Default) {
+                                    value.mapNotNull { it.dailyUUID }
+                                }
+                                val imageMap = withContext(Dispatchers.IO) {
+                                    dailyViewModel.getImagePathForUuids(uuids)
+                                }
+                                dailyList = value
 
-                            calendarToDailyAdapter.setDailyList(
-                                requireContext(),
-                                dailyList,
-                                yearMonthDay.ifEmpty {
-                                    DateUtil.getDateString(
-                                        0,
-                                        Date(fragmentCalendarQueryDailyBinding.calendarView.date)
-                                    ).substring(0, 10)
-                                }, imageMap
-                            )
-                        }
-                    }
+                                calendarToDailyAdapter.setDailyList(
+                                    requireContext(), dailyList, yearMonthDay.ifEmpty {
+                                        DateUtil.getDateString(
+                                            0, Date(fragmentCalendarQueryDailyBinding.calendarView.date)
+                                        ).substring(0, 10)
+                                    }, imageMap
+                                )
+                            }
 
-                }
-            })
+                        }
+                    })*/
+        mainViewModel.selectedYearMonthDay.observe(viewLifecycleOwner) { selectedDteString ->
+            // 统一转换为 yyyy-MM-dd 格式。
+            val formatString = selectedDteString.replace('/', '-')
+
+            dailyViewModel.getByDateRange(formatString).observe(viewLifecycleOwner) { value ->
+                dailyList = value
+
+                updateDailyList(selectedDteString)
+            }
+        }
+    }
+
+    /**
+     * 初始化年月日。
+     *
+     * 避免切换到 [CalendarQueryDailyFragment] 时，不主动加载对应日期数据。
+     */
+    private fun initYearMonthDay() {
+        val dayDateString = getDateString(0, getCurrentDate())
+
+        yearMonthDay = dayDateString.substring(YMD_INDEX.first, YMD_INDEX.second)
+
+        setYearMonthDay()
+    }
+
+    /**
+     * 更新日记列表。
+     *
+     * @param selectedDteString 已选择的日期字符串，不能为空。
+     */
+    private fun updateDailyList(
+        selectedDteString: String
+    ) {
+        lifecycleScope.launch {
+            val uuids = withContext(Dispatchers.Default) {
+                dailyList.mapNotNull { it.dailyUUID }
+            }
+
+            val imageMap = withContext(Dispatchers.IO) {
+                dailyViewModel.getImagePathForUuids(uuids)
+            }
+
+            calendarToDailyAdapter.setDailyList(
+                requireContext(), dailyList, selectedDteString, imageMap
+            )
+        }
     }
 
     /**
      * 跟随日历切换日记
      */
     private fun followCalendarChangeDaily() {
-        fragmentCalendarQueryDailyBinding.calendarView.setOnDateChangeListener { view, year, month, dayOfMonth ->
+        fragmentCalendarQueryDailyBinding.calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
             val dateFormat =
                 if (getString(R.string.daily) == "日记") "%04d/%02d/%02d" else "%04d-%02d-%02d"
             yearMonthDay = String.format(dateFormat, year, month + 1, dayOfMonth)
 
-            mainViewModel.setYearMonthDay(yearMonthDay)
-            lifecycleScope.launch {
-                val uuids = dailyList.mapNotNull { it.dailyUUID }
-                val imageMap = dailyViewModel.getImagePathForUuids(uuids)
-                calendarToDailyAdapter.setDailyList(
-                    requireContext(),
-                    dailyList,
-                    yearMonthDay,
-                    imageMap
-                )
-            }
+            setYearMonthDay()
         }
+    }
+
+    /**
+     * 设置年月日，[yearMonthDay] 不能为空。
+     */
+    private fun setYearMonthDay() {
+        if (yearMonthDay.isEmpty()) return
+
+        mainViewModel.setYearMonthDay(yearMonthDay)
     }
 
     override fun onResume() {
@@ -242,6 +283,8 @@ class CalendarQueryDailyFragment : Fragment() {
             currentShowWeek = showWeek
             loadDailyData()
         }
+
+        setYearMonthDay()
     }
 
     override fun onDestroyView() {
@@ -255,13 +298,30 @@ class CalendarQueryDailyFragment : Fragment() {
     private fun setRecyclerViewItemOnClick() {
         calendarToDailyAdapter.setOnItemClickListener(object : OnItemClickListener {
             override fun onItemClick(position: Int) {
+                // 获取原位。
+                val originalPosition = getOriginalPosition(position)
+
                 val intent = Intent()
                 intent.setClass(requireContext(), LookDailyActivity::class.java)
-                intent.putExtra("POSITION", position)
+                intent.putExtra("POSITION", originalPosition)
                 startActivity(intent)
             }
 
         })
+    }
+
+    /**
+     * 获取数据在包含所有数据的列表中的原位。
+     *
+     * @param position 点击的位置。
+     *
+     * @return 返回原位，如果数据不在列表中，则返回 -1.
+     */
+    private fun getOriginalPosition(position: Int): Int {
+        val dailyEntity = dailyList[position]
+        // 返回数据索引
+        val originalPosition = mainViewModel.dailyList.value?.indexOf(dailyEntity)
+        return originalPosition ?: -1
     }
 
     /**
@@ -278,7 +338,7 @@ class CalendarQueryDailyFragment : Fragment() {
                 if (moveInRecyclerBin) {
                     MaterialAlertDialogBuilder(requireContext()).apply {
                         setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                        setPositiveButton(getString(R.string.sure)) { dialog, which ->
+                        setPositiveButton(getString(R.string.sure)) { _, _ ->
                             dailyViewModel.updateDaily(
                                 DailyEntity(
                                     dailyEntity.id,
@@ -290,7 +350,8 @@ class CalendarQueryDailyFragment : Fragment() {
                                     dailyEntity.moodIndex,
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
-                                    true
+                                    true,
+                                    dailyEntity.dailyLabel
                                 )
                             )
                         }
@@ -331,7 +392,8 @@ class CalendarQueryDailyFragment : Fragment() {
                                     dailyEntity.moodIndex,
                                     dailyEntity.weatherIndex,
                                     dailyEntity.dailyUUID,
-                                    true
+                                    true,
+                                    dailyEntity.dailyLabel
                                 )
                             )
                         }
