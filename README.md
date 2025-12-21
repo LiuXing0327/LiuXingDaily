@@ -5,8 +5,8 @@
 
 ## Screenshot
 <div>
-<img src="screenshot/2.9.1/V2.9.1V.gif" width="40%"/>
- <img src="screenshot/2.9.1/V2.9.1V2.gif" width="40%"/>
+<img src="screenshot/2.9.1/V2.9.1V.gif" width="45%"/>
+ <img src="screenshot/2.9.1/V2.9.1V2.gif" width="45%"/>
 </div>
 
 <div>
