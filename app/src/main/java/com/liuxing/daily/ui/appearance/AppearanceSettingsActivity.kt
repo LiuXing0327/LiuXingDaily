@@ -1,8 +1,12 @@
 package com.liuxing.daily.ui.appearance
 
+import android.app.ActivityOptions
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
+import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -11,10 +15,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.listitem.ListItemCardView
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.ThemeColorAdapter
+import com.liuxing.daily.data.DailySettingsData
 import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.databinding.ActivityAppearanceSettingsBinding
+import com.liuxing.daily.extension.setVisibility
+import com.liuxing.daily.material.widget.DailyMaterialSwitch
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
 
@@ -22,6 +31,11 @@ class AppearanceSettingsActivity : AppCompatActivity() {
 
     private lateinit var appearanceSettingsBinding: ActivityAppearanceSettingsBinding
     private var sharedPreferences: SharedPreferences? = null
+
+    /**
+     * 动态取色切换键。
+     */
+    private val dynamicColorSwitchKey = AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +59,7 @@ class AppearanceSettingsActivity : AppCompatActivity() {
         initSharedPreferences()
         changeThemeMode()
         setColorData()
+        setDynamicColorData()
     }
 
     /**
@@ -190,6 +205,98 @@ class AppearanceSettingsActivity : AppCompatActivity() {
         val themeColorAdapter = ThemeColorAdapter(this, colorDataList)
         appearanceSettingsBinding.recyclerTheme.layoutManager = GridLayoutManager(this, 4)
         appearanceSettingsBinding.recyclerTheme.adapter = themeColorAdapter
+    }
+
+    /**
+     * 设置动态取色数据。
+     */
+    private fun setDynamicColorData() {
+        // 如果动态取色不可用，则隐藏容器。
+        if (!DynamicColors.isDynamicColorAvailable()) {
+            appearanceSettingsBinding.settingsContainer.root.setVisibility(false)
+            return
+        }
+
+        // 获取动态取色开关值
+        val dynamicColorChecked =
+            SharedPreferencesUtil.getBoolean(this, dynamicColorSwitchKey, false)
+
+        val data = DailySettingsData(
+            AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY,
+            getString(R.string.dynamic_color),
+            dynamicColorChecked,
+            R.drawable.outline_palette_preference_color_primary_24,
+            getString(R.string.dynamic_color_supporting_string)
+        )
+
+        val startIcon = appearanceSettingsBinding.settingsContainer.listItemStartIcon
+        val textView = appearanceSettingsBinding.settingsContainer.listItemText
+        val switch = appearanceSettingsBinding.settingsContainer.listItemSwitch
+        val cardView = appearanceSettingsBinding.settingsContainer.listItemCardView
+        val supportingText =
+            appearanceSettingsBinding.settingsContainer.listItemSupportingText
+
+        startIcon.setImageResource(data.iconResource)
+        textView.text = data.text
+        supportingText.text = data.supportingString
+        supportingText.setVisibility(true)
+        onDynamicColorDataChanged(startIcon, switch, cardView, data)
+
+        cardView.setOnClickListener {
+            val newChecked = !cardView.isChecked
+            data.checked = newChecked
+            onDynamicColorDataChanged(startIcon, switch, cardView, data)
+            SharedPreferencesUtil.putBoolean(this, dynamicColorSwitchKey, data.checked)
+
+            val animation =
+                ActivityOptions.makeCustomAnimation(this, R.anim.fade_in, R.anim.fade_out)
+            finish()
+            startActivity(
+                Intent(this, AppearanceSettingsActivity::class.java), animation.toBundle()
+            )
+
+        }
+
+        appearanceSettingsBinding.settingsContainer.root.setVisibility(true)
+    }
+
+    /**
+     * 当动态取色数据发生变化时
+     *
+     * 数据发生变化时，会主动使用 [onDynamicColorStatusChanged] 更新视图状态。
+     *
+     * @param startIcon 动态取色的图标。
+     * @param switch 动态取色启用开关。
+     * @param cardView 动态取色的卡片视图。
+     * @param data 动态取色数据。
+     */
+    private fun onDynamicColorDataChanged(
+        startIcon: ImageView,
+        switch: DailyMaterialSwitch,
+        cardView: ListItemCardView,
+        data: DailySettingsData
+    ) {
+        onDynamicColorStatusChanged(listOf(startIcon, switch, cardView), data)
+    }
+
+    /**
+     * 当动态取色视图状态发生变化时。
+     *
+     * @param views 需要更新状态的视图列表。
+     * @param data 新的数据。
+     */
+    private fun onDynamicColorStatusChanged(views: List<View>, data: DailySettingsData) {
+        views.forEach { view ->
+            /*
+                如果 View 是 DailyMaterialSwitch 或 ListItemCardView，调用 isChecked 设置状态。
+                不是则通过 isSelected 设置状态。
+             */
+            if (view is DailyMaterialSwitch || view is ListItemCardView) {
+                view.isChecked = data.checked
+            } else {
+                view.isSelected = data.checked
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
