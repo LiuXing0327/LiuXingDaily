@@ -1,10 +1,9 @@
 # LiuXingDaily
-一个 **免费、开源、无广告** 的 Material 3 风格日记应用  
-最低支持 Android 8.0
+一个 **免费、开源、无广告** 的 Material 3 风格本地日记应用
 
 作为一个开源项目，如果它对你有所帮助可以给 star 支持。你的支持对我非常重要！
 
-## Screenshot
+## 截图
 <div>
 <img src="screenshot/2.9.1/V2.9.1V.gif" width="45%"/>
  <img src="screenshot/2.9.1/V2.9.1V2.gif" width="45%"/>
@@ -33,6 +32,13 @@
  <img src="screenshot/2.9.1/V2.9.1Screenshot_20251221_142541.png" width="30%"/>
  <img src="screenshot/2.7/V2.7Screenshot_20250729_212322.png" width="30%"/>
 </div>
+
+## 特色
+- 日记记录、编辑、查看和搜索
+- 支持图片、视频和音频的多媒体日记
+- WebDav 备份与恢复
+- 支持外观自定义
+- 免费、开源、无广告
 
 ## License
 ```
