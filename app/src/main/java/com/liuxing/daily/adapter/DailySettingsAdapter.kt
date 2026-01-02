@@ -38,6 +38,7 @@ class DailySettingsAdapter(
         fun bind(
             data: DailySettingsData, onCheckedChange: (DailySettingsData, Boolean) -> Unit
         ) {
+            super.bind()
             textView.text = data.text
             startIcon.setImageResource(data.iconResource)
 
