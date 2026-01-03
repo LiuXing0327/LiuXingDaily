@@ -92,4 +92,8 @@ interface DailyDao {
 
     @Query("SELECT * FROM DAILY_INFO WHERE DATE_TIME BETWEEN :start AND :end ORDER BY ID DESC")
     fun getByDateRange(start: Long, end: Long): Flow<List<DailyEntity>>
+
+    @Query("SELECT * FROM DAILY_INFO WHERE MONTH_DAY = strftime('%m-%d','now','localtime') ORDER BY ID DESC")
+    fun getThatDayInHistory(): Flow<List<DailyEntity>>
+
 }
