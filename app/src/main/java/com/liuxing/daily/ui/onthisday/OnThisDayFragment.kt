@@ -21,8 +21,10 @@ import com.liuxing.daily.ui.main.MainActivity
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.DateUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
+import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,6 +47,7 @@ class OnThisDayFragment : Fragment() {
     private lateinit var onThisDayAdapter: OnThisDayAdapter
     private lateinit var dailyViewModel: DailyViewModel
     private lateinit var dailyList: List<DailyEntity>
+    private lateinit var mainViewModel: MainViewModel
 
     /**
      * 当前“是否显示星期”的开关
@@ -105,10 +108,11 @@ class OnThisDayFragment : Fragment() {
     }
 
     /**
-     * 初始化[dailyViewModel]
+     * 初始化[dailyViewModel]和[mainViewModel]
      */
     private fun initViewModel() {
         dailyViewModel = ViewModelProvider(requireActivity())[DailyViewModel::class.java]
+        mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
     }
 
     /**
@@ -147,8 +151,28 @@ class OnThisDayFragment : Fragment() {
      * 获取日记数据
      */
     private fun loadDailyData() {
-        dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { dailyList ->
+        /*        dailyViewModel.queryAllDaily().observe(viewLifecycleOwner) { dailyList ->
+                    this.dailyList = dailyList
+                    lifecycleScope.launch {
+                        val uuids = withContext(Dispatchers.Default) {
+                            dailyList.mapNotNull { it.dailyUUID }
+                        }
+                        val imageMap = withContext(Dispatchers.IO) {
+                            dailyViewModel.getImagePathForUuids(uuids)
+                        }
+
+                        onThisDayAdapter.setDailyList(
+                            requireContext(),
+                            dailyList,
+                            DateUtil.getDateString(0, DateUtil.getCurrentDate()).substring(5, 10),
+                            imageMap
+                        )
+                    }
+                }*/
+
+        dailyViewModel.getThatDayInHistory.observe(viewLifecycleOwner) { dailyList ->
             this.dailyList = dailyList
+
             lifecycleScope.launch {
                 val uuids = withContext(Dispatchers.Default) {
                     dailyList.mapNotNull { it.dailyUUID }
@@ -168,14 +192,38 @@ class OnThisDayFragment : Fragment() {
     }
 
     /**
+     * 获取数据在包含所有数据的列表中的原位。
+     *
+     * @param position 点击的位置。
+     *
+     * @return 返回原位，如果数据不在列表中，则返回 -1.
+     */
+    private fun getOriginalPosition(position: Int): Int {
+        LogUtil.d(message = "input position = $position")
+
+        val dailyEntity = dailyList[position]
+        LogUtil.d(message = "dailyEntity = $dailyEntity")
+
+        // 返回数据索引
+        val originalPosition = mainViewModel.dailyList.value?.filter { !it.isDeleted }?.indexOfFirst {
+            it.id == dailyEntity.id
+        } ?: -1
+
+        LogUtil.d(message = "originalPosition = $originalPosition")
+        return originalPosition
+    }
+
+    /**
      * 设置列表的点击事件
      */
     private fun setRecyclerViewItemOnClick() {
         onThisDayAdapter.setOnItemClickListener(object : OnItemClickListener {
             override fun onItemClick(position: Int) {
+                val originalPosition = getOriginalPosition(position)
+
                 val intent = Intent()
                 intent.setClass(requireContext(), LookDailyActivity::class.java)
-                intent.putExtra("POSITION", position)
+                intent.putExtra("POSITION", originalPosition)
                 requireActivity().startActivity(intent)
             }
 
