@@ -9,22 +9,27 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityAboutBinding
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
-class AboutActivity : AppCompatActivity() {
+class AboutActivity : QRXActivity() {
 
     private lateinit var activityAboutBinding: ActivityAboutBinding
 
@@ -39,8 +44,24 @@ class AboutActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
+        qrx()
         initData()
     }
+
+    private fun qrx() {
+        val qrx = (this as QRXActivity)
+        qrx.init(activityAboutBinding.wallpaper, activityAboutBinding.appBarLayout)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(300)
+                    qrx.checkStatusBarColor(true)
+                }
+            }
+        }
+    }
+
 
     /**
      * 初始化数据
