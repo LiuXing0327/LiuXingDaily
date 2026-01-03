@@ -394,6 +394,7 @@ class LookDailyActivity : AppCompatActivity() {
                 intent.putExtra("daily_uuid", dailyEntity.dailyUUID)
                 intent.putExtra("daily_label", dailyEntity.dailyLabel)
                 intent.putExtra("is_pinned", dailyEntity.isPinned)
+                intent.putExtra("month_day", dailyEntity.monthDay)
                 intent.setClass(this@LookDailyActivity, EditDailyActivity::class.java)
                 startActivity(intent)
             }

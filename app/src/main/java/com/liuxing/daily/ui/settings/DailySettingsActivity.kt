@@ -3,7 +3,6 @@ package com.liuxing.daily.ui.settings
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,11 +11,12 @@ import com.liuxing.daily.adapter.DailySettingsAdapter
 import com.liuxing.daily.adapter.DailySettingsAdapter.MarginItemDecoration
 import com.liuxing.daily.data.DailySettingsData
 import com.liuxing.daily.databinding.ActivityDailySettingsBinding
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
 
 
-class DailySettingsActivity : AppCompatActivity() {
+class DailySettingsActivity : QRXActivity() {
 
     private val binding: ActivityDailySettingsBinding by lazy {
         ActivityDailySettingsBinding.inflate(layoutInflater)
@@ -39,6 +39,7 @@ class DailySettingsActivity : AppCompatActivity() {
         }
 
         initData()
+        (this as QRXActivity).init(binding.wallpaper, binding.appBarLayout)
     }
 
     /**

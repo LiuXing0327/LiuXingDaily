@@ -6,20 +6,24 @@ import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.data.VersionLogData
 import com.liuxing.daily.databinding.ActivityUpdateLogBinding
 import com.liuxing.daily.markdown.MarkdownParser
-import com.liuxing.daily.markdown.color.MarkdownColor
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.ThemeUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.BufferedReader
 
 
-class UpdateLogActivity : AppCompatActivity() {
+class UpdateLogActivity : QRXActivity() {
 
     private lateinit var activityUpdateLogBinding: ActivityUpdateLogBinding
     private lateinit var typedValue: TypedValue
@@ -36,8 +40,24 @@ class UpdateLogActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
                     insets
         }
+        qrx()
         initData()
     }
+
+    private fun qrx() {
+        val qrx = (this as QRXActivity)
+        qrx.init(activityUpdateLogBinding.wallpaper, activityUpdateLogBinding.appBarLayout)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(300)
+                    qrx.checkStatusBarColor(true)
+                }
+            }
+        }
+    }
+
 
     /**
      * 初始化数据

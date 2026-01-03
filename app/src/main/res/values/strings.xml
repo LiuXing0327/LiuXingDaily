@@ -211,4 +211,9 @@
     <string name="at_least_4_digits">至少4位数</string>
     <string name="enter_pin">输入 PIN 码</string>
     <string name="dynamic_color_supporting_string">根据壁纸色调或所选颜色自动配色</string>
+    <string name="date_time_format">%1$s %2$s</string>
+    <string name="date_time_week_format">%1$s %2$s %3$s</string>
+    <string name="select_date">选择日期</string>
+    <string name="select_time">选择时间</string>
+    <string name="delete_wallpaper_message">是否删除壁纸？</string>
 </resources>

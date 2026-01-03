@@ -27,6 +27,7 @@ import com.liuxing.daily.util.DateUtil.YMD_INDEX
 import com.liuxing.daily.util.DateUtil.getCurrentDate
 import com.liuxing.daily.util.DateUtil.getDateString
 import com.liuxing.daily.util.FileUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
@@ -190,8 +191,9 @@ class CalendarQueryDailyFragment : Fragment() {
             val formatString = selectedDteString.replace('/', '-')
 
             dailyViewModel.getByDateRange(formatString).observe(viewLifecycleOwner) { value ->
-                dailyList = value
+                dailyList = value.filter { !it.isDeleted }
 
+                LogUtil.d(message = "dailyList size = ${dailyList.size}")
                 updateDailyList(selectedDteString)
             }
         }
@@ -318,10 +320,19 @@ class CalendarQueryDailyFragment : Fragment() {
      * @return 返回原位，如果数据不在列表中，则返回 -1.
      */
     private fun getOriginalPosition(position: Int): Int {
+        LogUtil.d(message = "input position = $position")
+
         val dailyEntity = dailyList[position]
+        LogUtil.d(message = "dailyEntity = $dailyEntity")
+
         // 返回数据索引
-        val originalPosition = mainViewModel.dailyList.value?.indexOf(dailyEntity)
-        return originalPosition ?: -1
+        val originalPosition =
+            mainViewModel.dailyList.value?.filter { !it.isDeleted }?.indexOfFirst {
+                it.id == dailyEntity.id
+            } ?: -1
+
+        LogUtil.d(message = "originalPosition = $originalPosition")
+        return originalPosition
     }
 
     /**
@@ -331,6 +342,7 @@ class CalendarQueryDailyFragment : Fragment() {
         calendarToDailyAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
             override fun onItemLongOnClick(position: Int) {
                 val dailyEntity = dailyList[position]
+                LogUtil.d(message = "setRecyclerViewItemOnLongClick $dailyEntity")
                 val sharedPreferences =
                     PreferenceManager.getDefaultSharedPreferences(requireContext())
                 val moveInRecyclerBin =

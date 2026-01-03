@@ -17,13 +17,14 @@ import com.liuxing.daily.databinding.ActivityDailyLabelBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.ui.add.AddDailyActivity
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 private const val DAILY_LABEL = "daily_label_label"
 
-class DailyLabelActivity : AppCompatActivity() {
+class DailyLabelActivity : QRXActivity() {
 
     private lateinit var dailyLabelBinding: ActivityDailyLabelBinding
     private lateinit var dailyViewModel: DailyViewModel
@@ -48,6 +49,10 @@ class DailyLabelActivity : AppCompatActivity() {
             insets
         }
         initData(savedInstanceState)
+        (this as QRXActivity).init(
+            dailyLabelBinding.wallpaper,
+            dailyLabelBinding.appBarLayout
+        )
     }
 
     /**

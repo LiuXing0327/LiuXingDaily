@@ -16,7 +16,7 @@ import com.liuxing.daily.entity.DailyVideoEntity
 
 @Database(
     entities = [DailyEntity::class, DailyImageEntity::class, DailyLabelEntity::class, DailyVideoEntity::class,DailyAudioEntity::class],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class DailyDatabase : RoomDatabase() {
@@ -38,8 +38,7 @@ abstract class DailyDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9,
-                        MIGRATION_9_10
+                        MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11
                     )
                     .build()
                 INSTANCE = instance
@@ -175,5 +174,19 @@ abstract class DailyDatabase : RoomDatabase() {
             db.execSQL("ALTER TABLE DAILY_INFO ADD COLUMN IS_PINNED INTEGER NOT NULL DEFAULT 0")
         }
 
+    }
+
+    /**
+     * 数据库升级
+     *
+     * MIGRATION_10_11 10 -> 11
+     *
+     * 新增字段 MONTH_DAY
+     */
+    object MIGRATION_10_11 : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE DAILY_INFO ADD COLUMN MONTH_DAY TEXT")
+            db.execSQL("UPDATE DAILY_INFO SET MONTH_DAY = strftime('%m-%d',DATE_TIME / 1000,'unixepoch','localtime')")
+        }
     }
 }

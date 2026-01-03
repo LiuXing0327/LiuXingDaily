@@ -7,11 +7,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.liuxing.daily.adapter.DailyLabelAdapter
 import com.liuxing.daily.databinding.FragmentDailyLabelBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.extension.setLightStausBarsFromBitmap
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.look.LookDailyActivity
+import com.liuxing.daily.ui.qrx.QRXActivity
+import com.liuxing.daily.util.StatusBarUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
 // TODO: Rename parameter arguments, choose names that match
@@ -124,6 +129,8 @@ class DailyLabelFragment : Fragment() {
             dailyViewModel,
             viewLifecycleOwner
         )
+
+        (requireActivity() as QRXActivity).init(dailyLabelBinding.recyclerView, dailyList)
     }
     /**
      * 设置点击事件

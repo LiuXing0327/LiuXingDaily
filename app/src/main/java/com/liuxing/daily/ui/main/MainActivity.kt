@@ -26,7 +26,6 @@ import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
@@ -82,6 +81,7 @@ import com.liuxing.daily.ui.lock.UnlockActivity
 import com.liuxing.daily.ui.look.LookDailyActivity
 import com.liuxing.daily.ui.main.MainActivity.Companion.isCalendarQueryDailyFragment
 import com.liuxing.daily.ui.main.MainActivity.Companion.isDailyFragment
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.BitmapUtil
@@ -125,7 +125,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : QRXActivity() {
 
     private lateinit var activityMainBinding: ActivityMainBinding
     private lateinit var dailyViewModel: DailyViewModel
@@ -1366,16 +1366,16 @@ class MainActivity : AppCompatActivity() {
 
         })
 
-        activityMainBinding.appBarLayout.addOnOffsetChangedListener { appBarLayout, verticalOffset ->
+/*        activityMainBinding.appBarLayout.addOnOffsetChangedListener { appBarLayout, verticalOffset ->
             val offsetChange = mainViewModel.enableAppBarOffsetChange.value ?: true
             if (offsetChange) checkStatusBarColor()
-        }
+        }*/
     }
 
     /**
      * 检查状态栏颜色
      */
-    fun checkStatusBarColor() {
+/*    fun checkStatusBarColor() {
         val background = activityMainBinding.appBarLayout.background
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
         if (background is MaterialShapeDrawable) {
@@ -1391,7 +1391,7 @@ class MainActivity : AppCompatActivity() {
                 insetsController.isAppearanceLightStatusBars = !isDark
             }
         }
-    }
+    }*/
 
     /**
      * 获取壁纸的 Bitmap，并使用 [BitmapUtil.check] 检测是否有效。
@@ -1691,14 +1691,40 @@ class MainActivity : AppCompatActivity() {
             loadSearchDailyData("")
         }
 
-        val fileMD5 = FileUtil().getFileMD5(File(ConstUtil.WALLPAPER_PATH))
+/*        val fileMD5 = FileUtil().getFileMD5(File(ConstUtil.WALLPAPER_PATH))
         if (wallpaperFileMD5.isEmpty() || wallpaperFileMD5 != fileMD5) {
             wallpaperFileMD5 = fileMD5
             setWallpaperAndStausBar()
+        }*/
+        (this as QRXActivity).init(
+            activityMainBinding.wallpaper,
+            activityMainBinding.appBarLayout
+        )
+
+        refreshDailies()
+    }
+
+    /**
+     * 刷新所有日记
+     */
+    private fun refreshDailies() {
+        if (!isDailyLikeFragment()) {
+            // 不是 DailyLikeFragment，不执行任何操作。
+            return
         }
 
-        val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
-        activityMainBinding.wallpaper.alpha = wallpaperAlpha
+        val dailyLikeFragment = getDailyLikeFragment()
+        val selectMode = dailyLikeFragment.getSelectMode()
+        if (!selectMode) {
+            // 不是多选模式，延迟 300 毫秒后执行 selectAllDailies.
+            CoroutineScope(Dispatchers.Main).launch {
+                lifecycleScope.launch {
+                    delay(300)
+
+                    selectAllDailies()
+                }
+            }
+        }
     }
 
     /**
@@ -1709,6 +1735,11 @@ class MainActivity : AppCompatActivity() {
             bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
             activityMainBinding.wallpaper.setImageBitmap(bitmap)
             setLightStausBarsFromBitmap(bitmap)
+
+            (this as QRXActivity).init(
+                activityMainBinding.wallpaper,
+                activityMainBinding.appBarLayout
+            )
         }
     }
 

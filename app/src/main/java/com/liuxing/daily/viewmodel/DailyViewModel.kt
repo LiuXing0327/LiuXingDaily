@@ -179,4 +179,8 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
     fun getByDateRange(dateString: String): LiveData<List<DailyEntity>> {
         return dailyRepository.getByDateRange(dateString).asLiveData()
     }
+
+    val getThatDayInHistory: LiveData<List<DailyEntity>> =
+        dailyRepository.getThatDayInHistory()
+            .asLiveData()
 }

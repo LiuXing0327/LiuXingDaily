@@ -31,9 +31,12 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.ChangeDailyCardColorAdapter
 import com.liuxing.daily.adapter.MoodAdapter
@@ -42,9 +45,13 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.extension.formatDateString
+import com.liuxing.daily.extension.formatDateTimeWeek
 import com.liuxing.daily.extension.setVisibility
+import com.liuxing.daily.extension.toMonthDay
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.listener.StringChangedListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
@@ -102,6 +109,8 @@ class AddDailyActivity : AppCompatActivity() {
     private val autoSave by lazy {
         sharedPreferences.getBoolean("switch_preference_auto_save", true)
     }
+
+    private lateinit var stringChangedListener: StringChangedListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -203,6 +212,7 @@ class AddDailyActivity : AppCompatActivity() {
         setDailyCount()
         initViewModel()
         setDateTime()
+        selectDateTime()
         checkedTitleLength()
         restoreIndex(savedInstanceState)
         setDailyLabel()
@@ -674,7 +684,10 @@ class AddDailyActivity : AppCompatActivity() {
                     moodIndex = moodIndex,
                     weatherIndex = weatherIndex,
                     dailyUUID = dailyUuid,
-                    dailyLabel = dailyLabel
+                    dailyLabel = dailyLabel,
+                    monthDay = DateUtil.dateStringToDate(
+                        activityAddDailyBinding.tvDateTime.text.toString(), 0
+                    ).toMonthDay()
                 )
             )
             finish()
@@ -697,6 +710,13 @@ class AddDailyActivity : AppCompatActivity() {
         val isDailyFragment = intent.getBooleanExtra("isDailyFragment", true)
         val selectedYearMonthDay = intent.getStringExtra("selectedYearMonthDay")
 
+        setStringChangedListener(object : StringChangedListener {
+            override fun onStringChanged(newString: String) {
+                activityAddDailyBinding.tvDateTime.text = newString
+            }
+
+        })
+
         val dateString = DateUtil.getDateString(
             0,
             DateUtil.getCurrentDate()
@@ -708,7 +728,8 @@ class AddDailyActivity : AppCompatActivity() {
                 DateUtil.getCurrentDate()
             )
         }"
-        activityAddDailyBinding.tvDateTime.text =
+
+        val defaultDateTime =
             if (isDailyFragment || selectedYearMonthDay.isNullOrEmpty()) "$dateString ${
                 DateUtil.getWeek(
                     this,
@@ -721,6 +742,66 @@ class AddDailyActivity : AppCompatActivity() {
                     DateUtil.getCurrentDate()
                 )
             }  ${DateUtil.getWeek(this, selectedDateString)}"
+
+        stringChangedListener.onStringChanged(defaultDateTime)
+    }
+
+    /**
+     * 选择日期时间
+     */
+    private fun selectDateTime() {
+        val datePicker =
+            MaterialDatePicker.Builder.datePicker().setTitleText(getString(R.string.select_date))
+                .setSelection(
+                    MaterialDatePicker.todayInUtcMilliseconds()
+                ).build()
+
+        val time = DateUtil.getDateString(2, DateUtil.getCurrentDate())
+        val hour = time.split(":")[0].toInt()
+        val minute = time.split(":")[1].toInt()
+        val timePicker =
+            MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setHour(hour)
+                .setMinute(minute)
+                .setTitleText(getString(R.string.select_time)).build()
+
+        activityAddDailyBinding.tvDateTime.setOnClickListener {
+            datePicker.show(supportFragmentManager, datePicker.tag)
+        }
+
+        var newSelectedDateString = ""
+        var newSelectedTime = ""
+        datePicker.addOnPositiveButtonClickListener {
+            newSelectedDateString = datePicker.headerText.replace(
+                Regex("[年月]"), if (getString(R.string.daily) == "日记") "/" else "-"
+            )
+            newSelectedDateString = newSelectedDateString.replace("日", "")
+            newSelectedDateString = newSelectedDateString.formatDateString()
+
+            timePicker.show(supportFragmentManager, timePicker.tag)
+        }
+
+        timePicker.addOnPositiveButtonClickListener { _ ->
+            val hour = timePicker.hour
+            val minute = timePicker.minute
+            newSelectedTime = "%02d:%02d".format(hour, minute)
+
+            val week = DateUtil.getWeek(this, "$newSelectedDateString $newSelectedTime")
+
+            stringChangedListener.onStringChanged(
+                formatDateTimeWeek(
+                    newSelectedDateString,
+                    newSelectedTime,
+                    week
+                )
+            )
+        }
+    }
+
+    /**
+     * 设置 [stringChangedListener].
+     */
+    private fun setStringChangedListener(stringChangedListener: StringChangedListener) {
+        this.stringChangedListener = stringChangedListener
     }
 
     /**
