@@ -31,6 +31,7 @@ class SpecialThanksActivity : BaseSpecialThanksActivity() {
             insets
         }
         initData()
+        (this as BaseSpecialThanksActivity).initQRX(specialThanksBinding.wallpaper,specialThanksBinding.appBarLayout)
     }
 
     /**

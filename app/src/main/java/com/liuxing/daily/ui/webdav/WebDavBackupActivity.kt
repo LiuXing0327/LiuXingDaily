@@ -18,6 +18,7 @@ import com.liuxing.daily.databinding.ActivityWebDavBackupBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
@@ -51,7 +52,7 @@ private const val WEB_DAV_USER_NAME = "web_dav_user_name"
 private const val WEB_DAV_PASS_WORD = "web_dav_pass_word"
 private const val WEB_DAV_ENCRYPT_PASS_WORD = "web_dav_encrypt_pass_word"
 
-class WebDavBackupActivity : AppCompatActivity() {
+class WebDavBackupActivity : QRXActivity() {
 
     private lateinit var webDavBackupBinding: ActivityWebDavBackupBinding
     private lateinit var sardine: OkHttpSardine
@@ -81,6 +82,7 @@ class WebDavBackupActivity : AppCompatActivity() {
         }
         SoftHideKeyBoardUtil(this)
         initData()
+        (this as QRXActivity).init(webDavBackupBinding.wallpaper,webDavBackupBinding.appBarLayout)
     }
 
     /**
