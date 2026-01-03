@@ -31,6 +31,7 @@ class OpenSourceActivity : BaseSpecialThanksActivity() {
             insets
         }
         initData()
+        (this as BaseSpecialThanksActivity).initQRX(binding.wallpaper,binding.appBarLayout)
     }
 
     /**

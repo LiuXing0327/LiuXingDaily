@@ -8,7 +8,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
@@ -24,10 +23,11 @@ import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.databinding.ActivityAppearanceSettingsBinding
 import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.material.widget.DailyMaterialSwitch
+import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
 
-class AppearanceSettingsActivity : AppCompatActivity() {
+class AppearanceSettingsActivity : QRXActivity() {
 
     private lateinit var appearanceSettingsBinding: ActivityAppearanceSettingsBinding
     private var sharedPreferences: SharedPreferences? = null
@@ -49,6 +49,10 @@ class AppearanceSettingsActivity : AppCompatActivity() {
                     insets
         }
         initData()
+        (this as QRXActivity).init(
+            appearanceSettingsBinding.wallpaper,
+            appearanceSettingsBinding.appBarLayout
+        )
     }
 
     /**
