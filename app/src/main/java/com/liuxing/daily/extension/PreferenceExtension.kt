@@ -5,6 +5,9 @@
 package com.liuxing.daily.extension
 
 import android.app.Activity
+import android.os.Bundle
+import androidx.annotation.IdRes
+import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.liuxing.daily.util.IntentUtil
@@ -27,6 +30,17 @@ fun PreferenceFragmentCompat.bindPreferenceAction(
 ) {
     findPreference<Preference>(key)?.setOnPreferenceClickListener {
         action()
+        true
+    }
+}
+
+fun PreferenceFragmentCompat.bindPreferenceToNavigation(
+    key: String,
+    @IdRes destinationId: Int,
+    args: Bundle? = null
+) {
+    findPreference<Preference>(key)?.setOnPreferenceClickListener {
+        findNavController().navigate(destinationId, args)
         true
     }
 }
