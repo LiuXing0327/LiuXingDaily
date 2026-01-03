@@ -32,9 +32,12 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.ChangeDailyCardColorAdapter
 import com.liuxing.daily.adapter.MoodAdapter
@@ -43,9 +46,12 @@ import com.liuxing.daily.adapter.WeatherAdapter
 import com.liuxing.daily.databinding.ActivityEditDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
+import com.liuxing.daily.extension.formatDateString
+import com.liuxing.daily.extension.formatDateTimeWeek
 import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
+import com.liuxing.daily.listener.StringChangedListener
 import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
@@ -116,6 +122,8 @@ class EditDailyActivity : AppCompatActivity() {
     private val autoSave by lazy {
         sharedPreferences.getBoolean("switch_preference_auto_save", true)
     }
+    private var monthDay = ""
+    private lateinit var stringChangedListener: StringChangedListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -192,6 +200,7 @@ class EditDailyActivity : AppCompatActivity() {
         setDailyTitle()
         setDailyContent()
         setDailyDateTime()
+        selectDateTime()
         setDailyCount()
         setDailySinglePassword()
         setDailyMoodIndex()
@@ -209,6 +218,7 @@ class EditDailyActivity : AppCompatActivity() {
         setDailyLabel()
         getDailyLabels()
         setIsPinned()
+        setMonthDay()
     }
 
     /**
@@ -259,15 +269,81 @@ class EditDailyActivity : AppCompatActivity() {
      * 设置日记日期时间
      */
     private fun setDailyDateTime() {
+        setStringChangedListener(object : StringChangedListener {
+            override fun onStringChanged(newString: String) {
+                activityEditDailyBinding.tvDateTime.text = newString
+            }
+        })
+
         val showWeek =
             SharedPreferencesUtil.getBoolean(this, DailySettingsConst.WEEK_SWITCH_KEY, true)
         val dailyDateTime = getDailyDateTime()
-        activityEditDailyBinding.tvDateTime.text = if (showWeek) "$dailyDateTime ${
+        val defaultDateTime = if (showWeek) "$dailyDateTime ${
             DateUtil.getWeek(
                 this,
                 dailyDateTime
             )
         }" else dailyDateTime
+
+        stringChangedListener.onStringChanged(defaultDateTime)
+    }
+
+    /**
+     * 选择日期时间
+     */
+    private fun selectDateTime() {
+        val datePicker =
+            MaterialDatePicker.Builder.datePicker().setTitleText(getString(R.string.select_date))
+                .setSelection(
+                    MaterialDatePicker.todayInUtcMilliseconds()
+                ).build()
+
+        val time = DateUtil.getDateString(2, DateUtil.getCurrentDate())
+        val hour = time.split(":")[0].toInt()
+        val minute = time.split(":")[1].toInt()
+        val timePicker =
+            MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setHour(hour)
+                .setMinute(minute)
+                .setTitleText(getString(R.string.select_time)).build()
+
+        activityEditDailyBinding.tvDateTime.setOnClickListener {
+            datePicker.show(supportFragmentManager, datePicker.tag)
+        }
+
+        var newSelectedDateString = ""
+        var newSelectedTime = ""
+        datePicker.addOnPositiveButtonClickListener {
+            newSelectedDateString = datePicker.headerText.replace(
+                Regex("[年月]"), if (getString(R.string.daily) == "日记") "/" else "-"
+            )
+            newSelectedDateString = newSelectedDateString.replace("日", "")
+            newSelectedDateString = newSelectedDateString.formatDateString()
+
+            timePicker.show(supportFragmentManager, timePicker.tag)
+        }
+
+        timePicker.addOnPositiveButtonClickListener { _ ->
+            val hour = timePicker.hour
+            val minute = timePicker.minute
+            newSelectedTime = "%02d:%02d".format(hour, minute)
+
+            val week = DateUtil.getWeek(this, "$newSelectedDateString $newSelectedTime")
+
+            stringChangedListener.onStringChanged(
+                formatDateTimeWeek(
+                    newSelectedDateString,
+                    newSelectedTime,
+                    week
+                )
+            )
+        }
+    }
+
+    /**
+     * 设置 [stringChangedListener].
+     */
+    private fun setStringChangedListener(stringChangedListener: StringChangedListener) {
+        this.stringChangedListener = stringChangedListener
     }
 
     /**
@@ -514,6 +590,18 @@ class EditDailyActivity : AppCompatActivity() {
         isPinned = getIsPinned()
     }
 
+    /**
+     * 获取日记月日
+     */
+    private fun getMonthDay() = intent.getStringExtra("month_day") ?: ""
+
+    /**
+     * 设置日记月日
+     */
+    private fun setMonthDay() {
+        monthDay = getMonthDay()
+    }
+
 
     /**
      * 初始化菜单
@@ -555,13 +643,21 @@ class EditDailyActivity : AppCompatActivity() {
                                 .inflate(R.layout.dialog_change_daily_card_color, null)
                         val materialAlertDialogBuilder =
                             MaterialAlertDialogBuilder(this@EditDailyActivity)
+                        materialAlertDialogBuilder.setTitle(getString(R.string.change_color))
                         materialAlertDialogBuilder.setView(view)
+                        materialAlertDialogBuilder.setPositiveButton(
+                            getString(R.string.close),
+                            null
+                        )
                         val dialog = materialAlertDialogBuilder.create()
                         dialog.show()
                         val colorRecycler = view.findViewById<RecyclerView>(R.id.color_recycler)
                         colorRecycler.layoutManager = GridLayoutManager(this@EditDailyActivity, 3)
                         colorRecycler.adapter =
-                            ChangeDailyCardColorAdapter(ConstUtil.backgroundColorList,backgroundColorIndex) { selectedColor, position ->
+                            ChangeDailyCardColorAdapter(
+                                ConstUtil.backgroundColorList,
+                                backgroundColorIndex
+                            ) { selectedColor, position ->
                                 backgroundColorIndex = position
                                 activityEditDailyBinding.main.setBackgroundColor(
                                     ContextCompat.getColor(
@@ -575,8 +671,6 @@ class EditDailyActivity : AppCompatActivity() {
                                         selectedColor
                                     )
                                 )
-
-                                onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
                                 dialog.dismiss()
                             }
                     }
@@ -1156,14 +1250,15 @@ class EditDailyActivity : AppCompatActivity() {
                 id = getDailyId(),
                 title = activityEditDailyBinding.inputTitle.text.toString(),
                 content = dailyTextInputEdit.text.toString(),
-                dateTime = DateUtil.dateStringToDate(getDailyDateTime(), 0),
+                dateTime = DateUtil.dateStringToDate(activityEditDailyBinding.tvDateTime.text.toString(), 0),
                 backgroundColorIndex = backgroundColorIndex,
                 singlePassword = singlePasswordSha256,
                 moodIndex = moodIndex,
                 weatherIndex = weatherIndex,
                 dailyUUID = dailyUuid,
                 dailyLabel = dailyLabel,
-                isPinned = isPinned
+                isPinned = isPinned,
+                monthDay = monthDay
             )
         )
 
