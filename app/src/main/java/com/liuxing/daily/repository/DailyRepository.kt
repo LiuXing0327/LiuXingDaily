@@ -119,4 +119,8 @@ class DailyRepository(application: Application) {
         val (start, end) = DateUtil.dateStringToDayRangeMillis(dateString)
         return dailyDao.getByDateRange(start, end)
     }
+
+    fun getThatDayInHistory(): Flow<List<DailyEntity>> {
+        return dailyDao.getThatDayInHistory()
+    }
 }
