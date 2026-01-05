@@ -45,7 +45,8 @@
                     style="@style/Widget.流星日记.Material3Expressive.Button.IconButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:icon="@drawable/baseline_add_circle_outline_24" />
+                    app:icon="@drawable/baseline_add_circle_outline_24"
+                    android:contentDescription="@string/add_image"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_delete_wallpaper"
@@ -53,7 +54,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:backgroundTint="?attr/colorError"
-                    app:icon="@drawable/outline_delete_24" />
+                    app:icon="@drawable/outline_delete_24"
+                    android:contentDescription="@string/delete"/>
 
             </com.google.android.material.button.MaterialButtonGroup>
 
