@@ -70,8 +70,10 @@ open class QRXActivity : AppCompatActivity() {
      * @param dailyList 日记数据列表。
      */
     fun init(dailyListView: RecyclerView, dailyList: List<DailyEntity>) {
-        dailyListView.setLightStausBarsFromBitmap(dailyList) {
-            setLightStausBarsFromBitmap(wallpaperBitmap, wallpaper, window)
+        if (::wallpaperBitmap.isInitialized) {
+            dailyListView.setLightStausBarsFromBitmap(dailyList) {
+                setLightStausBarsFromBitmap(wallpaperBitmap, wallpaper, window)
+            }
         }
     }
 
