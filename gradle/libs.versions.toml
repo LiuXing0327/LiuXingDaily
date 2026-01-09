@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.1"
+agp = "8.13.2"
 colorpickerview = "V1.0"
 davemorrisseySubsamplingScaleImageView = "3.10.0"
 glide = "5.0.5"
