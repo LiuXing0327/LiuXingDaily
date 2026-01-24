@@ -1111,9 +1111,20 @@ class MainActivity : QRXActivity() {
                     }
 
                     val tempDir = File(externalCacheDir, "temp_zip").apply { mkdirs() }
+                    val sb = StringBuilder()
+                    val currentSortIndex = sharedPreferences?.getInt("daily_sort_by", 0)
+                    val sortedList = if (currentSortIndex == 0) {
+                        dailyWithMediaList.sortedByDescending {
+                            it.dailyEntity.dateTime
+                        }
+                    } else {
+                        dailyWithMediaList.sortedBy {
+                            it.dailyEntity.dateTime
+                        }
+                    }
 
                     // 遍历每个每日条目并将其添加到 ZIP 文件中
-                    dailyWithMediaList.forEach { dailyWithMedia ->
+                    sortedList.forEach { dailyWithMedia ->
                         if (exportFormat == ExportFormat.JSON) {
                             // 将日记导出为 JSON 文件
                             val jsonFile =
@@ -1198,7 +1209,7 @@ class MainActivity : QRXActivity() {
                             val dateTime =
                                 dailyEntity.dateTime ?: getCurrentDateTime()
                             val dateString = getDateString(3, Date(dateTime))
-                            val txtFile = File(tempDir, "${dateString}.txt")
+                            val txtFile = File(tempDir, "daily.txt")
                             val title = dailyEntity.title ?: ""
                             val moodIndex = dailyEntity.moodIndex ?: 0
                             val moodString =
@@ -1221,38 +1232,39 @@ class MainActivity : QRXActivity() {
                                     )).joinToString(" ")
                                 )
                                 appendLine()
-                                appendLine("-----------------------------")
-                                appendLine()
                                 appendLine(dailyEntity.content)
                                 appendLine()
-                                appendLine("-----------------------------")
-                                appendLine()
+                                appendLine("========================================")
                             }
 
-                            txtFile.writeText(txtContent)
+                            sb.appendLine(txtContent)
+
+                            txtFile.writeText(sb.toString())
                             val txtParams = net.lingala.zip4j.model.ZipParameters().apply {
                                 isEncryptFiles = baseZipParameters.isEncryptFiles
                                 encryptionMethod = baseZipParameters.encryptionMethod
                                 aesKeyStrength = baseZipParameters.aesKeyStrength
-                                fileNameInZip = "Text/${dateString}.txt"
+                                fileNameInZip = "Text/daily.txt"
                             }
 
                             zipFile.addFile(txtFile, txtParams)
                         }
                     }
 
-                    // 处理标签
-                    val queryLabelList = dailyViewModel.queryDailyLabelToList()
-                    val labelFile = File(tempDir, "labels.json")
-                    val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-                    labelFile.writeText(gson.toJson(queryLabelList))
-                    val labelParams = net.lingala.zip4j.model.ZipParameters().apply {
-                        isEncryptFiles = baseZipParameters.isEncryptFiles
-                        encryptionMethod = baseZipParameters.encryptionMethod
-                        aesKeyStrength = baseZipParameters.aesKeyStrength
-                        fileNameInZip = "Label/labels.json"
+                    if (exportFormat == ExportFormat.JSON) {
+                        // 处理标签
+                        val queryLabelList = dailyViewModel.queryDailyLabelToList()
+                        val labelFile = File(tempDir, "labels.json")
+                        val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+                        labelFile.writeText(gson.toJson(queryLabelList))
+                        val labelParams = net.lingala.zip4j.model.ZipParameters().apply {
+                            isEncryptFiles = baseZipParameters.isEncryptFiles
+                            encryptionMethod = baseZipParameters.encryptionMethod
+                            aesKeyStrength = baseZipParameters.aesKeyStrength
+                            fileNameInZip = "Label/labels.json"
+                        }
+                        zipFile.addFile(labelFile, labelParams)
                     }
-                    zipFile.addFile(labelFile, labelParams)
 
                     contentResolver.openOutputStream(url)?.use { outputStream ->
                         tempZipFile.inputStream().use { inputStream ->
