@@ -216,4 +216,12 @@
     <string name="select_date">选择日期</string>
     <string name="select_time">选择时间</string>
     <string name="delete_wallpaper_message">是否删除壁纸？</string>
+    <string name="select_image">选择图片</string>
+    <string name="take_image">拍摄图片</string>
+    <string name="json_icon_description">这是一个 JSON 图标</string>
+    <string name="txt_icon_description">这是一个 TXT 图标</string>
+    <string name="import_and_export">导入与导出</string>
+    <string name="backup_and_restore">备份与恢复</string>
+    <string name="local_backup_path">本地备份路径</string>
+    <string name="auto_backup">自动备份</string>
 </resources>

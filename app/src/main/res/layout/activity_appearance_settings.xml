@@ -34,6 +34,7 @@
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
+                android:theme="@style/ThemeOverlay.Material3.Toolbar.CircleNavigationButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </FrameLayout>
@@ -46,47 +47,44 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-    <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:layout_margin="@dimen/dp_8"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior">
-
-        <com.google.android.material.overflow.OverflowLinearLayout
+        <com.google.android.material.button.MaterialButtonGroup
+            android:padding="@dimen/dp_16"
+            style="@style/Widget.Material3Expressive.MaterialButtonGroup.Connected"
             android:gravity="center"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/floating_toolbar_button_light"
-                style="?attr/materialIconButtonFilledStyle"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="true"
                 android:contentDescription="@string/light_mode"
+                android:text="@string/light_mode"
                 app:icon="@drawable/outline_light_mode_24" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/floating_toolbar_button_night"
-                style="?attr/materialIconButtonFilledStyle"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="true"
                 android:contentDescription="@string/night_node"
+                android:text="@string/night_node"
                 app:icon="@drawable/outline_mode_night_24" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/floating_toolbar_button_follow_system"
-                style="?attr/materialIconButtonFilledStyle"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="true"
                 android:contentDescription="@string/follow_the_system"
+                android:text="@string/follow_the_system"
                 app:icon="@drawable/outline_phone_android_24" />
 
-        </com.google.android.material.overflow.OverflowLinearLayout>
-    </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
+        </com.google.android.material.button.MaterialButtonGroup>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_theme"

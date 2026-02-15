@@ -80,7 +80,7 @@ class WebDavBackupActivity : QRXActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
-        SoftHideKeyBoardUtil(this)
+        // SoftHideKeyBoardUtil(this)
         initData()
         (this as QRXActivity).init(webDavBackupBinding.wallpaper,webDavBackupBinding.appBarLayout)
     }

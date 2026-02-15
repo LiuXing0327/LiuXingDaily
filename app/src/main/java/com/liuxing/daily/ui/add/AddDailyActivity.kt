@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -20,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -47,6 +49,7 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.extension.formatDateString
 import com.liuxing.daily.extension.formatDateTimeWeek
+import com.liuxing.daily.extension.getExternalPicturesFilesDir
 import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.extension.toMonthDay
 import com.liuxing.daily.listener.OnEnabledChangedListener
@@ -59,6 +62,7 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
 import com.liuxing.daily.util.SnackbarUtil
@@ -71,6 +75,7 @@ import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.UUID
 
 private const val BACK_GROUND_COLOR_INDEX = "backgroundColorIndex"
@@ -79,6 +84,8 @@ private const val TEMP_MOOD_INDEX = "tempMoodIndex"
 private const val WEATHER_INDEX = "weatherIndex"
 private const val TEMP_WEATHER_INDEX = "tempWeatherIndex"
 private const val DAILY_LABEL = "dailyLabel"
+private const val SELECT_IMAGE = 0
+private const val TAKE_IMAGE = 1
 
 class AddDailyActivity : AppCompatActivity() {
 
@@ -111,6 +118,7 @@ class AddDailyActivity : AppCompatActivity() {
     }
 
     private lateinit var stringChangedListener: StringChangedListener
+    private lateinit var imagePath: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -447,13 +455,32 @@ class AddDailyActivity : AppCompatActivity() {
                     }
 
                     R.id.item_add_image -> {
-                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                            setType("image/*")
-                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                            addCategory(Intent.CATEGORY_OPENABLE)
+                        val addImageOptions = arrayOf(getString(R.string.select_image),
+                            getString(R.string.take_image))
+                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
+                            setTitle(getString(R.string.add_image))
+                            setItems(addImageOptions) { _, which ->
+                                when (which) {
+                                    SELECT_IMAGE -> {
+                                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                            type = "image/*"
+                                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                        }
+                                        addLauncher.launch(intent)
+                                    }
+
+                                    TAKE_IMAGE -> {
+                                        openCamera()
+                                    }
+                                }
+                            }
+                            setPositiveButton(getString(R.string.cancel), null)
+                            create()
+                            show()
                         }
-                        addLauncher.launch(intent)
+
                     }
 
                     R.id.item_add_video -> {
@@ -520,6 +547,44 @@ class AddDailyActivity : AppCompatActivity() {
             }
         })
     }
+
+    /**
+     * 开启摄像头
+     */
+    private fun openCamera() {
+        val externalPicturesFilesDir = getExternalPicturesFilesDir()
+        val imageName = UUID.randomUUID().toString() + ".jpg"
+        val file = File(externalPicturesFilesDir, imageName)
+
+        imagePath = file.absolutePath
+
+        val imageUri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.fileprovider",
+            file
+        )
+
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+
+        takeImageLauncher.launch(intent)
+    }
+
+    private val takeImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                tempImageList.clear()
+                imageList.add(imagePath)
+                tempImageList.add(imagePath)
+                if (tempImageList.isNotEmpty()) {
+                    dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+                    dailyTextInputEdit.insertImages(tempImageList.toList())
+                }
+                tempImageList.clear()
+            }
+        }
 
     private val addDrawImageLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->

@@ -54,7 +54,7 @@ class CrashActivity : AppCompatActivity() {
 
         val crashFile = File(externalCacheDir, "crash_${System.currentTimeMillis()}.txt")
         crashFile.writeText(crashLog)
-        val fileUri = FileProvider.getUriForFile(this, "${packageName}.provider", crashFile)
+        val fileUri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", crashFile)
 
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "message/rfc822"
