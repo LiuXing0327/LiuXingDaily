@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Base.Theme.流星日记" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.流星日记" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
         <item name="searchViewShowingColor">@color/night_showing_color</item>

@@ -1,6 +1,6 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Base.Theme.流星日记" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.流星日记" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="searchViewShowingColor">@color/light_showing_color</item>
@@ -11,7 +11,7 @@
         </item>
     </style>
 
-    <style name="RedTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="RedTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary_red</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary_red</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer_red</item>
@@ -65,7 +65,7 @@
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
-    <style name="GreenTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="GreenTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary_green</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary_green</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer_green</item>
@@ -121,7 +121,7 @@
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
-    <style name="BlueTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="BlueTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary_blue</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary_blue</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer_blue</item>
@@ -177,7 +177,7 @@
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
-    <style name="YellowTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="YellowTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary_yellow</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary_yellow</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer_yellow</item>
@@ -235,7 +235,7 @@
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
-    <style name="PinkTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="PinkTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary_pink</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary_pink</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer_pink</item>
