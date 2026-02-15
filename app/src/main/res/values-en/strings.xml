@@ -211,4 +211,12 @@
     <string name="select_date">Select date</string>
     <string name="select_time">Select time</string>
     <string name="delete_wallpaper_message">Do you want to delete the wallpaper?</string>
+    <string name="select_image">Select image</string>
+    <string name="take_image">Take image</string>
+    <string name="json_icon_description">This is a JSON icon</string>
+    <string name="txt_icon_description">This is a TXT icon</string>
+    <string name="import_and_export">Import and Export</string>
+    <string name="backup_and_restore">Backup and restore</string>
+    <string name="local_backup_path">Local backup path</string>
+    <string name="auto_backup">Automatic backup</string>
 </resources>
