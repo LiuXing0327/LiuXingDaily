@@ -55,8 +55,8 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_send"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="@dimen/dp_150"
+                    android:layout_height="@dimen/dp_150"
                     android:layout_marginTop="24dp"
                     android:backgroundTint="@color/m3_button_background_color_selector"
                     android:text="@string/send_report"
@@ -65,8 +65,8 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_exit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="@dimen/dp_100"
+                    android:layout_height="@dimen/dp_100"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/m3_button_background_color_selector"
                     android:text="@string/exit_application"
