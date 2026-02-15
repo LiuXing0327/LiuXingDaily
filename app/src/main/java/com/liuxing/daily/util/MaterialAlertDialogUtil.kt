@@ -32,6 +32,7 @@ object MaterialAlertDialogUtil {
      * @param onNeutral setNeutralButton的回调函数
      * @param onViewCreated 当使用自定义布局时，会在布局创建完成后回调函数，
      *                      允许在此操作 view 或设置监听。
+     *@param isCancelable 是否可以取消，默认可以。
      *
      * @return MaterialAlertDialog
      */
@@ -46,7 +47,8 @@ object MaterialAlertDialogUtil {
         onNegative: (() -> Unit)? = null,
         neutralText: String = "",
         onNeutral: (() -> Unit)? = null,
-        onViewCreated: ((View, AlertDialog) -> Unit)? = null
+        onViewCreated: ((View, AlertDialog) -> Unit)? = null,
+        isCancelable: Boolean = true
     ): AlertDialog? {
         val activity = (context as? Activity) ?: return null
         if(activity.isFinishing || activity.isDestroyed){
@@ -64,6 +66,7 @@ object MaterialAlertDialogUtil {
             } else {
                 setMessage(message)
             }
+            setCancelable(isCancelable)
             setPositiveButton(positiveText) { _, _ ->
                 onPositive?.invoke()
             }
