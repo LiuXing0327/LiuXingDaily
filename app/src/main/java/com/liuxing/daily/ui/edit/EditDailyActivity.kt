@@ -197,6 +197,10 @@ class EditDailyActivity : AppCompatActivity() {
                 false
             ) || !getDailyTitle().isNullOrEmpty()
         activityEditDailyBinding.inputTitleContainer?.setVisibility(showTitle)
+
+        activityEditDailyBinding.actionBtnSave.setOnClickListener {
+            isDailyNullOrEquals()
+        }
     }
 
     /**
@@ -619,6 +623,7 @@ class EditDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_edit_daily, menu)
+                menu.findItem(R.id.item_save).isVisible = false
 /*                when {
                     activityEditDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && dailyTextInputEdit.text!!.trim()
