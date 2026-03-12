@@ -1,4 +1,4 @@
-package com.liuxing.daily.ui.edit
+﻿package com.liuxing.daily.ui.edit
 
 import android.app.Activity
 import android.content.Context
@@ -1333,6 +1333,10 @@ class EditDailyActivity : AppCompatActivity() {
                 monthDay = monthDay
             )
         )
+        autoSaveDailySharedPreferences(
+            this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false, false
+        )
+        sharedPreferences.edit { putLong("switch_preference_auto_save_id", 0) }
 
         // 循环去除被删除的图片
         if (deleteImageList.isNotEmpty()) {
