@@ -12,7 +12,7 @@
 <div>
 <img src="screenshot/2.6/V2.6Screenshot_20250705_102436.png" width="30%"/>
  <img src="screenshot/2.9.0/V2.9.0Screenshot_20251128_222954.png" width="30%"/>
- <img src="screenshot/2.4.1/V2.4.1Screenshot_20250509_172452.png" width="30%"/>
+ <img src="screenshot/2.9.5/V2.9.5Screenshot_20260312_150225.png" width="30%"/>
 </div>
 
 <div>
