@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.listitem.ListItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:paddingHorizontal="@dimen/dp_8"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.listitem.ListItemCardView
+        android:clickable="true"
+        android:focusable="true"
+        android:id="@+id/list_item_card_view"
+        style="?attr/listItemCardViewSegmentedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_66">
+
+        <LinearLayout
+            android:gravity="center_vertical"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:orientation="horizontal"
+            tools:ignore="UseCompoundDrawables">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                style="@style/Widget.Material3.ShapeableImageView.ListItem.LeadingImage"
+                android:id="@+id/list_item_image"
+                android:layout_height="@dimen/dp_24"
+                android:layout_width="@dimen/dp_24"
+                app:srcCompat="@drawable/outline_toolbar_download_24"
+                android:scaleType="centerCrop"/>
+
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="16dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/list_item_over_text"
+                    style="@style/Widget.Material3.TextView.ListItem.LabelText"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:text="Text"/>
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:text="Text"
+                    style="@style/Widget.Material3.TextView.ListItem.SupportingText"
+                    android:id="@+id/list_item_text"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"/>
+            </LinearLayout>
+
+            <TextView
+                android:visibility="gone"
+                style="@style/Widget.Material3.TextView.ListItem.TrailingSupportingText"
+                android:id="@+id/list_item_trailing_text"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:text="Trailing text"/>
+
+        </LinearLayout>
+
+    </com.google.android.material.listitem.ListItemCardView>
+
+</com.google.android.material.listitem.ListItemLayout>

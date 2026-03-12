@@ -14,7 +14,7 @@
         <item name="navigationIcon">@drawable/baseline_toolbar_close_24</item>
     </style>
 
-    <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.Material3Expressive.MaterialAlertDialog">
         <item name="buttonBarPositiveButtonStyle">?attr/colorPrimary</item>
     </style>
 

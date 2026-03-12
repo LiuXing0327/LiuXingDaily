@@ -1,4 +1,4 @@
-package com.liuxing.daily.ui.edit
+﻿package com.liuxing.daily.ui.edit
 
 import android.app.Activity
 import android.content.Context
@@ -197,6 +197,10 @@ class EditDailyActivity : AppCompatActivity() {
                 false
             ) || !getDailyTitle().isNullOrEmpty()
         activityEditDailyBinding.inputTitleContainer?.setVisibility(showTitle)
+
+        activityEditDailyBinding.actionBtnSave.setOnClickListener {
+            isDailyNullOrEquals()
+        }
     }
 
     /**
@@ -619,6 +623,7 @@ class EditDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_edit_daily, menu)
+                menu.findItem(R.id.item_save).isVisible = false
 /*                when {
                     activityEditDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && dailyTextInputEdit.text!!.trim()
@@ -1328,6 +1333,10 @@ class EditDailyActivity : AppCompatActivity() {
                 monthDay = monthDay
             )
         )
+        autoSaveDailySharedPreferences(
+            this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false, false
+        )
+        sharedPreferences.edit { putLong("switch_preference_auto_save_id", 0) }
 
         // 循环去除被删除的图片
         if (deleteImageList.isNotEmpty()) {

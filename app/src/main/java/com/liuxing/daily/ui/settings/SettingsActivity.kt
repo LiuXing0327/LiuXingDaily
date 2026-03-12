@@ -52,7 +52,7 @@ class SettingsActivity : QRXActivity() {
         }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settings)) { v, insets ->
             val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            v.setPadding(navigationBars.left,0,navigationBars.right,navigationBars.bottom)
+            v.setPadding(navigationBars.left, 0, navigationBars.right, navigationBars.bottom)
             insets
         }
         setSupportActionBar(activityBinding.toolbar)
@@ -65,7 +65,7 @@ class SettingsActivity : QRXActivity() {
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         currentDynamicColorChecked =
             SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
-        qrx()
+        // qrx()
     }
 
     fun qrx() {

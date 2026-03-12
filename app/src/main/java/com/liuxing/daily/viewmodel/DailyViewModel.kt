@@ -102,8 +102,8 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
         dailyRepository.deleteSelectVideoPath(videoPath)
     }
 
-    fun deletePathVideoByDailyUuid(videoPath: String) = viewModelScope.launch(Dispatchers.IO) {
-        dailyRepository.deletePathVideoByDailyUuid(videoPath)
+    fun deletePathVideoByDailyUuid(dailyUuid: String) = viewModelScope.launch(Dispatchers.IO) {
+        dailyRepository.deletePathVideoByDailyUuid(dailyUuid)
     }
 
     suspend fun queryDailyVideoByUuidToList(dailyUuid: String): List<DailyVideoEntity> =
@@ -153,27 +153,27 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun deleteSelected(selectedList: List<DailyEntity>) = withContext(Dispatchers.IO) {
         val fileUtil = FileUtil()
-            selectedList.forEach { dailyEntity ->
-                val uuid = dailyEntity.dailyUUID ?: return@forEach
-                queryDailyImageByUuidToList(uuid).mapNotNull { it.imagePath }
-                    .forEach { path ->
-                        if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
-                    }
-                deletePathImageByDailyUuid(uuid)
-
-                queryDailyVideoByUuidToList(uuid).mapNotNull { it.videoPath }
-                    .forEach { path ->
-                        if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
-                    }
-                deletePathVideoByDailyUuid(uuid)
-
-                queryDailyAudioByUuidToList(uuid).mapNotNull { it.audioPath }.forEach { path ->
+        selectedList.forEach { dailyEntity ->
+            val uuid = dailyEntity.dailyUUID ?: return@forEach
+            queryDailyImageByUuidToList(uuid).mapNotNull { it.imagePath }
+                .forEach { path ->
                     if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
                 }
-                deletePathAudioByDailyUuid(uuid)
+            dailyRepository.deletePathImageByDailyUuid(uuid)
 
-                deleteDaily(dailyEntity)
+            queryDailyVideoByUuidToList(uuid).mapNotNull { it.videoPath }
+                .forEach { path ->
+                    if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
+                }
+            dailyRepository.deletePathVideoByDailyUuid(uuid)
+
+            queryDailyAudioByUuidToList(uuid).mapNotNull { it.audioPath }.forEach { path ->
+                if (fileUtil.checkFileExists(path)) fileUtil.deleteFile(path)
             }
+            dailyRepository.deletePathAudioByDailyUuid(uuid)
+
+            dailyRepository.deleteDaily(dailyEntity)
+        }
     }
 
     fun getByDateRange(dateString: String): LiveData<List<DailyEntity>> {
@@ -183,4 +183,8 @@ class DailyViewModel(application: Application) : AndroidViewModel(application) {
     val getThatDayInHistory: LiveData<List<DailyEntity>> =
         dailyRepository.getThatDayInHistory()
             .asLiveData()
+
+    suspend fun queryAllDailyOnce(): List<DailyEntity> = withContext(Dispatchers.IO) {
+        dailyRepository.queryAllDailyOnce()
+    }
 }

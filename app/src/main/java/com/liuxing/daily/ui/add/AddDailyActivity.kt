@@ -1,4 +1,4 @@
-package com.liuxing.daily.ui.add
+﻿package com.liuxing.daily.ui.add
 
 import android.app.Activity
 import android.content.DialogInterface
@@ -197,6 +197,10 @@ class AddDailyActivity : AppCompatActivity() {
         activityAddDailyBinding.inputTitleContainer?.setVisibility(showTitle)
 
         loadLabel()
+
+        activityAddDailyBinding.actionBtnSave?.setOnClickListener {
+            isDailyNull()
+        }
     }
 
     /**
@@ -243,6 +247,7 @@ class AddDailyActivity : AppCompatActivity() {
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_add_daily, menu)
+                menu.findItem(R.id.item_save).isVisible = false
 /*                when {
                     activityAddDailyBinding.inputTitle.text!!.trim()
                         .isEmpty() && dailyTextInputEdit.text!!.trim()
@@ -734,6 +739,7 @@ class AddDailyActivity : AppCompatActivity() {
         autoSaveDailySharedPreferences(
             this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false, false
         )
+        sharedPreferences.edit { putLong("switch_preference_auto_save_id", 0) }
         isSystemExit = false
 
         dailyViewModel.insertDaily(

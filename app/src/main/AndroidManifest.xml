@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools" >
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -17,7 +17,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.流星日记"
         android:usesCleartextTraffic="true"
-        tools:targetApi="33">
+        tools:targetApi="33" >
+        <activity
+            android:label="@string/wallpaper"
+            android:name=".ui.wallpaper.WallpaperActivity"
+            android:exported="false" />
         <activity
             android:name=".ui.settings.DailySettingsActivity"
             android:exported="false" />
@@ -86,7 +90,7 @@
             android:exported="false" />
         <activity
             android:name=".ui.main.MainActivity"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -98,7 +102,7 @@
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true">
+            android:grantUriPermissions="true" >
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />

@@ -83,7 +83,7 @@ class DailyRepository(application: Application) {
         dailyDao.deleteDailySelectPathVideo(videoPath)
 
     suspend fun deletePathVideoByDailyUuid(dailyUuid: String) =
-        dailyDao.deletePathImageByDailyUuid(dailyUuid)
+        dailyDao.deleteDailyVideoPathByDailyUuid(dailyUuid)
 
     suspend fun insertDailyAudioPath(dailyUuid: String, audioPathList: List<String>) =
         audioPathList.forEach { path ->
@@ -123,4 +123,6 @@ class DailyRepository(application: Application) {
     fun getThatDayInHistory(): Flow<List<DailyEntity>> {
         return dailyDao.getThatDayInHistory()
     }
+
+    suspend fun queryAllDailyOnce(): List<DailyEntity> = dailyDao.queryAllDailyOnce()
 }

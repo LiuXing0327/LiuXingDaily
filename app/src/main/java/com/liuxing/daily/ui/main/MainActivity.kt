@@ -108,6 +108,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
@@ -852,7 +853,7 @@ class MainActivity : QRXActivity() {
             if (zipFile.isEncrypted) {
                 // 如果备份文件加密，提示输入密码
                 password = withContext(Dispatchers.Main) {
-                    suspendCoroutine { continuation ->
+                    suspendCancellableCoroutine { continuation ->
                         val inflate =
                             layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
                         val inputPasswordLayout =

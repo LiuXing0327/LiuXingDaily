@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024 流星
  */
 
@@ -288,16 +288,16 @@ class DailyTextInputEdit : TextInputEditText {
                     // 检查文本中是否已经插入该图片占位符，避免重复插入
                     val sequence = createImageSpannable(it)
                     if (!editable.contains(sequence)) {
-                            if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
-                                editable.insert(selectionStart, "\n\n")
-                            }
-                            editable.insert(selectionStart, sequence)
-                            val newLength = editable.length
-                            if (selectionStart + sequence.length <= newLength) {
-                                editable.insert(selectionStart + sequence.length, "\n")
-                            } else {
-                                editable.append("\n")
-                            }
+                        if (selectionStart > 0 && editable[selectionStart - 1] != '\n') {
+                            editable.insert(selectionStart, "\n\n")
+                        }
+                        editable.insert(selectionStart, sequence)
+                        val newLength = editable.length
+                        if (selectionStart + sequence.length <= newLength) {
+                            editable.insert(selectionStart + sequence.length, "\n")
+                        } else {
+                            editable.append("\n")
+                        }
                         isImageInserted = true
                     }
                 }
