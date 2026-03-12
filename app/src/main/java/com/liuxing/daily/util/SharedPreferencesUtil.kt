@@ -79,7 +79,7 @@ object SharedPreferencesUtil {
             )
             putString("switch_preference_auto_save_daily_label", dailyLabel)
             putBoolean("switch_preference_auto_save_video_list_not_null", videoListNotNull)
-            putBoolean("switch_preference_auto_save_video_list_not_null", audioListNotNull)
+            putBoolean("switch_preference_auto_save_audio_list_not_null", audioListNotNull)
             putBoolean("switch_preference_auto_save_is_pinned",isPinned)
             apply()
         }
