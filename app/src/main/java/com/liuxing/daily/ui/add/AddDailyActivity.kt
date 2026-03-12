@@ -1,4 +1,4 @@
-package com.liuxing.daily.ui.add
+﻿package com.liuxing.daily.ui.add
 
 import android.app.Activity
 import android.content.DialogInterface
@@ -739,6 +739,7 @@ class AddDailyActivity : AppCompatActivity() {
         autoSaveDailySharedPreferences(
             this, 1, "", "", 0, 0, "", 0, 0, "", false, "", false, false
         )
+        sharedPreferences.edit { putLong("switch_preference_auto_save_id", 0) }
         isSystemExit = false
 
         dailyViewModel.insertDaily(
