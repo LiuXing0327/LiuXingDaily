@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024 流星
  */
 
@@ -459,7 +459,7 @@ class DailyTextView : MaterialTextView {
         val audioTag = "<audio src=\"$audioPath\"/>"
         val iconDrawable =
             ContextCompat.getDrawable(context, R.drawable.baseline_audiotrack_circle_fille_24)
-            ?: return SpannableString("")
+                ?: return SpannableString("")
 
         val screenWidth = resources.displayMetrics.widthPixels
         val paddingHorizontal = 40 // 左右基础间距
