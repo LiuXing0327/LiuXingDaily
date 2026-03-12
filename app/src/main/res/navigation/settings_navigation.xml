@@ -9,13 +9,13 @@
         android:id="@+id/settingsFragment"
         android:name="com.liuxing.daily.ui.settings.SettingsFragment"
         android:label="@string/settings" >
-        <action
+<!--        <action
             android:id="@+id/action_settingsFragment_to_wallpaperFragment"
-            app:destination="@id/wallpaperFragment" />
+            app:destination="@id/wallpaperFragment" />-->
     </fragment>
-    <fragment
+<!--    <fragment
         android:id="@+id/wallpaperFragment"
         android:name="com.liuxing.daily.ui.wallpaper.WallpaperFragment"
         android:label="@string/wallpaper"
-        tools:layout="@layout/fragment_wallpaper" />
+        tools:layout="@layout/fragment_wallpaper" />-->
 </navigation>
