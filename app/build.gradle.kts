@@ -37,9 +37,6 @@ android {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
         }
     }
-    viewBinding {
-        enable = true
-    }
     buildFeatures {
         viewBinding = true
     }
