@@ -433,7 +433,7 @@ class EditDailyActivity : AppCompatActivity() {
      * 获取日记密码
      */
     private fun getDailySinglePassword(): String =
-        intent.getStringExtra("single_password").toString()
+        intent.getStringExtra("single_password") ?: "" // 避免编辑时传入 null
 
     /**
      * 设置日记密码
@@ -637,13 +637,8 @@ class EditDailyActivity : AppCompatActivity() {
                         invalidateOptionsMenu()
                     }
                 }*/
-                menu.findItem(R.id.item_lock_to_on_and_un_ed).title = when {
-                    singlePassword == "" -> {
-                        getString(R.string.locked)
-                    }
-
-                    else -> getString(R.string.unlocked)
-                }
+                menu.findItem(R.id.item_lock_to_on_and_un_ed).title =
+                    if (singlePassword == "") getString(R.string.locked) else getString(R.string.unlocked)
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -828,9 +823,10 @@ class EditDailyActivity : AppCompatActivity() {
                                     inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
                                 val inputPassword =
                                     inflate.findViewById<TextInputEditText>(R.id.input_password)
-                                if (singlePassword == "") inputPasswordLayout.hint =
-                                    getString(R.string.locked) else inputPasswordLayout.hint =
-                                    getString(R.string.unlocked)
+                                inputPasswordLayout.hint =
+                                    if (singlePassword == "") getString(R.string.locked) else getString(
+                                        R.string.unlocked
+                                    )
                                 inputPassword.setText(singlePassword)
                                 MaterialAlertDialogBuilder(this@EditDailyActivity).apply {
                                     if (singlePassword == "") setTitle(getString(R.string.locked)) else setTitle(
@@ -838,19 +834,15 @@ class EditDailyActivity : AppCompatActivity() {
                                     )
                                     setView(inflate)
                                     setPositiveButton(
-                                        getString(R.string.sure),
-                                        object : DialogInterface.OnClickListener {
-                                            override fun onClick(
-                                                dialog: DialogInterface?,
-                                                which: Int
-                                            ) {
-                                                onEnabledChangedListener?.onEnableChanged(!originalAllContentEqualsCurrentContent())
-                                                singlePassword = inputPassword.text.toString()
-                                            }
-
-                                        })
-                                    setNegativeButton(getString(R.string.forgot_password)) { dialog, which ->
-                                        singlePassword = ""
+                                        getString(R.string.sure)
+                                    ) { _, _ ->
+                                        onEnabledChangedListener.onEnableChanged(!originalAllContentEqualsCurrentContent())
+                                        singlePassword = inputPassword.text.toString()
+                                    }
+                                    if (singlePassword != "") {
+                                        setNegativeButton(getString(R.string.clear_password)) { _, _ ->
+                                            singlePassword = ""
+                                        }
                                     }
                                     setNeutralButton(getString(R.string.cancel), null)
                                     setCancelable(false)
