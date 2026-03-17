@@ -21,7 +21,9 @@ import com.liuxing.daily.adapter.ThemeColorAdapter
 import com.liuxing.daily.data.DailySettingsData
 import com.liuxing.daily.data.ThemeColorData
 import com.liuxing.daily.databinding.ActivityAppearanceSettingsBinding
+import com.liuxing.daily.extension.initDefIcon
 import com.liuxing.daily.extension.setVisibility
+import com.liuxing.daily.extension.toggleDoneIcon
 import com.liuxing.daily.material.widget.DailyMaterialSwitch
 import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.SharedPreferencesUtil
@@ -92,42 +94,78 @@ class AppearanceSettingsActivity : QRXActivity() {
      */
     private fun changeThemeMode() {
         val themeModeIndex = sharedPreferences!!.getInt("theme_mode_preference", 0)
-        when (themeModeIndex) {
-            1 -> appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = true
+        val id = when (themeModeIndex) {
+            1 -> appearanceSettingsBinding.floatingToolbarButtonLight
+            2 -> appearanceSettingsBinding.floatingToolbarButtonNight
+            else -> appearanceSettingsBinding.floatingToolbarButtonFollowSystem
+        }.apply {
+            isChecked = true
+        }.id
 
-            2 -> appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = true
+        changeDoneIcon(id)
 
-            else -> appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = true
+        appearanceSettingsBinding.floatingToolbarButtonLight.setOnClickListener(::onFloatingButtonClicked)
+        appearanceSettingsBinding.floatingToolbarButtonNight.setOnClickListener(::onFloatingButtonClicked)
+        appearanceSettingsBinding.floatingToolbarButtonFollowSystem.setOnClickListener(::onFloatingButtonClicked)
+    }
+
+    /**
+     * FloatingToolbar 按钮点击事件分发处理
+     *
+     * 所有按钮都执行 -> [selectTheme]
+     *
+     * @param view 被点击的按钮 View
+     */
+    private fun onFloatingButtonClicked(view: View) {
+        when (val id = view.id) {
+            R.id.floating_toolbar_button_light -> selectTheme(1, id)
+            R.id.floating_toolbar_button_night -> selectTheme(2, id)
+            R.id.floating_toolbar_button_follow_system -> selectTheme(0, id)
+        }
+    }
+
+    /**
+     * 选择主题
+     *
+     * @param mode 主题模型索引
+     * @param id 按钮 Id
+     */
+    private fun selectTheme(mode: Int, id: Int) {
+        ThemeUtil.setThemeMode(mode)
+        saveThemeMode(mode)
+
+        with(appearanceSettingsBinding) {
+            floatingToolbarButtonLight.isChecked = id == floatingToolbarButtonLight.id
+            floatingToolbarButtonNight.isChecked = id == floatingToolbarButtonNight.id
+            floatingToolbarButtonFollowSystem.isChecked = id == floatingToolbarButtonFollowSystem.id
         }
 
-        appearanceSettingsBinding.floatingToolbarButtonLight.setOnClickListener {
-            ThemeUtil.setThemeMode(1)
-            saveThemeMode(1)
-            appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = true
+        changeDoneIcon(id)
+    }
 
-            appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = false
-            appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = false
+    /**
+     * 根据按钮 [id] 切换完成图标。
+     *
+     *
+     * @param id 按钮 Id.
+     */
+    private fun changeDoneIcon(id: Int) {
+        mapOf(
+            appearanceSettingsBinding.floatingToolbarButtonLight to ContextCompat.getDrawable(
+                this, R.drawable.outline_light_mode_24
+            ),
+            appearanceSettingsBinding.floatingToolbarButtonNight to ContextCompat.getDrawable(
+                this, R.drawable.outline_mode_night_24
+            ),
+            appearanceSettingsBinding.floatingToolbarButtonFollowSystem to ContextCompat.getDrawable(
+                this, R.drawable.outline_phone_android_24
+            )
+        ).forEach { (button, drawable) ->
+            button.let {
+                it.initDefIcon(drawable)
+                it.toggleDoneIcon(id)
+            }
         }
-
-        appearanceSettingsBinding.floatingToolbarButtonNight.setOnClickListener {
-            ThemeUtil.setThemeMode(2)
-            saveThemeMode(2)
-            appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = false
-
-            appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = true
-
-            appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = false
-        }
-
-        appearanceSettingsBinding.floatingToolbarButtonFollowSystem.setOnClickListener {
-            ThemeUtil.setThemeMode(0)
-            saveThemeMode(0)
-            appearanceSettingsBinding.floatingToolbarButtonLight.isChecked = false
-            appearanceSettingsBinding.floatingToolbarButtonNight.isChecked = false
-
-            appearanceSettingsBinding.floatingToolbarButtonFollowSystem.isChecked = true
-        }
-
     }
 
     /**
