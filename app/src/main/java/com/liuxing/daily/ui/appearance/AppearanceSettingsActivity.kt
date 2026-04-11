@@ -1,21 +1,28 @@
 package com.liuxing.daily.ui.appearance
 
+import android.animation.ValueAnimator
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.listitem.ListItemCardView
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.liuxing.daily.R
 import com.liuxing.daily.adapter.ThemeColorAdapter
 import com.liuxing.daily.data.DailySettingsData
@@ -28,6 +35,10 @@ import com.liuxing.daily.material.widget.DailyMaterialSwitch
 import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+private const val SPAN_COUNT = 4
 
 class AppearanceSettingsActivity : QRXActivity() {
 
@@ -245,8 +256,17 @@ class AppearanceSettingsActivity : QRXActivity() {
             it.isSelected = it.id == themeColorId
         }
         val themeColorAdapter = ThemeColorAdapter(this, colorDataList)
-        appearanceSettingsBinding.recyclerTheme.layoutManager = GridLayoutManager(this, 4)
-        appearanceSettingsBinding.recyclerTheme.adapter = themeColorAdapter
+
+        with(appearanceSettingsBinding.recyclerTheme) {
+            layoutManager = GridLayoutManager(this@AppearanceSettingsActivity, SPAN_COUNT)
+            adapter = themeColorAdapter
+            addItemDecoration(
+                ThemeColorAdapter.MarginItemDecoration(
+                    this@AppearanceSettingsActivity,
+                    SPAN_COUNT
+                )
+            )
+        }
     }
 
     /**
@@ -278,11 +298,20 @@ class AppearanceSettingsActivity : QRXActivity() {
         val supportingText =
             appearanceSettingsBinding.settingsContainer.listItemSupportingText
 
+        val px = 16 * resources.displayMetrics.density
+        val shape = ShapeAppearanceModel.builder()
+            .setAllCornerSizes(px)
+            .build()
+
+        appearanceSettingsBinding.settingsContainer.listItemCardView.shapeAppearanceModel =
+            shape
+
         startIcon.setImageResource(data.iconResource)
         textView.text = data.text
         supportingText.text = data.supportingString
         supportingText.setVisibility(true)
         onDynamicColorDataChanged(startIcon, switch, cardView, data)
+        animateThemeList(!data.checked)
 
         cardView.setOnClickListener {
             val newChecked = !cardView.isChecked
@@ -290,16 +319,25 @@ class AppearanceSettingsActivity : QRXActivity() {
             onDynamicColorDataChanged(startIcon, switch, cardView, data)
             SharedPreferencesUtil.putBoolean(this, dynamicColorSwitchKey, data.checked)
 
-            val animation =
-                ActivityOptions.makeCustomAnimation(this, R.anim.fade_in, R.anim.fade_out)
-            finish()
-            startActivity(
-                Intent(this, AppearanceSettingsActivity::class.java), animation.toBundle()
-            )
+            animateThemeList(!data.checked)
 
+            lifecycleScope.launch {
+                delay(300)
+
+                val animation =
+                    ActivityOptions.makeCustomAnimation(
+                        this@AppearanceSettingsActivity,
+                        R.anim.fade_in,
+                        R.anim.fade_out
+                    )
+                finish()
+                startActivity(
+                    Intent(this@AppearanceSettingsActivity, AppearanceSettingsActivity::class.java),
+                    animation.toBundle()
+                )
+            }
         }
 
-        appearanceSettingsBinding.settingsContainer.root.setVisibility(true)
     }
 
     /**
@@ -338,6 +376,88 @@ class AppearanceSettingsActivity : QRXActivity() {
             } else {
                 view.isSelected = data.checked
             }
+        }
+    }
+
+    /**
+     * 主题列表的展开与收起动画
+     *
+     * @param show 是否展开列表：
+     *              true -> 展开。else -> 收起
+     */
+    private fun animateThemeList(show: Boolean) {
+        val view = appearanceSettingsBinding.themeListCard
+
+        // 防止动画叠加
+        view.animate().cancel()
+
+        if (show) {
+            if (view.isVisible) return
+
+            view.visibility = View.VISIBLE
+            view.alpha = 0f
+
+            // 测量高度
+            val parent = view.parent as View
+            val widthSpec =
+                View.MeasureSpec.makeMeasureSpec(parent.width, View.MeasureSpec.EXACTLY)
+            val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            view.measure(widthSpec, heightSpec)
+            val targetHeight = view.measuredHeight
+
+            // 从 0 开始展开
+            val lp = view.layoutParams
+            lp.height = 0
+            view.layoutParams = lp
+
+            val animator = ValueAnimator.ofInt(0, targetHeight)
+            animator.duration = 250
+
+            animator.addUpdateListener {
+                lp.height = it.animatedValue as Int
+                view.layoutParams = lp
+            }
+
+            animator.doOnEnd {
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = lp
+            }
+
+            animator.start()
+
+            view.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start()
+        } else {
+            if (view.isGone) return
+
+            val initHeight = view.height
+            val lp = view.layoutParams
+
+            val animator = ValueAnimator.ofInt(initHeight, 0)
+            animator.duration = 200
+
+            animator.addUpdateListener {
+                lp.height = it.animatedValue as Int
+                view.layoutParams = lp
+
+            }
+
+            animator.doOnEnd {
+                // 动画结束后隐藏
+                view.setVisibility(false)
+
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                view.layoutParams = lp
+            }
+
+            animator.start()
+
+            view.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .start()
         }
     }
 
