@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -26,14 +27,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isGone
 import androidx.core.widget.addTextChangedListener
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -68,8 +72,10 @@ import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.view.DailyRichText
 import com.liuxing.daily.view.DailyTextInputEdit
 import com.liuxing.daily.viewmodel.DailyViewModel
+import com.liuxing.library.ColorPickerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -208,6 +214,7 @@ class EditDailyActivity : AppCompatActivity() {
      */
     private fun initData(savedInstanceState: Bundle?) {
         setActionBar()
+        setupFloatingRichTextToolbar()
         initViewModel()
         setDailyTitle()
         setDailyContent()
@@ -1262,6 +1269,127 @@ class EditDailyActivity : AppCompatActivity() {
         tempAudioList2.add(copyAudioToMyAppDir)
     }
 
+    /** 设置浮动富文本工具栏 */
+    private fun setupFloatingRichTextToolbar() {
+        val buttonActions =
+            mapOf(
+                R.id.action_btn_b to { dailyTextInputEdit.toggleBoldText() },
+                R.id.action_btn_i to { dailyTextInputEdit.toggleItalicText() },
+                R.id.action_btn_c to { toggleRichTextToolbarVisibility() },
+                R.id.action_btn_u to { dailyTextInputEdit.toggleUnderlineText() },
+                R.id.action_btn_s to { dailyTextInputEdit.toggleStrikethroughText() },
+                R.id.action_btn_tc to { showColorPickerDialog(false) },
+                R.id.action_btn_bc to { showColorPickerDialog(true) },
+                R.id.action_btn_size to { showFontPresetDialog() },
+                R.id.action_btn_title to { showHeadingDialog() },
+                R.id.action_btn_list to { showListDialog() },
+                R.id.action_btn_quote to { dailyTextInputEdit.applyBlockQuote() },
+                R.id.action_btn_align_left to { dailyTextInputEdit.applyNormalAlignment() },
+                R.id.action_btn_align_center to { dailyTextInputEdit.applyCenterAlignment() },
+                R.id.action_btn_h to { dailyTextInputEdit.insertHorizontalRule() },
+                R.id.action_btn_link to { showLinkDialog() }
+            )
+
+        buttonActions.forEach { (id, action) ->
+            findViewById<MaterialButton>(id).setOnClickListener {
+                action.invoke()
+            }
+        }
+    }
+
+    /** 切换富文本工具栏可见性 */
+    private fun toggleRichTextToolbarVisibility() {
+        with(activityEditDailyBinding.rtaContainer.floatingToolbarLayout) {
+            if (isGone) {
+                setVisibility(true)
+            } else {
+                setVisibility(false)
+            }
+        }
+    }
+
+    /** 显示颜色选择器对话框 */
+    private fun showColorPickerDialog(isHighlight: Boolean) {
+        var selectedColor = if (isHighlight) "#FFF59D".toColorInt() else Color.BLACK
+        val colorPickerLayout = layoutInflater.inflate(R.layout.color_picker_layout, null)
+        val colorPickerView =
+            colorPickerLayout.findViewById<ColorPickerView>(R.id.color_picker_view)
+        colorPickerView.onColorChanged = { color ->
+            selectedColor = color
+        }
+        MaterialAlertDialogBuilder(this).setTitle(
+            if (isHighlight) getString(R.string.highlight) else getString(
+                R.string.text_color
+            )
+        )
+            .setView(colorPickerLayout).setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.sure)) { _, _ ->
+                if (isHighlight) {
+                    dailyTextInputEdit.applyHighlightColor(selectedColor)
+                } else {
+                    dailyTextInputEdit.applyTextColor(selectedColor)
+                }
+            }.show()
+    }
+
+    /** 显示字体对话框 */
+    private fun showFontPresetDialog() {
+        val items =
+            arrayOf(getString(R.string.small), getString(R.string.body), getString(R.string.title))
+        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.text_font_size))
+            .setItems(items) { _, which ->
+                val preset = when (which) {
+                    0 -> DailyRichText.FontPreset.SMALL
+                    1 -> DailyRichText.FontPreset.BODY
+                    else -> DailyRichText.FontPreset.TITLE
+                }
+                dailyTextInputEdit.applyFontPreset(preset)
+            }.show()
+    }
+
+    /** 显示标题层级对话框 */
+    private fun showHeadingDialog() {
+        val items = arrayOf("H1", "H2", "H3")
+        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.heading_level))
+            .setItems(items) { _, which ->
+                dailyTextInputEdit.applyHeading(which + 1)
+            }.show()
+    }
+
+    /** 显示列表与待办对话框 */
+    private fun showListDialog() {
+        val items = arrayOf(
+            getString(R.string.bullet_list),
+            getString(R.string.ordered_list), getString(R.string.todo_list)
+        )
+        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.list_and_todo))
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> dailyTextInputEdit.toggleBulletList()
+                    1 -> dailyTextInputEdit.toggleOrderedList()
+                    2 -> dailyTextInputEdit.toggleTodoList()
+                }
+            }.show()
+    }
+
+    /** 显示超链接对话框 */
+    private fun showLinkDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
+        val inputLayout = dialogView.findViewById<TextInputLayout>(R.id.input_label_layout)
+        val input = dialogView.findViewById<TextInputEditText>(R.id.input_label)
+        inputLayout.hint = getString(R.string.hyperlink)
+        input.setText("https://")
+
+        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.insert_hyperlink))
+            .setView(dialogView)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.sure)) { _, _ ->
+                val url = input.text?.toString()?.trim().orEmpty()
+                if (url.isNotEmpty()) {
+                    dailyTextInputEdit.applyLink(url)
+                }
+            }.show()
+    }
 
     /**
      * 判断日记是否为空
@@ -1301,8 +1429,8 @@ class EditDailyActivity : AppCompatActivity() {
     private fun saveDaily() {
         val singlePasswordSha256 = HashUtil.hashSHA256(singlePassword.toString())
         // 保存更新后日记内容到SharedPreferences
-        getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE).edit {
-            putString("daily_update_content_$dailyUuid", dailyTextInputEdit.text.toString())
+        getSharedPreferences("DAILY_CONTENT_UPDATE", MODE_PRIVATE).edit {
+            putString("daily_update_content_$dailyUuid", dailyTextInputEdit.getExportText())
             if (getDailySinglePassword() != singlePasswordSha256) putString(
                 "daily_update_single_password_$dailyUuid",
                 singlePasswordSha256
@@ -1313,7 +1441,7 @@ class EditDailyActivity : AppCompatActivity() {
             DailyEntity(
                 id = getDailyId(),
                 title = activityEditDailyBinding.inputTitle.text.toString(),
-                content = dailyTextInputEdit.text.toString(),
+                content = dailyTextInputEdit.getExportText(),
                 dateTime = DateUtil.dateStringToDate(activityEditDailyBinding.tvDateTime.text.toString(), 0),
                 backgroundColorIndex = backgroundColorIndex,
                 singlePassword = singlePasswordSha256,
@@ -1524,7 +1652,7 @@ class EditDailyActivity : AppCompatActivity() {
             autoSaveDailySharedPreferences(
                 this, 1,
                 activityEditDailyBinding.inputTitle.text.toString(),
-                dailyTextInputEdit.text.toString(),
+                dailyTextInputEdit.getExportText(),
                 DateUtil.dateStringToDate(
                     activityEditDailyBinding.tvDateTime.text.toString(),
                     0
