@@ -5,7 +5,6 @@
     android:layout_height="@dimen/dp_80"
     android:backgroundTint="?attr/colorSurfaceContainer"
     android:clickable="true"
-    android:layout_margin="@dimen/dp_6"
     android:contentDescription="@string/appearance"
     android:foreground="?attr/selectableItemBackground">
 
