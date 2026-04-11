@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.floatingtoolbar.FloatingToolbarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/floating_toolbar_layout"
+    style="?attr/floatingToolbarVibrantStyle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom|center"
+    android:layout_margin="@dimen/dp_16">
+
+    <com.liuxing.daily.material.widget.CustomOverflowLinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_u"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/format_text_underline"
+            app:icon="@drawable/outline_format_underlined_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_format_underlined_24"
+            app:layout_overflowText="@string/format_text_underline" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_s"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/format_text_strikethrough"
+            app:icon="@drawable/outline_strikethrough_s_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_strikethrough_s_24"
+            app:layout_overflowText="@string/format_text_strikethrough" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_tc"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/format_text_color"
+            app:icon="@drawable/round_format_color_text_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/round_format_color_text_24"
+            app:layout_overflowText="@string/format_text_color" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_bc"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/format_text_background_color"
+            app:icon="@drawable/outline_format_color_fill_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_format_color_fill_24"
+            app:layout_overflowText="@string/format_text_background_color" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_size"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/text_font_size"
+            app:icon="@drawable/outline_format_size_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_format_size_24"
+            app:layout_overflowText="@string/text_font_size" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_title"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/heading_level"
+            app:icon="@drawable/baseline_title_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/baseline_title_24"
+            app:layout_overflowText="@string/heading_level" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_list"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/list_and_todo"
+            app:icon="@drawable/outline_format_list_bulleted_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_format_list_bulleted_24"
+            app:layout_overflowText="@string/list_and_todo" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_quote"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/quote_block"
+            app:icon="@drawable/outline_format_quote_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_format_quote_24"
+            app:layout_overflowText="@string/quote_block" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_align_left"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/left_aligned"
+            app:icon="@drawable/baseline_format_align_left_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/baseline_format_align_left_24"
+            app:layout_overflowText="@string/left_aligned" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_align_center"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/center_aligned"
+            app:icon="@drawable/outline_format_align_center_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_format_align_center_24"
+            app:layout_overflowText="@string/center_aligned" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_h"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/insert_horizontal_rule"
+            app:icon="@drawable/outline_horizontal_rule_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_horizontal_rule_24"
+            app:layout_overflowText="@string/insert_horizontal_rule" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/action_btn_link"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/insert_hyperlink"
+            app:icon="@drawable/outline_insert_link_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_overflowIconTint="?attr/colorOnSurface"
+            app:layout_overflowIcon="@drawable/outline_insert_link_24"
+            app:layout_overflowText="@string/insert_hyperlink" />
+
+    </com.liuxing.daily.material.widget.CustomOverflowLinearLayout>
+
+</com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
