@@ -513,8 +513,8 @@ class WebDavBackupActivity : QRXActivity() {
      */
     private fun restoreDataFromWebDav() {
         webDavBackupBinding.btRestore.setOnClickListener {
-            if (!webDavBackupBinding.inputUrl.text.isNullOrEmpty() ||
-                !webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() ||
+            if (!webDavBackupBinding.inputUrl.text.isNullOrEmpty() &&
+                !webDavBackupBinding.inputAccountNumber.text.isNullOrEmpty() &&
                 !webDavBackupBinding.inputPassword.text.isNullOrEmpty()
             ) {
                 saveWebDavConfig()
