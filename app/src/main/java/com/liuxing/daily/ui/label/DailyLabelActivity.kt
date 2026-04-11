@@ -5,7 +5,6 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
@@ -18,7 +17,9 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.ui.add.AddDailyActivity
 import com.liuxing.daily.ui.qrx.QRXActivity
+import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.IntentUtil
+import com.liuxing.daily.util.MaterialAlertDialogUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.viewmodel.DailyViewModel
 
@@ -83,11 +84,27 @@ class DailyLabelActivity : QRXActivity() {
      * 设置工具栏
      */
     private fun setActionBar() {
-        setSupportActionBar(dailyLabelBinding.toolbar)
-        supportActionBar?.apply {
-            setDisplayShowTitleEnabled(false)
-            setDisplayHomeAsUpEnabled(true)
-            dailyLabelBinding.toolbar.title = this@DailyLabelActivity.label
+        val label = this@DailyLabelActivity.label
+        with(dailyLabelBinding.toolbar) {
+            setSupportActionBar(this)
+            supportActionBar?.apply {
+                setDisplayShowTitleEnabled(false)
+                setDisplayHomeAsUpEnabled(true)
+                this@with.title = label
+            }
+
+            setOnClickListener {
+                MaterialAlertDialogUtil.showDialog(
+                    this@DailyLabelActivity,
+                    getString(R.string.label),
+                    label,
+                    negativeText = getString(R.string.m_copy),
+                    onNegative = {
+                        CopyUtil.copyTextToClipboard(this@DailyLabelActivity, label ?: "")
+                    },
+                    positiveText = getString(R.string.close)
+                )
+            }
         }
     }
 

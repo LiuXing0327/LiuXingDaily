@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
@@ -20,138 +20,183 @@
             android:layout_height="?attr/actionBarSize">
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/action_btn_b"
+                style="?attr/materialIconButtonFilledStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="?attr/colorSecondaryContainer"
+                android:contentDescription="@string/format_text_bold"
+                app:icon="@drawable/outline_format_bold_24"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/action_btn_i"
+                style="?attr/materialIconButtonFilledStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="?attr/colorSecondaryContainer"
+                android:contentDescription="@string/format_text_italic"
+                app:icon="@drawable/outline_format_italic_24"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/action_btn_c"
+                style="?attr/materialIconButtonFilledStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="?attr/colorSecondaryContainer"
+                app:icon="@drawable/outline_view_list_24"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
                 style="?attr/materialIconButtonFilledStyle"
                 android:id="@+id/action_btn_save"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 app:iconGravity="textStart"
+                android:contentDescription="@string/save"
                 android:layout_gravity="center_vertical|end"
                 app:icon="@drawable/baseline_done_24"/>
 
         </com.google.android.material.appbar.MaterialToolbar>
-
     </com.google.android.material.appbar.AppBarLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/input_title_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/input_title"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:hint="@string/title"
-            android:textStyle="bold"
-            android:textSize="@dimen/sp_20" />
-
-
-    </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/dp_8">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tv_date_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="2024/09/30 16:05" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/input_title_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <com.google.android.material.divider.MaterialDivider
-            android:layout_width="@dimen/dp_1"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_vertical|center"
-            android:layout_marginStart="@dimen/dp_8" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/input_title"
+                android:ellipsize="end"
+                android:textSize="@dimen/sp_20"
+                android:maxLines="2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:hint="@string/title"
+                android:textStyle="bold" />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tv_daily_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/dp_8"
-            android:text="0字"
-            android:textSize="@dimen/sp_14" />
-
-        <ImageView
-            android:visibility="gone"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/iv_mood"
-            android:layout_marginStart="@dimen/dp_8"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <ImageView
-            android:id="@+id/iv_weather"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/dp_8"
-            android:src="@drawable/baseline_wb_sunny_24"
-            android:visibility="gone" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <LinearLayout
-            android:id="@+id/l_label"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/dp_8">
 
-            <ImageView
-                android:contentDescription="@string/label"
-                android:id="@+id/iv_label"
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tv_date_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2024/09/30 16:05" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="@dimen/dp_1"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical|center"
+                android:layout_marginStart="@dimen/dp_8" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tv_daily_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/dp_8"
-                android:src="@drawable/outline_label_24" />
+                android:text="0字"
+                android:textSize="@dimen/sp_14" />
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/tv_label"
+            <ImageView
+                android:id="@+id/iv_mood"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="@string/label" />
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="@dimen/dp_8"
+                android:src="@drawable/ic_happy"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/iv_weather"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/dp_8"
+                android:src="@drawable/baseline_wb_sunny_24"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/l_label"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:contentDescription="@string/label"
+                    android:id="@+id/iv_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_8"
+                    android:src="@drawable/outline_label_24" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tv_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/label" />
+
+            </LinearLayout>
 
         </LinearLayout>
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <ScrollView
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="@dimen/dp_4"
+                    android:layout_weight="1">
+
+                    <com.liuxing.daily.view.DailyTextInputEdit
+                        android:id="@+id/input_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"
+                        android:gravity="start"
+                        android:hint="@string/content"
+                        android:textSize="@dimen/sp_16" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+        </ScrollView>
 
     </LinearLayout>
 
-    <com.google.android.material.divider.MaterialDivider
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+    <include
+        android:id="@+id/rta_container"
+        layout="@layout/rich_text_annotation_container"/>
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="@dimen/dp_4">
-
-                <com.liuxing.daily.view.DailyTextInputEdit
-                    android:id="@+id/input_content"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@android:color/transparent"
-                    android:gravity="start"
-                    android:hint="@string/content"
-                    android:textSize="@dimen/sp_16" />
-
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </LinearLayout>
-
-    </ScrollView>
-
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

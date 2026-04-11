@@ -18,4 +18,9 @@
         <!-- 固定图标（不随选中状态变化） -->
         <attr name="static_icon" format="reference" />
     </declare-styleable>
+
+    <attr name="layout_overflowIconTint" format="color|reference" />
+    <declare-styleable name="CustomOverflowLinearLayout_Layout">
+        <attr name="layout_overflowIconTint"/>
+    </declare-styleable>
 </resources>

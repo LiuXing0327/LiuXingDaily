@@ -122,7 +122,7 @@ class WallpaperFragment : Fragment() {
                     val newFileMD5 = file.getFileMD5()
                     val wallpaperMD5 = (requireActivity() as QRXActivity).getWallpaperMD5()
                     if (newFileMD5 != wallpaperMD5) {
-                        (requireActivity() as SettingsActivity).qrx()
+                        (requireActivity() as WallpaperActivity).qrx()
                     }
                     hintCloseImageDisplayDialog()
                 }.onFailure {

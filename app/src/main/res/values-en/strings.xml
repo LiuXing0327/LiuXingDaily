@@ -219,4 +219,26 @@
     <string name="backup_and_restore">Backup and restore</string>
     <string name="local_backup_path">Local backup path</string>
     <string name="auto_backup">Automatic backup</string>
+    <string name="clear_password">Clear password</string>
+    <string name="format_text_bold">Format text bold</string>
+    <string name="format_text_italic">Format text italic</string>
+    <string name="format_text_underline">Format text underline</string>
+    <string name="format_text_strikethrough">Format text strikethrough</string>
+    <string name="format_text_color">Format text color</string>
+    <string name="format_text_background_color">Format text background color</string>
+    <string name="insert_horizontal_rule">Insert horizontal rule</string>
+    <string name="insert_hyperlink">Insert hyperlink</string>
+    <string name="hyperlink">Hyperlink</string>
+    <string name="heading_level">Heading level</string>
+    <string name="list_and_todo">List and TODO</string>
+    <string name="quote_block">Quote block</string>
+    <string name="left_aligned">Left aligned</string>
+    <string name="center_aligned">Center_aligned</string>
+    <string name="bullet_list">Bullet List</string>
+    <string name="ordered_list">Ordered_list</string>
+    <string name="todo_list">To-do List</string>
+    <string name="small">Small</string>
+    <string name="body">Body</string>
+    <string name="highlight">Highlight</string>
+    <string name="text_color">Text color</string>
 </resources>

@@ -224,4 +224,26 @@
     <string name="backup_and_restore">备份与恢复</string>
     <string name="local_backup_path">本地备份路径</string>
     <string name="auto_backup">自动备份</string>
+    <string name="clear_password">清除密码</string>
+    <string name="format_text_bold">文本设为粗体</string>
+    <string name="format_text_italic">文本设为斜体</string>
+    <string name="format_text_underline">文本格式下划线</string>
+    <string name="format_text_strikethrough">文本格式删除线</string>
+    <string name="format_text_color">设置文本颜色</string>
+    <string name="format_text_background_color">设置文本背景颜色</string>
+    <string name="insert_horizontal_rule">插入分割线</string>
+    <string name="insert_hyperlink">插入超链接</string>
+    <string name="hyperlink">超链接</string>
+    <string name="heading_level">标题样式</string>
+    <string name="list_and_todo">列表与待办</string>
+    <string name="quote_block">引用块</string>
+    <string name="left_aligned">左对齐</string>
+    <string name="center_aligned">居中对齐</string>
+    <string name="bullet_list">无序列表</string>
+    <string name="ordered_list">有序列表</string>
+    <string name="todo_list">待办清单</string>
+    <string name="small">小字</string>
+    <string name="body">正文</string>
+    <string name="highlight">背景高亮</string>
+    <string name="text_color">文字颜色</string>
 </resources>

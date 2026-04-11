@@ -163,8 +163,10 @@ class LookDailyActivity : AppCompatActivity() {
                             dailyEntity = finalList[currentIndex]
                             originalSignalPassword = dailyEntity.singlePassword ?: ""
                             originalSignalPasswordMap[dailyEntity.id!!] = originalSignalPassword
-                            tempSignalPasswordMap[dailyEntity.id!!].let {
-                                if (it.isNullOrEmpty()) originalSignalPassword
+                            // 避免编辑时传入 null
+                            val dailyId = dailyEntity.id!!
+                            if (tempSignalPasswordMap[dailyId].isNullOrEmpty()) {
+                                tempSignalPasswordMap[dailyId] = originalSignalPassword
                             }
                             invalidateOptionsMenu()
                         }

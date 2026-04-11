@@ -1,4 +1,4 @@
-package com.liuxing.daily.ui.look
+﻿package com.liuxing.daily.ui.look
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -173,6 +173,27 @@ class LookDailyPagerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         dailyTextView = view.findViewById(R.id.tv_content)
+        dailyTextView.setTodoToggleListener(object : DailyTextView.TodoToggleListener {
+            override fun onTodoToggled(updatedContent: String) {
+                content = updatedContent
+                dailyViewModel.updateDaily(
+                    DailyEntity(
+                        id,
+                        title,
+                        updatedContent,
+                        dateTime,
+                        backgroundColorIndex,
+                        singlePassword,
+                        moodIndex,
+                        weatherIndex,
+                        dailyUuid,
+                        false,
+                        dailyLabel,
+                        isPinned = isPinned
+                    )
+                )
+            }
+        })
         initData()
     }
 
@@ -492,6 +513,51 @@ class LookDailyPagerFragment : Fragment() {
      * 设置日记数据
      */
     private fun setDailyData() {
+        // 是否已更新日记内容
+        var updateApplied = false
+
+        fun applyDailyContentUpdateFromPreferences(updatedContent: StringBuilder) {
+            // 从SharedPreferences获取更新后日记内容
+            val sharedPreferences =
+                requireActivity().getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE)
+            val updateKey = "daily_update_content_$dailyUuid"
+            val dailyUpdateContentText = sharedPreferences.getString(updateKey, "").orEmpty()
+            // 确保不为空，以免死循环
+            if (dailyUpdateContentText.isNotEmpty()) {
+                // 如果保存的内容与最新内容不同，则重新更新
+                if (dailyUpdateContentText != updatedContent.toString()) {
+                    dailyViewModel.updateDaily(
+                        DailyEntity(
+                            id,
+                            title,
+                            dailyUpdateContentText,
+                            dateTime,
+                            backgroundColorIndex,
+                            singlePassword,
+                            moodIndex,
+                            weatherIndex,
+                            dailyUuid,
+                            false,
+                            dailyLabel,
+                            isPinned = isPinned
+                        )
+                    )
+                }
+
+                // 直接清空，避免更新其它日记
+                sharedPreferences.edit {
+                    remove(updateKey)
+                    apply()
+                }
+            }
+        }
+
+        fun applyDailyContentUpdateOnce() {
+            if (updateApplied) return
+            updateApplied = true
+            applyDailyContentUpdateFromPreferences(StringBuilder(content ?: ""))
+        }
+
         fun <T> setDailyList(
             dailyList: List<T>,
             getPath: (T) -> String?,
@@ -540,91 +606,55 @@ class LookDailyPagerFragment : Fragment() {
                 )
             }
 
-            // 从SharedPreferences获取更新后日记内容
-            val sharedPreferences =
-                requireActivity().getSharedPreferences("DAILY_CONTENT_UPDATE", Context.MODE_PRIVATE)
-            val updateKey = "daily_update_content_$dailyUuid"
-            val dailyUpdateContentText = sharedPreferences.getString(updateKey, "").orEmpty()
-            // 确保不为空，以免死循环
-            if (dailyUpdateContentText.isNotEmpty()) {
-                // 如果保存的内容与最新内容不同，则重新更新
-                if (dailyUpdateContentText != updatedContent.toString()) {
-                    dailyViewModel.updateDaily(
-                        DailyEntity(
-                            id,
-                            title,
-                            dailyUpdateContentText,
-                            dateTime,
-                            backgroundColorIndex,
-                            singlePassword,
-                            moodIndex,
-                            weatherIndex,
-                            dailyUuid,
-                            false,
-                            dailyLabel,
-                            isPinned = isPinned
-                        )
-                    )
-                }
-
-                // 直接清空，避免更新其它日记
-                sharedPreferences.edit {
-                    remove(updateKey)
-                    apply()
-                }
-            }
             return pathSet
         }
         dailyViewModel.queryDailyVideoByUuid(dailyUuid!!).observe(viewLifecycleOwner) { videoList ->
-            if (videoList.isNotEmpty()) {
-                this.videoList = setDailyList(
-                    videoList,
-                    getPath = { it.videoPath },
-                    tagGenerator = { path -> "<video src=\"$path\"/>" },
-                    deleteAction = { path -> dailyViewModel.deleteSelectPathVideo(path) }
-                )
+            this.videoList = setDailyList(
+                videoList,
+                getPath = { it.videoPath },
+                tagGenerator = { path -> "<video src=\"$path\"/>" },
+                deleteAction = { path -> dailyViewModel.deleteSelectPathVideo(path) }
+            )
 
-                dailyTextView.setMediaPathList(
-                    SpannableString(content!!),
-                    this.imageList.toList(),
-                    this.videoList.toList(),
-                    this.audioList.toList()
-                )
-            }
+            dailyTextView.setMediaPathList(
+                SpannableString(content!!),
+                this.imageList.toList(),
+                this.videoList.toList(),
+                this.audioList.toList()
+            )
+            applyDailyContentUpdateOnce()
         }
         dailyViewModel.queryDailyImageByUuid(dailyUuid!!).observe(viewLifecycleOwner) { imageList ->
-            if (imageList.isNotEmpty()) {
-                this.imageList = setDailyList(
-                    imageList,
-                    getPath = { it.imagePath },
-                    tagGenerator = { path -> "<img src=\"$path\"/>" },
-                    deleteAction = { path -> dailyViewModel.deleteSelectPathImage(path) }
-                )
+            this.imageList = setDailyList(
+                imageList,
+                getPath = { it.imagePath },
+                tagGenerator = { path -> "<img src=\"$path\"/>" },
+                deleteAction = { path -> dailyViewModel.deleteSelectPathImage(path) }
+            )
 
-                dailyTextView.setMediaPathList(
-                    SpannableString(content!!),
-                    this.imageList.toList(),
-                    this.videoList.toList(),
-                    this.audioList.toList()
-                )
-            }
+            dailyTextView.setMediaPathList(
+                SpannableString(content!!),
+                this.imageList.toList(),
+                this.videoList.toList(),
+                this.audioList.toList()
+            )
+            applyDailyContentUpdateOnce()
         }
         dailyViewModel.queryDailyAudioByUuid(dailyUuid!!).observe(viewLifecycleOwner) { audioList ->
-            if (audioList.isNotEmpty()) {
-                this.audioList = setDailyList(
-                    audioList,
-                    getPath = { it.audioPath },
-                    tagGenerator = { path -> "<audio src=\"$path\"/>" },
-                    deleteAction = { path -> dailyViewModel.deleteSelectPathAudio(path) }
-                )
+            this.audioList = setDailyList(
+                audioList,
+                getPath = { it.audioPath },
+                tagGenerator = { path -> "<audio src=\"$path\"/>" },
+                deleteAction = { path -> dailyViewModel.deleteSelectPathAudio(path) }
+            )
 
-                dailyTextView.setMediaPathList(
-                    SpannableString(content!!),
-                    this.imageList.toList(),
-                    this.videoList.toList(),
-                    this.audioList.toList()
-                )
-            }
+            dailyTextView.setMediaPathList(
+                SpannableString(content!!),
+                this.imageList.toList(),
+                this.videoList.toList(),
+                this.audioList.toList()
+            )
+            applyDailyContentUpdateOnce()
         }
     }
 
