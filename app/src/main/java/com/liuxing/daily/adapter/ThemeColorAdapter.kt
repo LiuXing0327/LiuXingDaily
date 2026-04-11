@@ -9,6 +9,7 @@ import android.app.Activity
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
+import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -112,5 +113,30 @@ class ThemeColorAdapter(
         val themeColorCard: MaterialCardView = itemView.findViewById(R.id.theme_color_card)
         val roundTricolor: RoundTricolorView = itemView.findViewById(R.id.round_tricolor_view)
         val icSelected: ImageView = itemView.findViewById(R.id.ic_selected)
+    }
+
+    class MarginItemDecoration(context: Context, private val spanCount: Int) :
+        RecyclerView.ItemDecoration() {
+
+        var itemMargin = 0
+
+        init {
+            itemMargin = context.resources.getDimensionPixelSize(R.dimen.dp_8)
+        }
+
+        override fun getItemOffsets(
+            outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State
+        ) {
+            val position = parent.getChildAdapterPosition(view)
+            val column = position % spanCount
+
+            outRect.left = column * itemMargin / spanCount
+            outRect.right = itemMargin - (column + 1) * itemMargin / spanCount
+
+            if (position >= spanCount) {
+                outRect.top = itemMargin
+            }
+        }
+
     }
 }
