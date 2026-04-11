@@ -12,12 +12,14 @@ import android.graphics.Paint
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
+import android.text.Annotation
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ImageSpan
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
@@ -25,6 +27,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textview.MaterialTextView
+import com.liuxing.daily.markdown.span.TodoSpan
 import com.liuxing.daily.R
 import com.liuxing.daily.ui.audio.PlayAudioActivity
 import com.liuxing.daily.ui.image.LookDailyImageActivity
@@ -40,6 +43,10 @@ import com.liuxing.daily.util.VideoUtil.createVideoThumbnail
  * 看日记文本
  */
 class DailyTextView : MaterialTextView {
+
+    interface TodoToggleListener {
+        fun onTodoToggled(updatedContent: String)
+    }
 
     private val context: Context
     private var imagePathList: MutableSet<String> = mutableSetOf()
@@ -104,6 +111,7 @@ class DailyTextView : MaterialTextView {
      * 搜索关键词
      */
     private var keyword = ""
+    private var todoToggleListener: TodoToggleListener? = null
 
     constructor(context: Context) : super(context) {
         this.context = context
@@ -121,6 +129,10 @@ class DailyTextView : MaterialTextView {
     private fun initialize() {
         // 启用点击事件
         movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    fun setTodoToggleListener(listener: TodoToggleListener?) {
+        todoToggleListener = listener
     }
 
     /**
@@ -212,14 +224,7 @@ class DailyTextView : MaterialTextView {
         newVideoPathList: List<String>,
         newAudioPathList: List<String>
     ) {
-        val spannableString =
-            SpannableStringBuilder(
-                HighlightUtil.highlightKeyword(
-                    context,
-                    text.toString(),
-                    keyword
-                )
-            )
+        val spannableString = SpannableStringBuilder(text)
         val replacements = mutableListOf<Triple<Int, Int, SpannableString>>()
 
         newImagePathList.forEachIndexed { index, path ->
@@ -246,10 +251,13 @@ class DailyTextView : MaterialTextView {
                 replacements.add(Triple(start, end, createAudioSpannable(path, index)))
             }
         }
+
         replacements.sortByDescending { it.first }
         for ((start, end, span) in replacements) {
             spannableString.replace(start, end, span)
         }
+        DailyRichText.applyMarkup(spannableString)
+        HighlightUtil.highlightKeyword(context, spannableString, keyword)
 
         setText(spannableString)
         invalidate()
@@ -571,6 +579,13 @@ class DailyTextView : MaterialTextView {
         return sb.toString()
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_UP && handleTodoTap(event)) {
+            return true
+        }
+        return super.onTouchEvent(event)
+    }
+
     override fun onTextContextMenuItem(id: Int): Boolean {
         return if (id == android.R.id.copy) {
             CopyUtil.copyTextToClipboard(
@@ -580,5 +595,36 @@ class DailyTextView : MaterialTextView {
             clearFocus()
             true
         } else super.onTextContextMenuItem(id)
+    }
+
+    private fun handleTodoTap(event: MotionEvent): Boolean {
+        val sourceText = text ?: return false
+        val currentText = SpannableStringBuilder(sourceText)
+        val layout = layout ?: return false
+        val x = event.x - totalPaddingLeft + scrollX
+        val y = event.y - totalPaddingTop + scrollY
+        val line = layout.getLineForVertical(y.toInt())
+        val lineStart = layout.getLineStart(line)
+        val lineEnd = layout.getLineEnd(line)
+        val todoSpan = currentText.getSpans(lineStart, lineEnd, TodoSpan::class.java).firstOrNull() ?: return false
+        val leadingMargin = todoSpan.getLeadingMargin(true)
+        if (x > leadingMargin) return false
+
+        val checked = currentText.getSpans(lineStart, lineStart, Annotation::class.java)
+            .firstOrNull { it.key == DailyRichText.ANNOTATION_KEY && it.value.startsWith("todo:") }
+            ?.value
+            ?.removePrefix("todo:")
+            ?.toBooleanStrictOrNull()
+            ?: todoSpan.checked
+
+        DailyRichText.removeTodoSpans(currentText, lineStart, lineEnd)
+        DailyRichText.removeAnnotations(currentText, lineStart, lineEnd) { it.startsWith("todo:") }
+        DailyRichText.applyTodoSpans(currentText, lineStart, lineEnd, !checked)
+
+        val updatedContent = DailyRichText.export(currentText)
+        originalText = SpannableString(updatedContent)
+        setFormattedText(originalText, originalImageList, originalVideoList, originalAudioList)
+        todoToggleListener?.onTodoToggled(updatedContent)
+        return true
     }
 }

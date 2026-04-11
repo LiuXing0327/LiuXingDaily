@@ -8,12 +8,18 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Typeface
+import android.text.Annotation
 import android.text.Editable
+import android.text.Layout
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.TextWatcher
 import android.text.style.ImageSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.Gravity
@@ -24,6 +30,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
+import com.liuxing.daily.markdown.span.TodoSpan
 import com.liuxing.daily.R
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.FileUtil
@@ -56,6 +63,12 @@ class DailyTextInputEdit : TextInputEditText {
     private var videoPathList: MutableSet<String> = mutableSetOf()
     private var videoDeletionListener: VideoDeletionListener? = null
     private var audioDeletionListener: AudioDeletionListener? = null
+    private var textChangeStart = -1
+    private var textChangeBefore = 0
+    private var textChangeCount = 0
+    private var isHandlingRichEnter = false
+    private var isNormalizingRichBlocks = false
+    private var isApplyingRichFormatting = false
 
     constructor(context: Context) : super(context) {
         this.context = context
@@ -199,6 +212,7 @@ class DailyTextInputEdit : TextInputEditText {
         replacements.forEach { (start, end, replacement) ->
             ssb.replace(start, end, replacement)
         }
+        DailyRichText.applyMarkup(ssb)
 
         setText(ssb)
         setSelection(ssb.length)
@@ -323,6 +337,9 @@ class DailyTextInputEdit : TextInputEditText {
         }
 
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+            textChangeStart = start
+            textChangeBefore = before
+            textChangeCount = count
             isImageInserted = false
             isVideoInserted = false
             isAudioInserted = false
@@ -347,10 +364,25 @@ class DailyTextInputEdit : TextInputEditText {
         }
 
         override fun afterTextChanged(s: Editable) {
-            if (isImageInserted || isVideoInserted || isAudioInserted) return
-            invalidate()
-            requestLayout()
-            updateFormattedText(s)
+            if (
+                isImageInserted ||
+                isVideoInserted ||
+                isAudioInserted ||
+                isHandlingRichEnter ||
+                isNormalizingRichBlocks ||
+                isApplyingRichFormatting
+            ) {
+                return
+            }
+            val insertedNewline =
+                textChangeBefore == 0 &&
+                    textChangeCount == 1 &&
+                    textChangeStart in s.indices &&
+                    s[textChangeStart] == '\n'
+            if (insertedNewline) {
+                handleRichEnter(s, textChangeStart)
+            }
+            refreshRichFormatting(s, preserveCursorLine = insertedNewline)
         }
     }
 
@@ -410,17 +442,7 @@ class DailyTextInputEdit : TextInputEditText {
      * @return 字数
      */
     fun getWordCount(): Int {
-        val editable = text ?: return 0
-        val spannableText = SpannableString(editable)
-        val imageSpans = spannableText.getSpans(0, spannableText.length, ImageSpan::class.java)
-        var totalLength = spannableText.length
-        for (imageSpan in imageSpans) {
-            val start = spannableText.getSpanStart(imageSpan)
-            val end = spannableText.getSpanEnd(imageSpan)
-            totalLength -= (end - start)
-        }
-
-        return maxOf(totalLength, 0)
+        return TextUtil.getWordCount(getExportText())
     }
 
     /**
@@ -437,6 +459,13 @@ class DailyTextInputEdit : TextInputEditText {
             }
         }
         return super.dispatchTouchEvent(event)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_UP && handleTodoCheckboxTap(event)) {
+            return true
+        }
+        return super.onTouchEvent(event)
     }
 
     /**
@@ -693,6 +722,672 @@ class DailyTextInputEdit : TextInputEditText {
         return ss
     }
 
+    /** 切换粗体文本 */
+    fun toggleBoldText() = toggleStyle(Typeface.BOLD)
+
+    /** 切换斜体文本 */
+    fun toggleItalicText() = toggleStyle(Typeface.ITALIC)
+
+    /** 切换下划线文本 */
+    fun toggleUnderlineText() = toggleUnderline()
+
+    /** 切换删除线文本 */
+    fun toggleStrikethroughText() = toggleStrikethroughSpan()
+
+    /** 应用文本颜色 */
+    fun applyTextColor(color: Int) = withValidSelection { editable, start, end ->
+        DailyRichText.removeForegroundSpans(editable, start, end)
+        DailyRichText.removeAnnotations(editable, start, end) { it.startsWith("color:") }
+        DailyRichText.applyColorSpans(editable, start, end, color)
+    }
+
+    /** 应用文本高亮颜色 */
+    fun applyHighlightColor(color: Int) = withValidSelection { editable, start, end ->
+        DailyRichText.removeBackgroundSpans(editable, start, end)
+        DailyRichText.removeAnnotations(editable, start, end) { it.startsWith("bg:") }
+        DailyRichText.applyHighlightSpans(editable, start, end, color)
+    }
+
+    /** 应用文本字号 */
+    fun applyFontPreset(preset: DailyRichText.FontPreset) = withValidSelection { editable, start, end ->
+        DailyRichText.removeRelativeSizeSpans(editable, start, end)
+        DailyRichText.removeAnnotations(editable, start, end) { it.startsWith("size:") }
+        DailyRichText.applyFontPresetSpans(editable, start, end, preset)
+    }
+
+    /** 应用标题层级 */
+    fun applyHeading(level: Int) = performRichFormattingChange {
+        withParagraphSelection(createEmptyParagraph = true) { editable, start, end ->
+            clearParagraphFormats(editable, start, end)
+            DailyRichText.applyHeadingSpans(editable, start, end, level)
+        }
+    }
+
+    /** 应用引用块 */
+    fun applyBlockQuote() = performRichFormattingChange {
+        withParagraphSelection(createEmptyParagraph = true) { editable, start, end ->
+            DailyRichText.removeQuoteSpans(editable, start, end)
+            DailyRichText.removeAnnotations(editable, start, end) { it == "blockquote" }
+            DailyRichText.applyQuoteSpans(editable, start, end)
+        }
+    }
+
+    /** 应用文本居中 */
+    fun applyCenterAlignment() = performRichFormattingChange {
+        withParagraphSelection(createEmptyParagraph = true) { editable, start, end ->
+            DailyRichText.removeAlignmentSpans(editable, start, end)
+            DailyRichText.removeAnnotations(editable, start, end) { it.startsWith("align:") }
+            DailyRichText.applyAlignmentSpans(editable, start, end, Layout.Alignment.ALIGN_CENTER)
+        }
+    }
+
+    /** 应用文本左对齐 */
+    fun applyNormalAlignment() = performRichFormattingChange {
+        withParagraphSelection(createEmptyParagraph = true) { editable, start, end ->
+            DailyRichText.removeAlignmentSpans(editable, start, end)
+            DailyRichText.removeAnnotations(editable, start, end) { it.startsWith("align:") }
+            DailyRichText.applyAlignmentSpans(editable, start, end, Layout.Alignment.ALIGN_NORMAL)
+        }
+    }
+
+    /** 应用超链接 */
+    fun applyLink(url: String) = withValidSelection { editable, start, end ->
+        DailyRichText.removeUrlSpans(editable, start, end)
+        DailyRichText.removeAnnotations(editable, start, end) { it.startsWith("a:") }
+        DailyRichText.applyLinkSpans(editable, start, end, url)
+    }
+
+    /** 插入分割线 */
+    fun insertHorizontalRule() {
+        val editable = text ?: return
+        val cursor = maxOf(selectionStart, 0)
+        val lineStart = findLineStart(editable, cursor)
+        val lineEnd = findLineEndExclusive(editable, cursor)
+        val currentLineBlank = getLineContent(editable, lineStart, lineEnd).isBlank()
+        val markerLine = "${DailyRichText.HR_MARKER}\n"
+        val replaceStart: Int
+        val replaceEnd: Int
+        val insertText: String
+
+        if (currentLineBlank) {
+            replaceStart = lineStart
+            replaceEnd = lineEnd
+            insertText = markerLine
+        } else {
+            replaceStart = cursor
+            replaceEnd = cursor
+            insertText = if (cursor == 0) {
+                DailyRichText.HR_PLACEHOLDER
+            } else {
+                "\n${DailyRichText.HR_PLACEHOLDER.trim('\n')}\n"
+            }
+        }
+        editable.replace(replaceStart, replaceEnd, insertText)
+        val markerIndex = editable.toString().indexOf(DailyRichText.HR_MARKER, replaceStart)
+        if (markerIndex != -1) {
+            DailyRichText.applyHorizontalRuleSpan(editable, markerIndex)
+        }
+        setSelection((replaceStart + insertText.length).coerceAtMost(editable.length))
+    }
+
+    /** 切换无序列表 */
+    fun toggleBulletList() = performRichFormattingChange {
+        transformSelectedParagraphs { editable, ranges ->
+            val allBullets = ranges.all { isBulletLine(editable, it.first) }
+            ranges.forEach { (start, end) ->
+                clearListFormats(editable, start, end)
+                if (!allBullets) {
+                    DailyRichText.applyBulletListSpans(editable, start, end)
+                }
+            }
+        }
+    }
+
+    /** 切换有序列表 */
+    fun toggleOrderedList() = performRichFormattingChange {
+        transformSelectedParagraphs { editable, ranges ->
+            val allOrdered = ranges.all { isOrderedLine(editable, it.first) }
+            ranges.forEachIndexed { index, range ->
+                clearListFormats(editable, range.first, range.second)
+                if (!allOrdered) {
+                    DailyRichText.applyOrderedListSpans(editable, range.first, range.second, index + 1)
+                }
+            }
+        }
+    }
+
+    /** 切换待办列表 */
+    fun toggleTodoList(checked: Boolean = false) = performRichFormattingChange {
+        transformSelectedParagraphs { editable, ranges ->
+            val allTodo = ranges.all { isTodoLine(editable, it.first) }
+            ranges.forEach { (start, end) ->
+                clearListFormats(editable, start, end)
+                if (!allTodo) {
+                    DailyRichText.applyTodoSpans(editable, start, end, checked)
+                }
+            }
+        }
+    }
+
+    /** 切换样式 */
+    private fun toggleStyle(style: Int) {
+        withValidSelection { editable, start, end ->
+            val token = if (style == Typeface.BOLD) "b" else "i"
+            val hasStyle = editable.getSpans(start, end, StyleSpan::class.java).any { it.style == style }
+            if (hasStyle) {
+                DailyRichText.removeStyleSpans(editable, start, end, style)
+                DailyRichText.removeAnnotations(editable, start, end) { it == token }
+            } else {
+                editable.setSpan(StyleSpan(style), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                DailyRichText.addAnnotation(editable, start, end, token)
+            }
+        }
+    }
+
+    /** 切换下划线 */
+    private fun toggleUnderline() {
+        withValidSelection { editable, start, end ->
+            val hasUnderline = editable.getSpans(start, end, UnderlineSpan::class.java).isNotEmpty()
+            if (hasUnderline) {
+                DailyRichText.removeUnderlineSpans(editable, start, end)
+                DailyRichText.removeAnnotations(editable, start, end) { it == "u" }
+            } else {
+                editable.setSpan(UnderlineSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                DailyRichText.addAnnotation(editable, start, end, "u")
+            }
+        }
+    }
+
+    /** 切换删除线 */
+    private fun toggleStrikethroughSpan() {
+        withValidSelection { editable, start, end ->
+            val hasStrike = editable.getSpans(start, end, StrikethroughSpan::class.java).isNotEmpty()
+            if (hasStrike) {
+                DailyRichText.removeStrikeSpans(editable, start, end)
+                DailyRichText.removeAnnotations(editable, start, end) { it == "s" }
+            } else {
+                editable.setSpan(StrikethroughSpan(), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                DailyRichText.addAnnotation(editable, start, end, "s")
+            }
+        }
+    }
+
+    /**
+     * 导出不带标签的文本
+     *
+     * @return 导出的文本字符串（为空时返回 ""）
+     */
+    fun getExportText(): String {
+        val editable = text ?: return ""
+        if (editable.isEmpty()) return ""
+
+        return DailyRichText.export(editable).also {
+            LogUtil.d(message = "Export: $it")
+        }
+    }
+
+    private inline fun performRichFormattingChange(action: () -> Unit) {
+        val editable = text ?: return
+        isApplyingRichFormatting = true
+        try {
+            action()
+        } finally {
+            isApplyingRichFormatting = false
+        }
+        refreshRichFormatting(editable)
+    }
+
+    private fun refreshRichFormatting(editable: Editable, preserveCursorLine: Boolean = false) {
+        isNormalizingRichBlocks = true
+        try {
+            cleanupLegacyRichMarkers(editable)
+            normalizeEmptyBlockParagraphs(editable, preserveCursorLine = preserveCursorLine)
+            DailyRichText.normalizeListSpans(editable)
+            DailyRichText.normalizeQuoteSpans(editable)
+            DailyRichText.normalizeAlignmentSpans(editable)
+            DailyRichText.normalizeHeadingSpans(editable)
+        } finally {
+            isNormalizingRichBlocks = false
+        }
+        invalidate()
+        requestLayout()
+        updateFormattedText(editable)
+    }
+
+    private inline fun withValidSelection(block: (Editable, Int, Int) -> Unit) {
+        val editable = text ?: return
+        val start = minOf(selectionStart, selectionEnd)
+        val end = maxOf(selectionStart, selectionEnd)
+        if (start < 0 || end <= start) return
+        block(editable, start, end)
+    }
+
+    private inline fun withParagraphSelection(
+        createEmptyParagraph: Boolean = false,
+        block: (Editable, Int, Int) -> Unit
+    ) {
+        val editable = text ?: return
+        val start = minOf(selectionStart, selectionEnd).coerceAtLeast(0)
+        val end = maxOf(selectionStart, selectionEnd).coerceAtLeast(start)
+        val textValue = editable.toString()
+        val paragraphStart = textValue.lastIndexOf('\n', (start - 1).coerceAtLeast(0)).let {
+            if (it == -1) 0 else it + 1
+        }
+        val paragraphEndIndex = if (end >= textValue.length) -1 else textValue.indexOf('\n', end)
+        var paragraphEnd = if (paragraphEndIndex == -1) editable.length else paragraphEndIndex + 1
+        val createdEmptyParagraph = paragraphEnd <= paragraphStart
+        if (createdEmptyParagraph) {
+            if (!createEmptyParagraph) return
+            val anchoredRange = ensureParagraphAnchor(editable, paragraphStart, paragraphEnd)
+            paragraphEnd = anchoredRange.second
+        }
+        block(editable, paragraphStart, paragraphEnd)
+        val collapsedSelection = start == end
+        val keepCursorOnCurrentParagraph =
+            createEmptyParagraph &&
+                collapsedSelection &&
+                getLineContent(editable, paragraphStart, paragraphEnd).isBlank()
+        val targetSelection = if (collapsedSelection) {
+            start.coerceAtMost(editable.length)
+        } else if (createdEmptyParagraph && createEmptyParagraph || keepCursorOnCurrentParagraph) {
+            paragraphStart
+        } else {
+            paragraphEnd
+        }
+        setSelection(targetSelection.coerceAtMost(editable.length))
+    }
+
+    private fun clearParagraphFormats(editable: Editable, start: Int, end: Int) {
+        DailyRichText.removeRelativeSizeSpans(editable, start, end)
+        DailyRichText.removeStyleSpans(editable, start, end, Typeface.BOLD)
+        DailyRichText.removeAnnotations(editable, start, end) {
+            it.matches(Regex("h[123]")) || it.startsWith("size:")
+        }
+    }
+
+    private fun clearListFormats(editable: Editable, start: Int, end: Int) {
+        if (end < start) return
+        DailyRichText.removeBulletSpans(editable, start, end)
+        DailyRichText.removeOrderedListSpans(editable, start, end)
+        DailyRichText.removeTodoSpans(editable, start, end)
+        DailyRichText.removeAnnotations(editable, start, end) {
+            it == "ul" || it.startsWith("ol:") || it.startsWith("todo:")
+        }
+    }
+
+    private fun collectParagraphRanges(
+        editable: Editable,
+        selectionStart: Int,
+        selectionEnd: Int
+    ): List<Pair<Int, Int>> {
+        val ranges = mutableListOf<Pair<Int, Int>>()
+        var cursor = selectionStart
+        while (cursor < selectionEnd) {
+            val lineStart = findLineStart(editable, cursor)
+            val lineEnd = findLineEndExclusive(editable, cursor)
+            if (ranges.lastOrNull() != lineStart to lineEnd) {
+                ranges.add(lineStart to lineEnd)
+            }
+            if (lineEnd <= cursor) break
+            cursor = lineEnd
+        }
+        if (ranges.isEmpty()) {
+            val lineStart = findLineStart(editable, selectionStart)
+            val lineEnd = findLineEndExclusive(editable, selectionStart)
+            ranges.add(lineStart to lineEnd)
+        }
+        return ranges
+    }
+
+    private fun normalizeEmptyBlockParagraphs(editable: Editable, preserveCursorLine: Boolean) {
+        val annotations = editable.getSpans(0, editable.length, Annotation::class.java)
+            .filter {
+                it.key == DailyRichText.ANNOTATION_KEY &&
+                    (
+                        it.value == "ul" ||
+                            it.value.startsWith("ol:") ||
+                            it.value.startsWith("todo:") ||
+                            it.value == "blockquote"
+                        )
+            }
+            .sortedByDescending { editable.getSpanStart(it) }
+
+        annotations.forEach { annotation ->
+            val start = editable.getSpanStart(annotation)
+            val end = editable.getSpanEnd(annotation)
+            if (start < 0 || end < start) return@forEach
+            val lineText = getLineContent(editable, start, end)
+            if (lineText.isNotBlank()) return@forEach
+            if (editable.subSequence(start, end.coerceAtMost(editable.length)).contains(DailyRichText.EMPTY_BLOCK_MARKER)) {
+                return@forEach
+            }
+            // Empty block lines need a real paragraph terminator so paragraph spans render immediately.
+            ensureParagraphTerminator(editable, start)
+        }
+    }
+
+    private fun findLineStart(text: CharSequence, index: Int): Int {
+        val safeIndex = index.coerceIn(0, text.length)
+        val previousBreak = text.toString().lastIndexOf('\n', (safeIndex - 1).coerceAtLeast(0))
+        return if (previousBreak == -1) 0 else previousBreak + 1
+    }
+
+    private fun findLineEndExclusive(text: CharSequence, index: Int): Int {
+        val safeIndex = index.coerceIn(0, text.length)
+        val nextBreak = text.toString().indexOf('\n', safeIndex)
+        return if (nextBreak == -1) text.length else nextBreak + 1
+    }
+
+    private fun getLineContent(editable: Editable, lineStart: Int, lineEndExclusive: Int): String {
+        val safeStart = lineStart.coerceIn(0, editable.length)
+        val safeEnd = lineEndExclusive.coerceIn(safeStart, editable.length)
+        val raw = editable.subSequence(safeStart, safeEnd).toString()
+        return raw
+            .removeSuffix("\n")
+            .replace(DailyRichText.EMPTY_BLOCK_MARKER, "")
+            .replace(DailyRichText.PLAIN_EXIT_MARKER, "")
+    }
+
+    private fun getRichAnnotations(editable: Editable, position: Int): List<Annotation> {
+        val lineStart = findLineStart(editable, position.coerceAtLeast(0))
+        val lineEnd = findLineEndExclusive(editable, position.coerceAtLeast(0))
+        return editable.getSpans(lineStart, lineEnd, Annotation::class.java)
+            .filter { annotation ->
+                annotation.key == DailyRichText.ANNOTATION_KEY &&
+                    editable.getSpanStart(annotation) < lineEnd &&
+                    editable.getSpanEnd(annotation) > lineStart
+            }
+    }
+
+    private fun getTodoState(editable: Editable, position: Int): Boolean? {
+        return getRichAnnotations(editable, position)
+            .firstOrNull { it.value.startsWith("todo:") }
+            ?.value
+            ?.removePrefix("todo:")
+            ?.toBooleanStrictOrNull()
+    }
+
+    private fun isTodoLine(editable: Editable, position: Int): Boolean = getTodoState(editable, position) != null
+
+    private fun isBulletLine(editable: Editable, position: Int): Boolean {
+        return getRichAnnotations(editable, position).any { it.value == "ul" }
+    }
+
+    private fun isOrderedLine(editable: Editable, position: Int): Boolean {
+        return getRichAnnotations(editable, position).any { it.value.startsWith("ol:") }
+    }
+
+    private fun getOrderedIndex(editable: Editable, position: Int): Int? {
+        return getRichAnnotations(editable, position)
+            .firstOrNull { it.value.startsWith("ol:") }
+            ?.value
+            ?.removePrefix("ol:")
+            ?.toIntOrNull()
+    }
+
+    private inline fun transformSelectedParagraphs(
+        block: (Editable, List<Pair<Int, Int>>) -> Unit
+    ) {
+        withParagraphSelection(createEmptyParagraph = true) { editable, start, end ->
+            val ranges = collectParagraphRanges(editable, start, end)
+            if (ranges.isEmpty()) return@withParagraphSelection
+            val anchoredRanges = mutableListOf<Pair<Int, Int>>()
+            var delta = 0
+            ranges.forEach { (rangeStart, rangeEnd) ->
+                val adjustedStart = (rangeStart + delta).coerceAtLeast(0)
+                val adjustedEnd = (rangeEnd + delta).coerceAtLeast(adjustedStart)
+                val anchoredRange = ensureParagraphAnchor(editable, adjustedStart, adjustedEnd)
+                delta += anchoredRange.second - adjustedEnd
+                anchoredRanges.add(anchoredRange)
+            }
+            block(editable, anchoredRanges)
+        }
+    }
+
+    private fun handleRichEnter(editable: Editable, newlineIndex: Int) {
+        val previousLineStart = findInsertedNewlineSourceLineStart(editable, newlineIndex)
+        val previousLineEnd = newlineIndex.coerceIn(previousLineStart, editable.length)
+        val previousLine = getLineContent(editable, previousLineStart, previousLineEnd)
+
+        when {
+            isBulletLine(editable, previousLineStart) -> {
+                continueListLine(editable, newlineIndex, previousLineStart, previousLine) { start, end ->
+                    DailyRichText.applyBulletListSpans(editable, start, end)
+                }
+            }
+            isTodoLine(editable, previousLineStart) -> {
+                continueTodoLine(
+                    editable,
+                    newlineIndex,
+                    previousLineStart,
+                    previousLine,
+                    getTodoState(editable, previousLineStart) ?: false
+                )
+            }
+            isOrderedLine(editable, previousLineStart) -> {
+                continueOrderedLine(editable, newlineIndex, previousLineStart, previousLine)
+            }
+            isQuoteLine(previousLineStart) -> {
+                continueQuote(editable, newlineIndex, previousLineStart, previousLine)
+            }
+            isHeadingLine(previousLineStart) -> {
+                clearHeadingFromNewParagraph(editable, newlineIndex)
+            }
+        }
+    }
+
+    private fun findInsertedNewlineSourceLineStart(text: CharSequence, newlineIndex: Int): Int {
+        if (newlineIndex <= 0) return 0
+        val searchIndex = (newlineIndex - 1).coerceAtLeast(0)
+        val previousBreak = text.toString().lastIndexOf('\n', searchIndex)
+        return if (previousBreak == -1) 0 else previousBreak + 1
+    }
+
+    private fun continueListLine(
+        editable: Editable,
+        newlineIndex: Int,
+        lineStart: Int,
+        previousLine: String,
+        applyToNewLine: (Int, Int) -> Unit
+    ) {
+        val content = previousLine.trim()
+        isHandlingRichEnter = true
+        if (content.isEmpty()) {
+            exitCurrentParagraphBlock(editable, lineStart, newlineIndex) { start, end ->
+                clearListFormats(editable, start, end)
+            }
+        } else {
+            val newLineStart = (newlineIndex + 1).coerceAtMost(editable.length)
+            val newLineEnd = ensureParagraphTerminator(editable, newLineStart)
+            applyToNewLine(newLineStart, maxOf(newLineStart, newLineEnd))
+            setSelection(newLineStart.coerceAtMost(editable.length))
+        }
+        isHandlingRichEnter = false
+    }
+
+    private fun continueOrderedLine(
+        editable: Editable,
+        newlineIndex: Int,
+        lineStart: Int,
+        previousLine: String
+    ) {
+        val index = getOrderedIndex(editable, lineStart) ?: return
+        val content = previousLine.trim()
+        isHandlingRichEnter = true
+        if (content.isEmpty()) {
+            exitCurrentParagraphBlock(editable, lineStart, newlineIndex) { start, end ->
+                clearListFormats(editable, start, end)
+            }
+        } else {
+            val newLineStart = (newlineIndex + 1).coerceAtMost(editable.length)
+            val newLineEnd = ensureParagraphTerminator(editable, newLineStart)
+            DailyRichText.applyOrderedListSpans(editable, newLineStart, maxOf(newLineStart, newLineEnd), index + 1)
+            setSelection(newLineStart.coerceAtMost(editable.length))
+        }
+        isHandlingRichEnter = false
+    }
+
+    private fun continueTodoLine(
+        editable: Editable,
+        newlineIndex: Int,
+        lineStart: Int,
+        previousLine: String,
+        checked: Boolean
+    ) {
+        continueListLine(editable, newlineIndex, lineStart, previousLine) { start, end ->
+            DailyRichText.applyTodoSpans(editable, start, end, checked)
+        }
+    }
+
+    private fun continueQuote(
+        editable: Editable,
+        newlineIndex: Int,
+        lineStart: Int,
+        previousLine: String
+    ) {
+        val currentParagraphEnd = editable.toString().indexOf('\n', newlineIndex + 1)
+            .let { if (it == -1) editable.length else it + 1 }
+        isHandlingRichEnter = true
+        if (previousLine.isBlank()) {
+            exitCurrentParagraphBlock(editable, lineStart, newlineIndex) { start, end ->
+                DailyRichText.removeQuoteSpans(editable, start, end)
+                DailyRichText.removeAnnotations(editable, start, end) { it == "blockquote" }
+            }
+        } else {
+            val newLineStart = (newlineIndex + 1).coerceAtMost(editable.length)
+            val newLineEnd = ensureParagraphTerminator(editable, newLineStart)
+            val quoteBlockStart = findQuoteBlockStart(editable, lineStart)
+            val quoteBlockEnd = maxOf(newLineStart, maxOf(currentParagraphEnd, newLineEnd))
+            DailyRichText.removeQuoteSpans(editable, quoteBlockStart, quoteBlockEnd)
+            DailyRichText.removeAnnotations(editable, quoteBlockStart, quoteBlockEnd) { it == "blockquote" }
+            DailyRichText.applyQuoteSpans(editable, quoteBlockStart, quoteBlockEnd)
+            setSelection(newLineStart.coerceAtMost(editable.length))
+        }
+        isHandlingRichEnter = false
+    }
+
+    private inline fun exitCurrentParagraphBlock(
+        editable: Editable,
+        lineStart: Int,
+        newlineIndex: Int,
+        clearBlock: (Int, Int) -> Unit
+    ) {
+        val paragraphEnd = findLineEndExclusive(editable, newlineIndex)
+        clearBlock(lineStart, paragraphEnd)
+        if (paragraphEnd > lineStart) {
+            editable.delete(lineStart, paragraphEnd)
+        }
+        setSelection(lineStart.coerceAtMost(editable.length))
+    }
+
+    private fun ensureParagraphTerminator(editable: Editable, lineStart: Int): Int {
+        val safeStart = lineStart.coerceIn(0, editable.length)
+        if (safeStart == editable.length) {
+            editable.insert(safeStart, "\n")
+            return safeStart + 1
+        }
+        val lineEnd = findLineEndExclusive(editable, safeStart)
+        if (lineEnd <= safeStart || editable[lineEnd - 1] != '\n') {
+            editable.insert(lineEnd, "\n")
+            return lineEnd + 1
+        }
+        return lineEnd
+    }
+
+    private fun ensureParagraphAnchor(editable: Editable, start: Int, end: Int): Pair<Int, Int> {
+        val safeStart = start.coerceIn(0, editable.length)
+        val safeEnd = end.coerceIn(safeStart, editable.length)
+        if (safeEnd > safeStart) {
+            return safeStart to safeEnd
+        }
+        editable.insert(safeStart, DailyRichText.EMPTY_BLOCK_MARKER)
+        return safeStart to (safeStart + DailyRichText.EMPTY_BLOCK_MARKER.length)
+    }
+
+    private fun cleanupLegacyRichMarkers(editable: Editable) {
+        var index = editable.length - 1
+        while (index >= 0) {
+            val current = editable[index].toString()
+            val shouldDelete = when (current) {
+                DailyRichText.PLAIN_EXIT_MARKER -> true
+                DailyRichText.EMPTY_BLOCK_MARKER -> {
+                    val lineStart = findLineStart(editable, index)
+                    val lineEnd = findLineEndExclusive(editable, index)
+                    val visibleText = getLineContent(editable, lineStart, lineEnd)
+                    val hasBlockAnnotation = editable.getSpans(lineStart, lineEnd, Annotation::class.java)
+                        .any { annotation ->
+                            annotation.key == DailyRichText.ANNOTATION_KEY &&
+                                (
+                                    annotation.value == "ul" ||
+                                        annotation.value.startsWith("ol:") ||
+                                        annotation.value.startsWith("todo:") ||
+                                        annotation.value == "blockquote" ||
+                                        annotation.value.startsWith("align:") ||
+                                        annotation.value.matches(Regex("h[123]"))
+                                    )
+                        }
+                    visibleText.isNotBlank() || !hasBlockAnnotation
+                }
+                else -> false
+            }
+            if (shouldDelete) {
+                editable.delete(index, index + 1)
+                if (selectionStart > index) {
+                    setSelection((selectionStart - 1).coerceAtLeast(0))
+                }
+            }
+            index--
+        }
+    }
+
+    private fun findQuoteBlockStart(editable: Editable, position: Int): Int {
+        return editable.getSpans(position.coerceIn(0, editable.length), position.coerceIn(0, editable.length), Annotation::class.java)
+            .filter { it.key == DailyRichText.ANNOTATION_KEY && it.value == "blockquote" }
+            .map { editable.getSpanStart(it) }
+            .filter { it >= 0 }
+            .minOrNull()
+            ?: position
+    }
+
+    private fun clearHeadingFromNewParagraph(editable: Editable, newlineIndex: Int) {
+        val currentParagraphEnd = editable.toString().indexOf('\n', newlineIndex + 1)
+            .let { if (it == -1) editable.length else it + 1 }
+        isHandlingRichEnter = true
+        clearParagraphFormats(editable, newlineIndex + 1, currentParagraphEnd)
+        setSelection((newlineIndex + 1).coerceAtMost(editable.length))
+        isHandlingRichEnter = false
+    }
+
+    private fun isQuoteLine(position: Int): Boolean {
+        val editable = text ?: return false
+        return getRichAnnotations(editable, position).any { it.value == "blockquote" }
+    }
+
+    private fun isHeadingLine(position: Int): Boolean {
+        val editable = text ?: return false
+        return getRichAnnotations(editable, position).any { it.value.matches(Regex("h[123]")) }
+    }
+
+    private fun handleTodoCheckboxTap(event: MotionEvent): Boolean {
+        val editable = text ?: return false
+        val layout = layout ?: return false
+        val x = event.x - totalPaddingLeft + scrollX
+        val y = event.y - totalPaddingTop + scrollY
+        val line = layout.getLineForVertical(y.toInt())
+        val lineStart = layout.getLineStart(line)
+        val lineEnd = layout.getLineEnd(line)
+        val todoState = getTodoState(editable, lineStart) ?: return false
+        val leadingMargin = editable.getSpans(lineStart, lineEnd, TodoSpan::class.java)
+            .firstOrNull()
+            ?.getLeadingMargin(true)
+            ?: return false
+        if (x > leadingMargin) return false
+
+        clearListFormats(editable, lineStart, lineEnd)
+        DailyRichText.applyTodoSpans(editable, lineStart, lineEnd, !todoState)
+        setSelection(lineStart.coerceAtMost(editable.length))
+        return true
+    }
 
     /**
      * 获取插入的音频路径集合
