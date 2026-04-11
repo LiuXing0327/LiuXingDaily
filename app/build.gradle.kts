@@ -12,8 +12,8 @@ android {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 36
-        versionCode = 27
-        versionName = "2.9.5"
+        versionCode = 28
+        versionName = "2.9.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
