@@ -8,7 +8,6 @@
         <item name="collapsed_status_bar">@color/light_collapsed_status_bar_color</item>
         <item name="android:windowOptOutEdgeToEdgeEnforcement">false</item>
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
-        <item name="popupMenuStyle">@drawable/custom_popup_background</item>
         <item name="toolbarWithCloseButtonStyle">@style/Widget.Theme.流星日记.Toolbar.WithCloseButton</item>
     </style>
 </resources>
