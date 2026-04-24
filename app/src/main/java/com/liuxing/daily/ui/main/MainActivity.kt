@@ -123,7 +123,6 @@ import java.net.URL
 import java.util.Date
 import java.util.UUID
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 
 class MainActivity : QRXActivity() {
@@ -1233,7 +1232,7 @@ class MainActivity : QRXActivity() {
                                     )).joinToString(" ")
                                 )
                                 appendLine()
-                                appendLine(dailyEntity.content)
+                                appendLine(TextUtil.replaceTag(dailyEntity.content ?: "", ""))
                                 appendLine()
                                 appendLine("========================================")
                             }
@@ -1302,41 +1301,39 @@ class MainActivity : QRXActivity() {
      */
     private fun onDestinationChanged() {
         navController.addOnDestinationChangedListener { _, fragment, _ ->
-            activityMainBinding.floatingActionButton.visibility =
-                when (fragment.id) {
-                    R.id.dailyFragment -> {
-                        isDailyFragment = true
-                        isRecyclerBinFragment = false
-                        isCalendarQueryDailyFragment = false
-                        showAddDailyButton()
-                        onEnabledChangedListener?.onEnableChanged(false)
-                        View.VISIBLE
-                    }
-
-                    R.id.calendarQueryDailyFragment -> {
-                        isDailyFragment = false
-                        isRecyclerBinFragment = false
-                        isCalendarQueryDailyFragment = true
-                        showAddDailyButton()
-                        onEnabledChangedListener?.onEnableChanged(true)
-                        View.VISIBLE
-                    }
-
-                    R.id.recyclerBinFragment -> {
-                        isDailyFragment = false
-                        isRecyclerBinFragment = true
-                        isCalendarQueryDailyFragment = false
-                        onEnabledChangedListener?.onEnableChanged(true)
-                        View.GONE
-                    }
-
-                    else -> {
-                        isDailyFragment = false
-                        isRecyclerBinFragment = false
-                        isCalendarQueryDailyFragment = false
-                        View.GONE
-                    }
+            when (fragment.id) {
+                R.id.dailyFragment -> {
+                    isDailyFragment = true
+                    isRecyclerBinFragment = false
+                    isCalendarQueryDailyFragment = false
+                    showAddDailyButton()
+                    onEnabledChangedListener.onEnableChanged(false)
                 }
+
+                R.id.calendarQueryDailyFragment -> {
+                    isDailyFragment = false
+                    isRecyclerBinFragment = false
+                    isCalendarQueryDailyFragment = true
+                    showAddDailyButton()
+                    onEnabledChangedListener.onEnableChanged(true)
+                }
+
+                R.id.recyclerBinFragment -> {
+                    isDailyFragment = false
+                    isRecyclerBinFragment = true
+                    isCalendarQueryDailyFragment = false
+                    onEnabledChangedListener.onEnableChanged(true)
+                    hideAddDailyButton()
+                }
+
+                else -> {
+                    isDailyFragment = false
+                    isRecyclerBinFragment = false
+                    isCalendarQueryDailyFragment = false
+                    hideAddDailyButton()
+                }
+            }
+
             hideContextualToolbar()
         }
     }
@@ -2513,4 +2510,9 @@ class MainActivity : QRXActivity() {
             activityMainBinding.floatingActionButton.show()
         }
     }
+
+    /**
+     * 隐藏添加日记的按钮。
+     */
+    fun hideAddDailyButton() = activityMainBinding.floatingActionButton.hide()
 }
