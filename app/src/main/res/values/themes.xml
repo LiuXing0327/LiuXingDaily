@@ -3,8 +3,6 @@
     <style name="Base.Theme.流星日记" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-        <item name="searchViewShowingColor">@color/light_showing_color</item>
-        <item name="collapsed_status_bar">@color/light_collapsed_status_bar_color</item>
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
         <item name="toolbarWithCloseButtonStyle">
             @style/Widget.Theme.流星日记.Toolbar.WithCloseButton
@@ -59,9 +57,6 @@
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh_red</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_red</item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_red</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_red</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
@@ -114,9 +109,6 @@
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh_green</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_green
         </item>
-
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_green</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_green</item>
 
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
@@ -229,9 +221,6 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_yellow
         </item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_yellow</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_yellow</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
@@ -284,9 +273,6 @@
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh_pink</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_pink
         </item>
-
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_pink</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_pink</item>
 
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
