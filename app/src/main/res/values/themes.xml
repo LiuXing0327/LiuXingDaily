@@ -163,9 +163,6 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_blue
         </item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_blue</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_blue</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
