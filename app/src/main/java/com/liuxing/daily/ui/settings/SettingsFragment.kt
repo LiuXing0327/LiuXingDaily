@@ -1,5 +1,17 @@
 /*
- * Copyright (c) 2026 流星
+ * Copyright 2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.liuxing.daily.ui.settings
@@ -22,7 +34,9 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import androidx.core.os.LocaleListCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
@@ -40,6 +54,7 @@ import com.liuxing.daily.ui.about.AboutActivity
 import com.liuxing.daily.ui.about.OpenSourceActivity
 import com.liuxing.daily.ui.about.SpecialThanksActivity
 import com.liuxing.daily.ui.appearance.AppearanceSettingsActivity
+import com.liuxing.daily.ui.datamanagement.DataManagementActivity
 import com.liuxing.daily.ui.privacy.PrivacyActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.ui.wallpaper.WallpaperActivity
@@ -60,9 +75,9 @@ import java.io.FileOutputStream
 private const val ABOUT_ITEM_SELECT_COUNT = 4
 private const val UPDATE_ITEM_SELECT_COUNT = 2
 private const val DAILY_ITEM_SELECT_COUNT = 8
-private const val APPEARANCE_ITEM_SELECT_COUNT = 2
+private const val APPEARANCE_ITEM_SELECT_COUNT = 3
 
-// private const val DATA_ITEM_SELECT_COUNT = 1
+private const val DATA_ITEM_SELECT_COUNT = 2
 // private const val SAFE_ITEM_SELECT_COUNT = 1
 
 private enum class AboutItemKey {
@@ -84,11 +99,11 @@ private enum class DailyItemKey(val key: String) {
 }
 
 private enum class AppearanceItemKey {
-    APPEARANCE, WALLPAPER
+    APPEARANCE, WALLPAPER, LANGUAGE
 }
 
 private enum class DataItemKey {
-    WEBDAV
+    WEBDAV, BACKUP
 }
 
 private enum class SafeIemKey {
@@ -100,9 +115,11 @@ class SettingsFragment : Fragment() {
     /**
      * 当前选中的应用锁选项索引，默认索引为 0
      */
-    private val appLockOptionsIndex: Int by lazy {
+    private val originalAppLockOptionsIndex: Int by lazy {
         sharedPreferences.getInt("app_lock_options_index", 0)
     }
+    private var appLockOptionsIndex = 0
+
     private val sharedPreferences: SharedPreferences by lazy {
         PreferenceManager.getDefaultSharedPreferences(requireContext())
     }
@@ -164,6 +181,8 @@ class SettingsFragment : Fragment() {
      *             }
      *         }
      */
+    private val dayKeys by lazy { daysMap.keys.toList().sorted() }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -210,8 +229,6 @@ class SettingsFragment : Fragment() {
 
                     AboutItemKey.USER_AGREEMENT_AND_PRIVACY_POLICY -> startActivity(PrivacyActivity::class.java)
 
-                    DailyItemKey.AUTO_DELETE_RECYCLER_BIN -> showAutoDeleteDialog()
-
                     DailyItemKey.TEXT_SPACING -> showTextLineSpacingDialog()
 
                     DailyItemKey.TEXT_SIZE -> showTextFontSizeDialog()
@@ -226,7 +243,11 @@ class SettingsFragment : Fragment() {
 
                     AppearanceItemKey.WALLPAPER -> startActivity(WallpaperActivity::class.java)
 
+                    AppearanceItemKey.LANGUAGE -> showLanguageDialog()
+
                     DataItemKey.WEBDAV -> startActivity(WebDavBackupActivity::class.java)
+
+                    DataItemKey.BACKUP -> startActivity(DataManagementActivity::class.java)
 
                     SafeIemKey.APP_LOCK -> showLockDialog(lockOptions)
                 }
@@ -236,6 +257,18 @@ class SettingsFragment : Fragment() {
                 sharedPreferences.edit {
                     putBoolean(item.key, newValue)
                     apply()
+                }
+            },
+
+            onSliderValueChange = { item, value, fromUser ->
+                if (!fromUser) return@ListMultisectionAdapter
+
+                when (item.key) {
+                    DailyItemKey.AUTO_DELETE_RECYCLER_BIN -> {
+                        val dayKey = dayKeys.getOrElse(value.toInt()) { dayKeys.first() }
+                        autoDeleteIndex = dayKey
+                        putAutoDeleteIndex(dayKey)
+                    }
                 }
             })
 
@@ -409,14 +442,15 @@ class SettingsFragment : Fragment() {
         )
 
         settingsDataList.add(
-            BaseListItemData.Item(
+            BaseListItemData.SliderItem(
                 DailyItemKey.AUTO_DELETE_RECYCLER_BIN,
                 R.drawable.outline_auto_delete_preference_24,
                 getString(R.string.regularly_automatically_delete_the_diaries_in_the_recycle_bin),
-                true,
                 4,
                 DAILY_ITEM_SELECT_COUNT,
-                daysMap[autoDeleteIndex].toString()
+                valueTo = (dayKeys.size - 1).toFloat(),
+                value = dayKeys.indexOf(autoDeleteIndex).coerceAtLeast(0).toFloat(),
+                labels = dayKeys.map { daysMap[it].orEmpty() }
             )
         )
 
@@ -485,6 +519,18 @@ class SettingsFragment : Fragment() {
                 selectionCount = APPEARANCE_ITEM_SELECT_COUNT
             )
         )
+
+        settingsDataList.add(
+            BaseListItemData.Item(
+                AppearanceItemKey.LANGUAGE,
+                R.drawable.baseline_language_24,
+                getString(R.string.language),
+                true,
+                2,
+                APPEARANCE_ITEM_SELECT_COUNT,
+                getCurrentLanguageName()
+            )
+        )
     }
 
     /**
@@ -497,7 +543,21 @@ class SettingsFragment : Fragment() {
                 DataItemKey.WEBDAV,
                 R.drawable.outline_cloud_upload_preference_24,
                 getString(R.string.webdav_backup),
-                false
+                false,
+                0,
+                DATA_ITEM_SELECT_COUNT
+            )
+        )
+
+        settingsDataList.add(
+            BaseListItemData.Item(
+                DataItemKey.BACKUP,
+                R.drawable.baseline_storage_24,
+                getString(R.string.data_management),
+                false,
+                1,
+                DATA_ITEM_SELECT_COUNT,
+                subText = getString(R.string.local_backup)
             )
         )
     }
@@ -506,6 +566,8 @@ class SettingsFragment : Fragment() {
      * 创建安全 Item
      */
     private fun createSafeItems() {
+        appLockOptionsIndex = originalAppLockOptionsIndex
+
         settingsDataList.add(BaseListItemData.Header(getString(R.string.safe)))
         settingsDataList.add(
             BaseListItemData.Item(
@@ -518,74 +580,54 @@ class SettingsFragment : Fragment() {
         )
     }
 
-
-    /*
-        override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-            setPreferencesFromResource(R.xml.root_preferences, rootKey)
-
-            bindPreferenceToActivity<AboutActivity>("about_preference")
-            bindPreferenceToActivity<SpecialThanksActivity>("special_thanks_preference")
-            bindPreferenceToActivity<OpenSourceActivity>("open_source_preference")
-            bindPreferenceToActivity<UpdateLogActivity>("update_log_preference")
-            bindPreferenceToActivity<AppearanceSettingsActivity>("appearance_preference")
-            bindPreferenceToActivity<WebDavBackupActivity>("webdav_backup_preference")
-            bindPreferenceToActivity<PrivacyActivity>("user_agreement_and_privacy_policy_preference")
-            bindPreferenceToActivity<DataManagementActivity>("data_management_preference")
-            bindPreferenceToActivity<DailySettingsActivity>("daily_settings_preference")
-           // bindPreferenceToActivity<WallpaperActivity>("background_image_preference")
-
-            bindPreferenceToNavigation("background_image_preference",R.id.wallpaperFragment)
-
-            bindPreferenceAction("check_update_preference") {
-                CheckAppUpdateUtil.checkUpdate(requireContext())
-            }
-            *//*            bindPreferenceAction("background_image_preference"){
-                            showWallpaperDialog()
-                        }*//*
-
-
-        val textLineSpacingPreference =
-            findPreference<Preference>("text_line_spacing_preference")
-        val textLineSpacingValue =
-            textLineSpacingValue(sharedPreferences)
-        textLineSpacingPreference?.summary = "$textLineSpacingValue"
-        bindPreferenceAction("text_line_spacing_preference"){
-            textLineSpacingPreference?.let {
-                showTextLineSpacingDialog(it)
-            }
+    /**
+     * 获取当前语言名称
+     */
+    private fun getCurrentLanguageName(): String {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        if (locales.isEmpty) {
+            return getString(R.string.follow_the_system)
         }
-
-        val appLockPreference = findPreference<Preference>("app_lock_preference")
-        appLockOptionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
-        val options = arrayOf(
-            getString(R.string.close),
-            getString(R.string.password),
-            getString(R.string.pin)
-        )
-        appLockPreference?.summary = options[appLockOptionsIndex]
-        appLockPreference?.setOnPreferenceClickListener {
-            appLockOptionsIndex = sharedPreferences.getInt("app_lock_options_index", 0)
-            showLockDialog(it,options)
-            true
-        }
-
-        val textFontSizePreference = findPreference<Preference>("text_font_size_preference")
-        val textSize = textSizeValue(sharedPreferences)
-        textFontSizePreference?.summary = textSize.toString()
-        textFontSizePreference?.icon = if (textSize >= 16) ContextCompat.getDrawable(
-            requireContext(),
-            R.drawable.outline_text_increase_24
-        ) else ContextCompat.getDrawable(requireContext(), R.drawable.outline_text_decrease_24)
-        textFontSizePreference?.setOnPreferenceClickListener {
-            showTextFontSizeDialog(it,textSize)
-            true
-        }
-
-        bindPreferenceAction("daily_lock_key_preference") {
-            showDailyLockKeyDialog()
+        return when (locales.get(0)?.language) {
+            "zh" -> getString(R.string.chinese_simplified)
+            "en" -> getString(R.string.english)
+            else -> getString(R.string.follow_the_system)
         }
     }
-*/
+
+    /**
+     * 显示语言选择对话框
+     */
+    private fun showLanguageDialog() {
+        val languages = arrayOf(
+            getString(R.string.follow_the_system),
+            getString(R.string.chinese_simplified),
+            getString(R.string.english)
+        )
+        val currentLocales = AppCompatDelegate.getApplicationLocales()
+        val currentIndex = if (currentLocales.isEmpty) 0 else {
+            when (currentLocales.get(0)?.language) {
+                "zh" -> 1
+                "en" -> 2
+                else -> 0
+            }
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.language)
+            .setSingleChoiceItems(languages, currentIndex) { dialog, which ->
+                val localeList = when (which) {
+                    1 -> LocaleListCompat.forLanguageTags("zh")
+                    2 -> LocaleListCompat.forLanguageTags("en")
+                    else -> LocaleListCompat.getEmptyLocaleList()
+                }
+                AppCompatDelegate.setApplicationLocales(localeList)
+                updateItemSubText(AppearanceItemKey.LANGUAGE, languages[which])
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
 
     /**
      * 显示壁纸对话框
@@ -840,6 +882,7 @@ class SettingsFragment : Fragment() {
                             )
 
                             updateItemSubText(SafeIemKey.APP_LOCK, options[which])
+                            appLockOptionsIndex = which
 
                             dialog.dismiss()
                         },
@@ -879,35 +922,10 @@ class SettingsFragment : Fragment() {
                         }
                     }
 
-
-                    /*                        MaterialAlertDialogBuilder(requireContext()).apply {
-                                                val view = layoutInflater.inflate(
-                                                    R.layout.dialog_input_password_layout,
-                                                    null
-                                                )
-                                                val inputPassword =
-                                                    view.findViewById<TextInputEditText>(R.id.input_password)
-                                                setTitle(title)
-                                                setView(view)
-                                                setPositiveButton(
-                                                    getString(R.string.sure)
-                                                ) { _, _ ->
-                                                    if (!inputPassword.text.isNullOrEmpty()) {
-                                                        putLockInfo(
-                                                            sharedPreferences,
-                                                            which,
-                                                            inputPassword.text.toString()
-                                                        )
-                                                        preference.summary = getString(R.string.enabled)
-                                                    }
-                                                }
-                                                setNeutralButton(getString(R.string.cancel), null)
-                                                create()
-                                                show()
-                                            }*/
                 } else {
                     putLockInfo(sharedPreferences, which)
                     updateItemSubText(SafeIemKey.APP_LOCK, getString(R.string.close))
+                    appLockOptionsIndex = which
                 }
                 dialog.dismiss()
             }
@@ -959,37 +977,6 @@ class SettingsFragment : Fragment() {
                 )
             }
             setNeutralButton(getString(R.string.cancel), null)
-            create()
-            show()
-        }
-    }
-
-    /*    private fun showDailyLockKeyDialog() {
-            MaterialAlertDialogUtil.showDialog(
-                requireContext(),
-                title = requireContext().getString(R.string.key),
-                layoutRes = R.layout.dialog_input_password_layout,
-                onViewCreated = { view, _ ->
-                    val inputPasswordLayout =
-                        view.findViewById<TextInputLayout>(R.id.input_password_layout)
-                    inputPasswordLayout.hint = requireContext().getString(R.string.key)
-                }
-
-            )
-        }*/
-
-    private fun showAutoDeleteDialog() {
-        val dayEntries = daysMap.entries.toList()
-
-        MaterialAlertDialogBuilder(requireContext()).apply {
-            setItems(
-                dayEntries.map { it.value }.toTypedArray()
-            ) { _, which ->
-                putAutoDeleteIndex(dayEntries[which].key)
-                updateItemSubText(DailyItemKey.AUTO_DELETE_RECYCLER_BIN, dayEntries[which].value)
-            }
-
-            setPositiveButton(getString(R.string.cancel), null)
             create()
             show()
         }
