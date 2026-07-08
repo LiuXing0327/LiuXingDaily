@@ -10,12 +10,13 @@
         android:id="@+id/list_item_card_view"
         style="?attr/listItemCardViewSegmentedStyle"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_66"
+        android:layout_height="wrap_content"
         android:checkable="true"
         android:clickable="true"
         android:focusable="true">
 
         <LinearLayout
+            android:padding="@dimen/dp_8"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
