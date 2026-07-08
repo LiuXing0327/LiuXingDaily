@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.listitem.ListItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/dp_8">
+
+    <com.google.android.material.listitem.ListItemCardView
+        android:id="@+id/list_item_card_view"
+        style="?attr/listItemCardViewSegmentedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checkable="true"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:padding="@dimen/dp_8"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            tools:ignore="UseCompoundDrawables">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/list_item_start_icon"
+                style="@style/Widget.Material3.ShapeableImageView.ListItem.LeadingImage"
+                android:layout_width="@dimen/dp_24"
+                android:layout_height="@dimen/dp_24"
+                app:srcCompat="@drawable/baseline_check_circle_24" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/list_item_text"
+                    style="@style/Widget.Material3.TextView.ListItem.LabelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="text" />
+
+                <com.google.android.material.slider.Slider
+                    app:centered="true"
+                    android:valueFrom="0"
+                    android:id="@+id/list_item_center_slider"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.listitem.ListItemCardView>
+
+</com.google.android.material.listitem.ListItemLayout>

@@ -1,62 +1,71 @@
+/*
+ * Copyright 2025-2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.liuxing.daily.ui.about
 
 import android.os.Bundle
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import com.liuxing.daily.R
 import com.liuxing.daily.data.SpecialThanksData
-import com.liuxing.daily.databinding.ActivitySpecialThanksBinding
-import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.ui.compose.theme.DailyTheme
+import com.liuxing.daily.ui.compose.theme.DailyThemeManager
+import com.liuxing.daily.ui.qrx.QRXActivity
 
-
-class SpecialThanksActivity : BaseSpecialThanksActivity() {
-
-    private lateinit var specialThanksBinding: ActivitySpecialThanksBinding
+class SpecialThanksActivity : QRXActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        ThemeUtil.applyTheme(this)
-        specialThanksBinding = ActivitySpecialThanksBinding.inflate(layoutInflater)
-        setContentView(specialThanksBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
-                            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-                            insets
+
+        setContent {
+            initCompose()
+            
+            LaunchedEffect(Unit) {
+                checkStatusBarColorForCompose(
+                    topAppBarColor = androidx.compose.ui.graphics.Color.Transparent
+                )
+            }
+
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                val wallpaperBitmap = remember { safeWallpaperBitmap }
+                val wallpaperAlpha = remember { safeWallpaperAlpha }
+                val cardAlpha = remember { safeCardAlpha }
+
+                SpecialThanksScreen(
+                    title = getString(R.string.special_thanks),
+                    wallpaperBitmap = wallpaperBitmap,
+                    wallpaperAlpha = wallpaperAlpha,
+                    cardAlpha = cardAlpha,
+                    dataList = getSpecialThanksList(),
+                    onBack = ::finish
+                )
+            }
         }
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.recycler_view)) { v, insets ->
-            val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            v.setPadding(navigationBars.left, 0, navigationBars.right, navigationBars.bottom)
-            insets
-        }
-        initData()
-        (this as BaseSpecialThanksActivity).initQRX(specialThanksBinding.wallpaper,specialThanksBinding.appBarLayout)
     }
 
-    /**
-     * 初始化数据
-     */
-    private fun initData() {
-        setActionBar()
-        initRecyclerView()
-    }
-
-    /**
-     * 设置工具栏
-     */
-    private fun setActionBar() {
-        setSupportActionBar(specialThanksBinding.toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        specialThanksBinding.toolbar.title = getString(R.string.special_thanks)
-    }
-
-    /**
-     * 初始化列表
-     */
-    private fun initRecyclerView() {
-        val specialThanksDataList = setOf(
+    private fun getSpecialThanksList(): List<SpecialThanksData> {
+        return listOf(
             SpecialThanksData(
                 "zoyonsheng",
                 "对醒悟推广的支持与帮助",
@@ -75,10 +84,6 @@ class SpecialThanksActivity : BaseSpecialThanksActivity() {
                 "",
                 0
             )
-        )
-        (this as BaseSpecialThanksActivity).initRecyclerView(
-            specialThanksBinding.recyclerView,
-            specialThanksDataList.toList()
         )
     }
 }

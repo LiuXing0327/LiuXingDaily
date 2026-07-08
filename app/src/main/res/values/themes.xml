@@ -3,8 +3,6 @@
     <style name="Base.Theme.流星日记" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-        <item name="searchViewShowingColor">@color/light_showing_color</item>
-        <item name="collapsed_status_bar">@color/light_collapsed_status_bar_color</item>
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
         <item name="toolbarWithCloseButtonStyle">
             @style/Widget.Theme.流星日记.Toolbar.WithCloseButton
@@ -59,9 +57,6 @@
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh_red</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_red</item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_red</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_red</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
@@ -115,9 +110,6 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_green
         </item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_green</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_green</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
@@ -170,9 +162,6 @@
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh_blue</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_blue
         </item>
-
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_blue</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_blue</item>
 
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
@@ -229,9 +218,6 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_yellow
         </item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_yellow</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_yellow</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
@@ -285,31 +271,8 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest_pink
         </item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_pink</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_pink</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 
     <style name="Theme.流星日记" parent="Base.Theme.流星日记" />
-
-    <style name="Theme.流星日记.Fullscreen" parent="Theme.流星日记">
-        <item name="android:actionBarStyle">@style/Widget.Theme.流星日记.ActionBar.Fullscreen</item>
-        <item name="android:windowActionBarOverlay">true</item>
-        <item name="android:windowBackground">@null</item>
-    </style>
-
-    <style name="ThemeOverlay.流星日记.FullscreenContainer" parent="">
-        <item name="fullscreenBackgroundColor">@color/light_blue_600</item>
-        <item name="fullscreenTextColor">@color/light_blue_A200</item>
-    </style>
-
-    <style name="Theme.流星日记.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="Theme.流星日记.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="Theme.流星日记.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

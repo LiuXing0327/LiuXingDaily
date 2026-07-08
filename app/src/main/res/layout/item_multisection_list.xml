@@ -13,9 +13,10 @@
         android:id="@+id/list_item_card_view"
         style="?attr/listItemCardViewSegmentedStyle"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_66">
+        android:layout_height="wrap_content">
 
         <LinearLayout
+            android:padding="@dimen/dp_8"
             android:gravity="center_vertical"
             android:layout_height="match_parent"
             android:layout_width="match_parent"

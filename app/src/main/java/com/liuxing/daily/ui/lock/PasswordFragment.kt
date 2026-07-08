@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025-2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.liuxing.daily.ui.lock
 
 import android.content.SharedPreferences
@@ -19,6 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -146,13 +163,16 @@ class PasswordFragment : Fragment() {
                     getString(R.string.wrong_password)
 
                 CoroutineScope(Dispatchers.Main).launch {
-                    delay(1000)
+                    delay(1000.milliseconds)
                     binding.passwordLayout.inputPasswordLayout.error = null
                 }
             } else {
-                IntentUtil.startActivity(
-                    requireContext(), MainActivity::class.java, mapOf("lock" to false)
-                )
+                val isBackgroundResume = requireActivity().intent.getBooleanExtra("lock", false)
+                if (!isBackgroundResume) {
+                    IntentUtil.startActivity(
+                        requireContext(), MainActivity::class.java, mapOf("lock" to false)
+                    )
+                }
                 requireActivity().finish()
             }
         }

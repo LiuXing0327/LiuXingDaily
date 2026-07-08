@@ -1,5 +1,17 @@
 /*
- * Copyright (c) 2025 流星
+ * Copyright 2025-2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.liuxing.daily.util
@@ -9,6 +21,10 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.BackgroundColorSpan
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import com.google.android.material.color.MaterialColors
 import com.liuxing.daily.markdown.span.InlineBackgroundSpan
 import com.liuxing.daily.markdown.span.SearchHighlightSpan
@@ -17,6 +33,37 @@ import com.liuxing.daily.markdown.span.SearchHighlightSpan
  * 搜索高亮工具。
  */
 object HighlightUtil {
+
+    /**
+     * Compose 搜索高亮。
+     * 
+     * @param fullText 完整文本
+     * @param keyword 搜索关键字
+     * @param highlightColor 高亮背景色
+     */
+    fun highlightToAnnotatedString(
+        fullText: String,
+        keyword: String,
+        highlightColor: Color
+    ): AnnotatedString {
+        if (fullText.isEmpty() || keyword.isEmpty()) return AnnotatedString(fullText)
+        
+        return buildAnnotatedString {
+            append(fullText)
+            val lowerText = fullText.lowercase()
+            val lowerKey = keyword.lowercase()
+            
+            var index = lowerText.indexOf(lowerKey)
+            while (index != -1) {
+                addStyle(
+                    style = SpanStyle(background = highlightColor),
+                    start = index,
+                    end = index + keyword.length
+                )
+                index = lowerText.indexOf(lowerKey, index + keyword.length)
+            }
+        }
+    }
 
     /**
      * 在纯文本上创建搜索高亮结果。

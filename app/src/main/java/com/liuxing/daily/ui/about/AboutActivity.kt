@@ -8,25 +8,23 @@ import android.text.method.LinkMovementMethod
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.MenuProvider
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityAboutBinding
+import com.liuxing.daily.ui.compose.theme.DailyTheme
+import com.liuxing.daily.ui.compose.theme.DailyThemeManager
 import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.ui.updatelog.UpdateLogActivity
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.SnackbarUtil
-import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.util.VersionUtil
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 
 class AboutActivity : QRXActivity() {
@@ -34,30 +32,54 @@ class AboutActivity : QRXActivity() {
     private lateinit var activityAboutBinding: ActivityAboutBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState)/*        enableEdgeToEdge()
+                ThemeUtil.applyTheme(this)
+                activityAboutBinding = ActivityAboutBinding.inflate(layoutInflater)
+                setContentView(activityAboutBinding.root)
+                ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+                    insets
+                }*/
+        //  initData()
         enableEdgeToEdge()
-        ThemeUtil.applyTheme(this)
-        activityAboutBinding = ActivityAboutBinding.inflate(layoutInflater)
-        setContentView(activityAboutBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-            insets
-        }
-        qrx()
-        initData()
-    }
+        setContent {
 
-    private fun qrx() {
-        val qrx = (this as QRXActivity)
-        qrx.init(activityAboutBinding.wallpaper, activityAboutBinding.appBarLayout)
+            initCompose()
+            LaunchedEffect(Unit) {
+                checkStatusBarColorForCompose(
+                    topAppBarColor = Color.Transparent
+                )
+            }
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                while (true) {
-                    delay(300)
-                    qrx.checkStatusBarColor(true)
-                }
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                val wallpaperBitmap = remember { safeWallpaperBitmap }
+                val currentWallpaperAlpha = remember { safeWallpaperAlpha }
+                val cardAlpha = remember { safeCardAlpha }
+
+                AboutScreen(
+                    wallpaperBitmap = wallpaperBitmap,
+                    wallpaperAlpha = currentWallpaperAlpha,
+                    cardAlpha = cardAlpha,
+                    onBack = ::finish,
+                    {
+                        MaterialAlertDialogBuilder(this).apply {
+                            setTitle("注意事项")
+                            setMessage("在加入交流群之前，请注意以下事项：\n1、请遵守群规，文明交流。\n2、不要分享个人隐私。\n3、若有疑问请联系群主或管理员。")
+                            setPositiveButton(
+                                getString(R.string.sure)
+                            ) { _, _ -> joinQQGroup("5XhiuTnwUF3YfNpZauGW2ZItbLnuZ2Xs") }
+                            setNegativeButton(getString(R.string.cancel), null)
+                            create()
+                            show()
+                        }
+                    }
+                )
             }
         }
     }
@@ -114,23 +136,13 @@ class AboutActivity : QRXActivity() {
             Html.fromHtml("<a href='mailto:$email'>Email：$email</a>", Html.FROM_HTML_MODE_COMPACT)
         activityAboutBinding.tvJoinGroup.text = getString(R.string.qq_920994447)
         activityAboutBinding.tvJoinGroup.setOnClickListener {
-            MaterialAlertDialogBuilder(this).apply {
-                setTitle("注意事项")
-                setMessage("在加入交流群之前，请注意以下事项：\n1、请遵守群规，文明交流。\n2、不要分享个人隐私。\n3、若有疑问请联系群主或管理员。")
-                setPositiveButton(
-                    getString(R.string.sure)
-                ) { dialog, which -> joinQQGroup("5XhiuTnwUF3YfNpZauGW2ZItbLnuZ2Xs") }
-                setNegativeButton(getString(R.string.cancel), null)
-                create()
-                show()
-            }
+
 
         }
         activityAboutBinding.tvJoinGroup.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, "920994447")
             SnackbarUtil.showSnackbarShort(
-                activityAboutBinding.tvGithub,
-                getString(R.string.copy_successful)
+                activityAboutBinding.tvGithub, getString(R.string.copy_successful)
             )
             true
         }
@@ -138,18 +150,20 @@ class AboutActivity : QRXActivity() {
         activityAboutBinding.tvEmail.movementMethod = LinkMovementMethod.getInstance()
         activityAboutBinding.tvEmail.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, email)
-            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvEmail, getString(R.string.copy_successful))
+            SnackbarUtil.showSnackbarShort(
+                activityAboutBinding.tvEmail, getString(R.string.copy_successful)
+            )
             true
         }
         val sourceCodeUrl = "https://github.com/LiuXing0327/LiuXingDaily"
-        activityAboutBinding.tvGithub.text =
-            Html.fromHtml(
-                getString(R.string.a_href_a, sourceCodeUrl, sourceCodeUrl),
-                Html.FROM_HTML_MODE_COMPACT
-            )
+        activityAboutBinding.tvGithub.text = Html.fromHtml(
+            getString(R.string.a_href_a, sourceCodeUrl, sourceCodeUrl), Html.FROM_HTML_MODE_COMPACT
+        )
         activityAboutBinding.tvGithub.setOnLongClickListener {
             CopyUtil.copyTextToClipboard(this@AboutActivity, sourceCodeUrl)
-            SnackbarUtil.showSnackbarShort(activityAboutBinding.tvGithub, getString(R.string.copy_successful))
+            SnackbarUtil.showSnackbarShort(
+                activityAboutBinding.tvGithub, getString(R.string.copy_successful)
+            )
             true
         }
         // 设置可点击
@@ -169,8 +183,7 @@ class AboutActivity : QRXActivity() {
                     android.R.id.home -> finish()
 
                     R.id.item_update_log -> IntentUtil.startActivity(
-                        this@AboutActivity,
-                        UpdateLogActivity::class.java
+                        this@AboutActivity, UpdateLogActivity::class.java
                     )
                 }
                 return true
@@ -196,10 +209,10 @@ class AboutActivity : QRXActivity() {
             return true
         } catch (e: Exception) {
             // 未安装手Q或安装的版本不支持
-            SnackbarUtil.showSnackbarShort(
-                activityAboutBinding.tvJoinGroup,
-                "未安装手Q或安装的版本不支持"
-            )
+//            SnackbarUtil.showSnackbarShort(
+//                activityAboutBinding.tvJoinGroup, "未安装手Q或安装的版本不支持"
+//            )
+            CopyUtil.copyTextToClipboard(this, "920994447")
             return false
         }
     }

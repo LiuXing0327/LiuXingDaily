@@ -57,9 +57,6 @@
             @color/md_theme_surfaceContainerHighest_light_cyan
         </item>
 
-        <item name="searchViewShowingColor">@color/md_theme_surfaceContainerHigh_light_cyan</item>
-        <item name="collapsed_status_bar">@color/md_theme_surfaceContainer_light_cyan</item>
-
         <item name="popupMenuBackground">@drawable/custom_popup_background</item>
     </style>
 </resources>

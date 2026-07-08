@@ -7,7 +7,6 @@ package com.liuxing.daily.adapter
 import android.content.Context
 import android.graphics.Rect
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
@@ -23,9 +22,11 @@ import com.google.android.material.listitem.ListItemCardView
 import com.google.android.material.listitem.ListItemLayout
 import com.google.android.material.listitem.ListItemViewHolder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.slider.Slider
 import com.google.android.material.textview.MaterialTextView
 import com.liuxing.daily.R
 import com.liuxing.daily.data.BaseListItemData
+import com.liuxing.daily.extension.inflate
 import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.ui.datamanagement.DataManagementActivity
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
@@ -34,6 +35,7 @@ import kotlin.math.max
 
 private const val VIEW_TYPE_EXPANDABLE_ITEM = 2
 private const val VIEW_TYPE_SWITCH_ITEM = 3
+private const val VIEW_TYPE_SLIDER_ITEM = 4
 
 private const val EXPANDED_SECTION_COUNT = 3
 
@@ -41,7 +43,8 @@ class ListMultisectionAdapter(
     private val onItemClick: ((BaseListItemData.Item) -> Unit)? = null,
     private val onExpandableFirstItemClick: ((BaseListItemData.ExpandableItem) -> Unit)? = null,
     private val onExpandableSecondItemOnClick: ((BaseListItemData.ExpandableItem) -> Unit)? = null,
-    private val onCheckedChange: ((BaseListItemData.SwitchItem, Boolean) -> Unit)? = null
+    private val onCheckedChange: ((BaseListItemData.SwitchItem, Boolean) -> Unit)? = null,
+    private val onSliderValueChange: ((BaseListItemData.SliderItem, Float, Boolean) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var list: List<BaseListItemData> = emptyList()
@@ -55,26 +58,27 @@ class ListMultisectionAdapter(
     ): RecyclerView.ViewHolder {
         return when (viewType) {
             VIEW_TYPE_HEADER -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.list_item_subheader, parent, false)
+                val view = parent.inflate(R.layout.list_item_subheader)
                 SubheadingViewHolder(view)
             }
 
             VIEW_TYPE_DAILY -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_multisection_list, parent, false)
+                val view = parent.inflate(R.layout.item_multisection_list)
                 ViewHolder(view)
             }
 
             VIEW_TYPE_SWITCH_ITEM -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_switch_list, parent, false)
+                val view = parent.inflate(R.layout.item_switch_list)
                 SwitchViewHolder(view)
             }
 
+            VIEW_TYPE_SLIDER_ITEM -> {
+                val view = parent.inflate(R.layout.item_slider_list)
+                SliderViewHolder(view)
+            }
+
             else -> {
-                val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_expandable_list, parent, false)
+                val view = parent.inflate(R.layout.item_expandable_list)
                 ExpandableViewHolder(view)
             }
         }
@@ -96,6 +100,10 @@ class ListMultisectionAdapter(
                 data,
                 onCheckedChange
             )
+            is BaseListItemData.SliderItem -> (holder as SliderViewHolder).bind(
+                data,
+                onSliderValueChange
+            )
         }
     }
 
@@ -105,6 +113,7 @@ class ListMultisectionAdapter(
             is BaseListItemData.Item -> VIEW_TYPE_DAILY
             is BaseListItemData.ExpandableItem -> VIEW_TYPE_EXPANDABLE_ITEM
             is BaseListItemData.SwitchItem -> VIEW_TYPE_SWITCH_ITEM
+            is BaseListItemData.SliderItem -> VIEW_TYPE_SLIDER_ITEM
         }
     }
 
@@ -344,6 +353,41 @@ class ListMultisectionAdapter(
 
                 onCheckedChange?.invoke(data, newChecked)
             }
+        }
+    }
+
+    class SliderViewHolder(itemView: View) : ListItemViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.list_item_start_icon)
+        private val textView: MaterialTextView = itemView.findViewById(R.id.list_item_text)
+        private val centerSlider: Slider = itemView.findViewById(R.id.list_item_center_slider)
+
+        fun bind(
+            data: BaseListItemData.SliderItem,
+            onSliderValueChange: ((BaseListItemData.SliderItem, Float, Boolean) -> Unit)?
+        ) {
+            super.bind(data.indexInSelection, data.selectionCount)
+
+            imageView.setImageResource(data.iconResource)
+            textView.text = data.text
+            centerSlider.clearOnChangeListeners()
+            centerSlider.valueFrom = data.valueFrom
+            centerSlider.valueTo = data.valueTo
+            centerSlider.value = data.value
+            centerSlider.stepSize = data.stepSize
+
+            centerSlider.setLabelFormatter { value ->
+                data.labels.getOrNull(value.toInt()) ?: formatSliderValue(value)
+            }
+
+            centerSlider.addOnChangeListener { _, value, fromUser ->
+                data.value = value
+                onSliderValueChange?.invoke(data, value, fromUser)
+            }
+        }
+
+        private fun formatSliderValue(value: Float): String {
+            val intValue = value.toInt()
+            return if (value == intValue.toFloat()) intValue.toString() else value.toString()
         }
     }
 

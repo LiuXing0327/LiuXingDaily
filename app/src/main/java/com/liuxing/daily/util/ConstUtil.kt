@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024-2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.liuxing.daily.util
 
 import com.liuxing.daily.R
@@ -103,6 +119,8 @@ object ConstUtil {
     const val WALLPAPER_PATH = "/storage/emulated/0/Android/data/com.liuxing.daily/files/Wallpaper/wallpaper.jpg"
     // 壁纸透明度键
     const val WALLPAPER_ALPHA_KEY = "background_image_alpha"
+    // 卡片透明度键
+    const val CARD_ALPHA_KEY = "card_alpha"
 
     // 日记列表图片显示键
     const val DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY = "switch_preference_image_display"

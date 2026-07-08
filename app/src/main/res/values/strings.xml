@@ -91,7 +91,7 @@
     <string name="theme_mode">主题模式</string>
     <string name="follow_the_system">跟随系统</string>
     <string name="light_mode">浅色模式</string>
-    <string name="night_node">深色模式</string>
+    <string name="night_mode">深色模式</string>
     <string name="Sort_by_by_date">排序方式-按日期</string>
     <string name="from_new_to_old">从新到旧</string>
     <string name="from_old_to_new">从旧到新</string>
@@ -223,7 +223,15 @@
     <string name="import_and_export">导入与导出</string>
     <string name="backup_and_restore">备份与恢复</string>
     <string name="local_backup_path">本地备份路径</string>
+    <string name="local_backup_path_not_selected">未选择。备份将保存在 backups/local/ 目录下。</string>
+    <string name="backup_supporting_text">将所有日记、媒体记录和标签备份为 JSON 文件</string>
+    <string name="restore_supporting_text">选择 JSON 备份文件进行恢复</string>
+    <string name="auto_backup_supporting_text">应用启动时自动备份 JSON 文件（最多保留最新 10 个）</string>
+    <string name="processing">正在处理&#8230;</string>
     <string name="auto_backup">自动备份</string>
+    <string name="backup_encryption">备份加密</string>
+    <string name="backup_encryption_supporting_text">使用密码保护您的备份文件。如果丢失密码，将无法恢复数据。</string>
+    <string name="set_backup_password">设置备份密码</string>
     <string name="clear_password">清除密码</string>
     <string name="format_text_bold">文本设为粗体</string>
     <string name="format_text_italic">文本设为斜体</string>
@@ -246,4 +254,19 @@
     <string name="body">正文</string>
     <string name="highlight">背景高亮</string>
     <string name="text_color">文字颜色</string>
+    <string name="search_page_placeholder">输入关键字，后续会在这里接入高级搜索与组合筛选。</string>
+    <string name="search_page_title">新搜索页已准备好</string>
+    <string name="search_page_description">这是 Compose 搜索页的第一步。后续可以逐步接入搜索历史、组合筛选、搜索结果和高亮显示。</string>
+    <string name="source_code">开源地址</string>
+    <string name="local_backup">本地备份</string>
+    <string name="all">全部</string>
+    <string name="text">文字</string>
+    <string name="video">视频</string>
+    <string name="audio">音频</string>
+    <string name="starred">已置顶</string>
+    <string name="change_wallpaper">更换壁纸</string>
+    <string name="wallpaper_opacity">壁纸不透明度</string>
+    <string name="card_opacity">卡片不透明度</string>
+    <string name="no_matching_content_found">未找到匹配内容</string>
+    <string name="leave_blank_for_no_encryption">不加密请留空</string>
 </resources>

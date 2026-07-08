@@ -189,7 +189,7 @@ class LookDailyActivity : AppCompatActivity() {
      * @param bitmap 用于分析的壁纸 Bitmap
      */
     fun setLightStausBarsFromBitmap(bitmap: Bitmap) {
-        StatusBarUtil.setLightStausBarsFromBitmap(bitmap,lookDailyBinding.wallpaper,window)
+        StatusBarUtil.setLightStausBarsFromBitmap(bitmap,lookDailyBinding.wallpaper.alpha,window)
     }
 
     /**
