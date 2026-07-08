@@ -90,7 +90,7 @@
     <string name="theme_mode">Theme Mode</string>
     <string name="follow_the_system">Follow System</string>
     <string name="light_mode">Light Mode</string>
-    <string name="night_node">Dark Mode</string>
+    <string name="night_mode">Dark Mode</string>
     <string name="Sort_by_by_date">Sort By Date</string>
     <string name="from_new_to_old">From New to Old</string>
     <string name="from_old_to_new">From Old to New</string>
@@ -218,7 +218,15 @@
     <string name="import_and_export">Import and Export</string>
     <string name="backup_and_restore">Backup and restore</string>
     <string name="local_backup_path">Local backup path</string>
+    <string name="local_backup_path_not_selected">Not selected. Backups are saved under backups/local/.</string>
+    <string name="backup_supporting_text">Backup all diaries, media records, and labels to JSON</string>
+    <string name="restore_supporting_text">Restore using JSON backup files</string>
+    <string name="auto_backup_supporting_text">Automatically back up JSON files when the application starts (keeping up to the latest 10)</string>
+    <string name="processing">Processing&#8230;</string>
     <string name="auto_backup">Automatic backup</string>
+    <string name="backup_encryption">Backup encryption</string>
+    <string name="backup_encryption_supporting_text">Protect your backup files with a password. Data cannot be recovered if the password is lost.</string>
+    <string name="set_backup_password">Set backup password</string>
     <string name="clear_password">Clear password</string>
     <string name="format_text_bold">Format text bold</string>
     <string name="format_text_italic">Format text italic</string>
@@ -241,4 +249,19 @@
     <string name="body">Body</string>
     <string name="highlight">Highlight</string>
     <string name="text_color">Text color</string>
+    <string name="search_page_placeholder">Enter a keyword. Advanced search and combined filters will be added here next.</string>
+    <string name="search_page_title">The new search page is ready</string>
+    <string name="search_page_description">This is the first Compose-based search page. Next we can gradually add search history, combined filters, result lists, and highlight rendering here.</string>
+    <string name="source_code">Source Code</string>
+    <string name="local_backup">Local backup</string>
+    <string name="all">All</string>
+    <string name="text">Text</string>
+    <string name="video">Video</string>
+    <string name="audio">Audio</string>
+    <string name="starred">Pinned</string>
+    <string name="change_wallpaper">Change wallpaper</string>
+    <string name="wallpaper_opacity">Wallpaper Opacity</string>
+    <string name="card_opacity">Card Opacity</string>
+    <string name="no_matching_content_found">No matching content found</string>
+    <string name="leave_blank_for_no_encryption">Leave blank for no encryption</string>
 </resources>

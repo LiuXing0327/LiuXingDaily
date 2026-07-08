@@ -1,5 +1,17 @@
 /*
- * Copyright (c) 2025 流星
+ * Copyright 2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.liuxing.daily.ui.qrx
@@ -8,6 +20,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
@@ -32,7 +46,10 @@ open class QRXActivity : AppCompatActivity() {
      */
     private lateinit var appBarLayout: AppBarLayout
 
-    private lateinit var wallpaperBitmap: Bitmap
+    protected lateinit var wallpaperBitmap: Bitmap
+    val safeWallpaperBitmap: Bitmap?
+        get() = if (::wallpaperBitmap.isInitialized) wallpaperBitmap else null
+
     private val mainViewModel by lazy {
         ViewModelProvider(this)[MainViewModel::class.java]
     }
@@ -40,6 +57,14 @@ open class QRXActivity : AppCompatActivity() {
     private val sharedPreferences by lazy {
         PreferenceManager.getDefaultSharedPreferences(this)
     }
+
+    private var wallpaperAlpha = 0.15f
+    val safeWallpaperAlpha
+        get() = wallpaperAlpha
+
+    private var cardAlpha = 0.7f
+    val safeCardAlpha
+        get() = cardAlpha
 
     /**
      * 初始化
@@ -72,7 +97,28 @@ open class QRXActivity : AppCompatActivity() {
     fun init(dailyListView: RecyclerView, dailyList: List<DailyEntity>) {
         if (::wallpaperBitmap.isInitialized) {
             dailyListView.setLightStausBarsFromBitmap(dailyList) {
-                setLightStausBarsFromBitmap(wallpaperBitmap, wallpaper, window)
+                setLightStausBarsFromBitmap(wallpaperBitmap, wallpaperAlpha, window)
+            }
+        }
+    }
+
+    /**
+     * 初始化 Compose 壁纸以及状态栏。
+     */
+    fun initCompose() {
+        if (File(ConstUtil.WALLPAPER_PATH).checkFileExistsToPath()) {
+            val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+            this.wallpaperAlpha = wallpaperAlpha
+
+            val cardAlpha = sharedPreferences!!.getFloat(ConstUtil.CARD_ALPHA_KEY,0.7f)
+            this.cardAlpha = cardAlpha
+            try {
+                val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+                this.wallpaperBitmap = bitmap
+
+                setLightStausBarsFromBitmap(bitmap, wallpaperAlpha, window)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -98,10 +144,20 @@ open class QRXActivity : AppCompatActivity() {
         if (::wallpaperBitmap.isInitialized) {
             getBitmap(wallpaperBitmap)?.let { bitmap ->
                 if (offsetChange) checkStatusBarColor(
-                    appBarLayout, window, bitmap, wallpaper
+                    appBarLayout, window, bitmap, wallpaperAlpha
                 )
             }
         }
+    }
+
+    fun checkStatusBarColorForCompose(topAppBarColor: Color) {
+        val bitmap = safeWallpaperBitmap ?: return
+        checkStatusBarColor(
+            topAppBarColor = topAppBarColor.toArgb(),
+            window = window,
+            bitmap = bitmap,
+            wallpaperAlpha = wallpaperAlpha
+        )
     }
 
     /**
@@ -111,7 +167,7 @@ open class QRXActivity : AppCompatActivity() {
         if (File(ConstUtil.WALLPAPER_PATH).checkFileExistsToPath()) {
             wallpaperBitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
             wallpaper.setImageBitmap(wallpaperBitmap)
-            setLightStausBarsFromBitmap(wallpaperBitmap, wallpaper, window)
+            setLightStausBarsFromBitmap(wallpaperBitmap, wallpaperAlpha, window)
         }
     }
 
@@ -128,5 +184,6 @@ open class QRXActivity : AppCompatActivity() {
 
     fun setWallpaperAlpha(alpha: Float) {
         wallpaper.alpha = alpha
+        wallpaperAlpha = alpha
     }
 }
