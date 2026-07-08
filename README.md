@@ -10,27 +10,14 @@
 </div>
 
 <div>
+<img src="screenshot/3.0.0/Screen_recording_20260707_210054.gif" width="45%"/>
+ <img src="screenshot/3.0.0/Screen_recording_20260707_205948.gif" width="45%"/>
+</div>
+
+<div>
 <img src="screenshot/2.6/V2.6Screenshot_20250705_102436.png" width="30%"/>
  <img src="screenshot/2.9.0/V2.9.0Screenshot_20251128_222954.png" width="30%"/>
  <img src="screenshot/2.9.5/V2.9.5Screenshot_20260312_150225.png" width="30%"/>
-</div>
-
-<div>
-<img src="screenshot/2.4/V2.4Screenshot_20250315_132349.png" width="30%"/>
- <img src="screenshot/1.2/V1.2Screenshot_20241013_232055.png" width="30%"/>
- <img src="screenshot/2.4.1/V2.4.1Screenshot_20250509_172511.png" width="30%"/>
-</div>
-
-<div>
-<img src="screenshot/2.9.1/V2.9.1V2.gif" width="30%"/>
- <img src="screenshot/2.1/V2.1Screenshot_20241106_220440.png" width="30%"/>
- <img src="screenshot/2.1/V2.1Screenshot_20241106_220455.png" width="30%"/>
-</div>
-
-<div>
- <img src="screenshot/2.3.3/V2.3.3Screenshot_20250212_165827 (1).png" width="30%"/>
- <img src="screenshot/2.9.1/V2.9.1Screenshot_20251221_142541.png" width="30%"/>
- <img src="screenshot/2.7/V2.7Screenshot_20250729_212322.png" width="30%"/>
 </div>
 
 ## 特色
