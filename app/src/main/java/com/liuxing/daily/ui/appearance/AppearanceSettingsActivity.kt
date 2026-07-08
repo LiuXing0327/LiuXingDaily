@@ -9,18 +9,20 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.listitem.ListItemCardView
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.liuxing.daily.R
@@ -32,11 +34,14 @@ import com.liuxing.daily.extension.initDefIcon
 import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.extension.toggleDoneIcon
 import com.liuxing.daily.material.widget.DailyMaterialSwitch
+import com.liuxing.daily.ui.compose.theme.DailyTheme
+import com.liuxing.daily.ui.compose.theme.DailyThemeManager
 import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val SPAN_COUNT = 4
 
@@ -51,21 +56,44 @@ class AppearanceSettingsActivity : QRXActivity() {
     private val dynamicColorSwitchKey = AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState)/*        enableEdgeToEdge()
+                ThemeUtil.applyTheme(this)
+                appearanceSettingsBinding = ActivityAppearanceSettingsBinding.inflate(layoutInflater)
+                setContentView(appearanceSettingsBinding.root)
+                ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
+                            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+                            insets
+                }
+                initData()
+                (this as QRXActivity).init(
+                    appearanceSettingsBinding.wallpaper,
+                    appearanceSettingsBinding.appBarLayout
+                )*/
         enableEdgeToEdge()
-        ThemeUtil.applyTheme(this)
-        appearanceSettingsBinding = ActivityAppearanceSettingsBinding.inflate(layoutInflater)
-        setContentView(appearanceSettingsBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_container)) { v, insets ->
-                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-                    insets
+        DailyThemeManager.syncFromPreferences(this)
+        setContent {
+
+            initCompose()
+            LaunchedEffect(Unit) {
+                checkStatusBarColorForCompose(
+                    topAppBarColor = androidx.compose.ui.graphics.Color.Transparent
+                )
+            }
+
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                val wallpaperBitmap = remember { safeWallpaperBitmap }
+                val wallpaperAlpha = remember { safeWallpaperAlpha }
+                val cardAlpha = remember { safeCardAlpha }
+
+                AppearanceSettingsScreen(wallpaperBitmap, wallpaperAlpha, cardAlpha, ::finish)
+            }
         }
-        initData()
-        (this as QRXActivity).init(
-            appearanceSettingsBinding.wallpaper,
-            appearanceSettingsBinding.appBarLayout
-        )
     }
 
     /**
@@ -303,7 +331,12 @@ class AppearanceSettingsActivity : QRXActivity() {
             .setAllCornerSizes(px)
             .build()
 
-        appearanceSettingsBinding.settingsContainer.listItemCardView.shapeAppearanceModel =
+        cardView.setCardBackgroundColor(
+            MaterialColors.getColor(
+                cardView, com.google.android.material.R.attr.colorPrimaryContainer
+            )
+        )
+        cardView.shapeAppearanceModel =
             shape
 
         startIcon.setImageResource(data.iconResource)
@@ -322,7 +355,7 @@ class AppearanceSettingsActivity : QRXActivity() {
             animateThemeList(!data.checked)
 
             lifecycleScope.launch {
-                delay(300)
+                delay(300.milliseconds)
 
                 val animation =
                     ActivityOptions.makeCustomAnimation(
@@ -386,7 +419,7 @@ class AppearanceSettingsActivity : QRXActivity() {
      *              true -> 展开。else -> 收起
      */
     private fun animateThemeList(show: Boolean) {
-        val view = appearanceSettingsBinding.themeListCard
+        val view = appearanceSettingsBinding.recyclerTheme
 
         // 防止动画叠加
         view.animate().cancel()
