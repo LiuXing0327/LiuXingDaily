@@ -70,10 +70,11 @@ import com.liuxing.daily.extension.rotateOnce
 import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
-import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.markdown.color.MarkdownColor
 import com.liuxing.daily.ui.add.AddDailyActivity
 import com.liuxing.daily.ui.appearance.AppearanceConst
+import com.liuxing.daily.ui.compose.theme.DailyTheme
+import com.liuxing.daily.ui.compose.theme.DailyThemeManager
 import com.liuxing.daily.ui.config.SystemBarController
 import com.liuxing.daily.ui.daily.DailyFragment
 import com.liuxing.daily.ui.label.DailyLabelActivity
@@ -83,6 +84,8 @@ import com.liuxing.daily.ui.main.MainActivity.Companion.isCalendarQueryDailyFrag
 import com.liuxing.daily.ui.main.MainActivity.Companion.isDailyFragment
 import com.liuxing.daily.ui.qrx.QRXActivity
 import com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment
+import com.liuxing.daily.ui.search.SearchScreen
+import com.liuxing.daily.ui.search.SearchViewModel
 import com.liuxing.daily.ui.settings.SettingsActivity
 import com.liuxing.daily.util.BitmapUtil
 import com.liuxing.daily.util.CheckAppUpdateUtil
@@ -123,6 +126,7 @@ import java.net.URL
 import java.util.Date
 import java.util.UUID
 import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class MainActivity : QRXActivity() {
@@ -130,6 +134,11 @@ class MainActivity : QRXActivity() {
     private lateinit var activityMainBinding: ActivityMainBinding
     private lateinit var dailyViewModel: DailyViewModel
     private lateinit var dailySearchAdapter: DailySearchAdapter
+
+    // 搜索 ViewModel
+    private val searchViewModel by lazy {
+        ViewModelProvider(this)[SearchViewModel::class.java]
+    }
     private var dailyList: List<DailyEntity> = ArrayList()
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var navController: NavController
@@ -229,6 +238,7 @@ class MainActivity : QRXActivity() {
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         currentDynamicColorChecked =
             SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
+        DailyThemeManager.syncFromPreferences(this)
         MarkdownColor.init(this)
         val okHttpClient = OkHttpClient()
         val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
@@ -386,9 +396,7 @@ class MainActivity : QRXActivity() {
         setNavigation()
         initViewModel()
         initSharePreferences()
-        initSearchRecyclerView()
         initSearchView()
-        setSearchRecyclerViewData()
         initSearchBar()
         floatingOnClick()
         onDestinationChanged()
@@ -399,7 +407,7 @@ class MainActivity : QRXActivity() {
         refreshSelectedDailyList()
 
         lifecycleScope.launch {
-            delay(300)
+            delay(300.milliseconds)
             selectAllDailies()
         }
     }
@@ -500,57 +508,40 @@ class MainActivity : QRXActivity() {
     }
 
     /**
-     * 初始化搜索列表
-     */
-    private fun initSearchRecyclerView() {
-        val linearLayoutManagerSearch = LinearLayoutManager(this)
-        activityMainBinding.searchRecyclerView.layoutManager = linearLayoutManagerSearch
-        dailySearchAdapter = DailySearchAdapter()
-        activityMainBinding.searchRecyclerView.adapter = dailySearchAdapter
-    }
-
-    /**
-     * 设置搜索列表数据
-     */
-    private fun setSearchRecyclerViewData() {
-        setSearchRecyclerViewItemOnClick()
-        setSearchRecyclerViewItemOnLongClick()
-    }
-
-    /**
-     * 加载搜索日记的数据
-     */
-    private fun loadSearchDailyData(searchQuery: String) {
-        lifecycleScope.launch {
-            val uuids = dailyList.mapNotNull { it.dailyUUID }
-            val imageMap = dailyViewModel.getImagePathForUuids(uuids)
-            dailySearchAdapter.setDailyList(
-                this@MainActivity, dailyList, searchQuery, imageMap
-            )
-        }
-    }
-
-    /**
-     * 设置搜索列表点击事件
-     */
-    private fun setSearchRecyclerViewItemOnClick() {
-        dailySearchAdapter.setOnItemClickListener(object : OnItemClickListener {
-            override fun onItemClick(position: Int) {
-                val intent = Intent()
-                intent.setClass(this@MainActivity, LookDailyActivity::class.java)
-                intent.putExtra("POSITION", position)
-                intent.putExtra("search_query", searchQuery)
-                startActivity(intent)
-            }
-
-        })
-    }
-
-    /**
      * 初始化搜索视图
      */
     private fun initSearchView() {
         activityMainBinding.searchView.inflateMenu(R.menu.menu_search_daily)
+
+        activityMainBinding.composeSearchView.setContent {
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                SearchScreen(
+                    viewModel = searchViewModel,
+                    onResultClick = { clickedDaily ->
+                        val filteredList = dailyList.filter { !it.isDeleted }
+                        val position =
+                            filteredList.indexOfFirst { it.dailyUUID == clickedDaily.dailyUUID }
+
+                        if (position != -1) {
+                            val intent =
+                                Intent(this@MainActivity, LookDailyActivity::class.java).apply {
+                                    putExtra("POSITION", position)
+                                    putExtra("search_query", searchViewModel.query)
+                                }
+                            startActivity(intent)
+                        }
+                    },
+                    onResultLongClick = { daily ->
+                        showDailyManagementDialog(daily)
+                    }
+                )
+            }
+        }
 
         activityMainBinding.searchView.addTransitionListener { searchView, previousState, newState ->
             val enable =
@@ -576,22 +567,74 @@ class MainActivity : QRXActivity() {
      */
     private fun searchDaily() {
         // 点击键盘搜索事件
-        activityMainBinding.searchView.editText.setOnEditorActionListener { v, actionId, event ->
-            loadSearchDailyData(v.text.toString())
+        activityMainBinding.searchView.editText.setOnEditorActionListener { v, _, _ ->
+            searchViewModel.performSearch(v.text.toString())
             true
         }
 
         activityMainBinding.searchView.editText.addTextChangedListener {
-            loadSearchDailyData(it.toString())
-            searchQuery = it.toString()
+            val currentText = it.toString()
+            searchViewModel.performSearch(currentText)
+            searchQuery = currentText
         }
 
         // 点击搜索视图菜单搜索事件
         activityMainBinding.searchView.setOnMenuItemClickListener { item ->
             when (item!!.itemId) {
-                R.id.item_search -> loadSearchDailyData(activityMainBinding.searchView.text.toString())
+                R.id.item_search -> searchViewModel.performSearch(activityMainBinding.searchView.editText.text.toString())
             }
             true
+        }
+    }
+
+    /**
+     * 显示搜索结果或列表项的长按管理对话框
+     */
+    private fun showDailyManagementDialog(dailyEntity: DailyEntity) {
+        val moveInRecyclerBin =
+            sharedPreferences?.getBoolean("switch_delete_to_recycler_bin_daily", true) ?: true
+        val neutralButtonText =
+            if (dailyEntity.isPinned) getString(R.string.cancel_pinned) else getString(R.string.pinned)
+
+        if (moveInRecyclerBin) {
+            MaterialAlertDialogBuilder(this).apply {
+                setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
+                setPositiveButton(getString(R.string.sure)) { _, _ ->
+                    dailyViewModel.updateDaily(
+                        dailyEntity.copy(
+                            isDeleted = true,
+                            dailyRecyclerDateTime = getCurrentDateTime()
+                        )
+                    )
+                }
+                setNegativeButton(getString(R.string.cancel), null)
+                setNeutralButton(neutralButtonText) { _, _ ->
+                    val isPinned = neutralButtonText == getString(R.string.pinned)
+                    dailyViewModel.updateDaily(dailyEntity.copy(isPinned = isPinned))
+                }
+                create()
+                show()
+            }
+        } else {
+            MaterialAlertDialogBuilder(this).apply {
+                setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
+                setPositiveButton(getString(R.string.delete)) { _, _ ->
+                    lifecycleScope.launch {
+                        dailyViewModel.deleteSelected(listOf(dailyEntity))
+                    }
+                }
+                setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
+                    dailyViewModel.updateDaily(
+                        dailyEntity.copy(
+                            isDeleted = true,
+                            dailyRecyclerDateTime = getCurrentDateTime()
+                        )
+                    )
+                }
+                setNeutralButton(getString(R.string.cancel), null)
+                create()
+                show()
+            }
         }
     }
 
@@ -1041,7 +1084,7 @@ class MainActivity : QRXActivity() {
                 getString(R.string.import_successful)
             )
 
-            delay(3000)
+            delay(3000.milliseconds)
             isImporting = false
         }
     }
@@ -1383,27 +1426,6 @@ class MainActivity : QRXActivity() {
     }
 
     /**
-     * 检查状态栏颜色
-     */
-/*    fun checkStatusBarColor() {
-        val background = activityMainBinding.appBarLayout.background
-        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        if (background is MaterialShapeDrawable) {
-            val fillColor = background.fillColor
-            val color = fillColor?.defaultColor ?: Color.TRANSPARENT
-            if (color == Color.TRANSPARENT) {
-                val bitmapValid = BitmapUtil.check({ bitmap })
-                if (bitmapValid) {
-                    setLightStausBarsFromBitmap(bitmap)
-                }
-            } else {
-                val isDark = ColorUtils.calculateLuminance(color) < 0.5
-                insetsController.isAppearanceLightStatusBars = !isDark
-            }
-        }
-    }*/
-
-    /**
      * 获取壁纸的 Bitmap，并使用 [BitmapUtil.check] 检测是否有效。
      *
      * @return 有效时返回 bitmap，
@@ -1583,7 +1605,8 @@ class MainActivity : QRXActivity() {
 
                 mainViewModel.setDailyList(dailyList)
 
-                loadSearchDailyData(activityMainBinding.searchView.text.toString())
+                // loadSearchDailyData(activityMainBinding.searchView.text.toString())
+                searchViewModel.performSearch(activityMainBinding.searchView.text.toString())
                 var dailyTextSize = 0
                 if (isUpdating) return
                 val tempDailyList = dailyList
@@ -1690,22 +1713,6 @@ class MainActivity : QRXActivity() {
 
     override fun onResume() {
         super.onResume()
-        val headerYearMonth = sharedPreferences?.getBoolean(
-            "switch_preference_header_display",
-            true
-        )
-        val textFontSize = sharedPreferences!!.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
-        if (dailySearchAdapter.headerYearMonth != headerYearMonth
-            || dailySearchAdapter.textSize != textFontSize
-        ) {
-            loadSearchDailyData("")
-        }
-
-/*        val fileMD5 = FileUtil().getFileMD5(File(ConstUtil.WALLPAPER_PATH))
-        if (wallpaperFileMD5.isEmpty() || wallpaperFileMD5 != fileMD5) {
-            wallpaperFileMD5 = fileMD5
-            setWallpaperAndStausBar()
-        }*/
         (this as QRXActivity).init(
             activityMainBinding.wallpaper,
             activityMainBinding.appBarLayout
@@ -1729,7 +1736,7 @@ class MainActivity : QRXActivity() {
             // 不是多选模式，延迟 300 毫秒后执行 selectAllDailies.
             CoroutineScope(Dispatchers.Main).launch {
                 lifecycleScope.launch {
-                    delay(300)
+                    delay(300.milliseconds)
 
                     selectAllDailies()
                 }
@@ -1759,7 +1766,11 @@ class MainActivity : QRXActivity() {
      * @param bitmap 用于分析的壁纸 Bitmap
      */
     fun setLightStausBarsFromBitmap(bitmap: Bitmap) {
-        StatusBarUtil.setLightStausBarsFromBitmap(bitmap, activityMainBinding.wallpaper, window)
+        StatusBarUtil.setLightStausBarsFromBitmap(
+            bitmap,
+            activityMainBinding.wallpaper.alpha,
+            window
+        )
     }
 
     companion object {
@@ -1801,140 +1812,6 @@ class MainActivity : QRXActivity() {
             }
 
         })
-
-    /**
-     * 设置列表长按事件
-     */
-    private fun setSearchRecyclerViewItemOnLongClick() {
-        dailySearchAdapter.setOnItemLongClickListener(object : OnItemLongClickListener {
-            override fun onItemLongOnClick(position: Int) {
-                val moveInRecyclerBin =
-                    sharedPreferences!!.getBoolean("switch_delete_to_recycler_bin_daily", true)
-                val dailyEntity = dailyList.filter { !it.isDeleted }[position]
-                val neutralButtonText =
-                    if (dailyEntity.isPinned) getString(R.string.cancel_pinned) else getString(
-                        R.string.pinned
-                    )
-                if (moveInRecyclerBin) {
-                    MaterialAlertDialogBuilder(this@MainActivity).apply {
-                        setMessage(getString(R.string.are_you_sure_this_journal_is_moving_to_the_recycle_bin))
-                        setPositiveButton(getString(R.string.sure)) { _, _ ->
-                            dailyViewModel.updateDaily(
-                                DailyEntity(
-                                    dailyEntity.id,
-                                    dailyEntity.title,
-                                    dailyEntity.content,
-                                    dailyEntity.dateTime,
-                                    dailyEntity.backgroundColorIndex,
-                                    dailyEntity.singlePassword,
-                                    dailyEntity.moodIndex,
-                                    dailyEntity.weatherIndex,
-                                    dailyEntity.dailyUUID,
-                                    true,
-                                    dailyEntity.dailyLabel,
-                                    isPinned = dailyEntity.isPinned
-                                )
-                            )
-                        }
-                            .setNegativeButton(getString(R.string.cancel), null)
-                            .setNeutralButton(neutralButtonText) { _, _ ->
-
-                                val isPinned: Boolean =
-                                    neutralButtonText == getString(R.string.pinned)
-
-                                dailyViewModel.updateDaily(
-                                    DailyEntity(
-                                        dailyEntity.id,
-                                        dailyEntity.title,
-                                        dailyEntity.content,
-                                        dailyEntity.dateTime,
-                                        dailyEntity.backgroundColorIndex,
-                                        dailyEntity.singlePassword,
-                                        dailyEntity.moodIndex,
-                                        dailyEntity.weatherIndex,
-                                        dailyEntity.dailyUUID,
-                                        false,
-                                        dailyEntity.dailyLabel,
-                                        isPinned = isPinned
-                                    )
-                                )
-                            }
-                            .create()
-                            .show()
-                    }
-
-                } else {
-                    MaterialAlertDialogBuilder(this@MainActivity).apply {
-                        setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_journal_permanently))
-                        setPositiveButton(getString(R.string.delete)) { _, _ ->
-                            val fileUtil = FileUtil()
-                            dailyViewModel.queryDailyImageByUuid(dailyEntity.dailyUUID.toString())
-                                .observe(this@MainActivity) { dailyImageList ->
-                                    val existingImagePaths = dailyImageList.map { it.imagePath }.toSet()
-                                    if (existingImagePaths.isNotEmpty()) {
-                                        val list = existingImagePaths.toList()
-                                        list.forEach {
-                                            if (fileUtil.checkFileExists(it!!)) {
-                                                fileUtil.deleteFile(it)
-                                            }
-                                        }
-                                    }
-                                    dailyViewModel.deletePathImageByDailyUuid(dailyEntity.dailyUUID.toString())
-                                }
-                            dailyViewModel.queryDailyVideoByUuid(dailyEntity.dailyUUID.toString())
-                                .observe(this@MainActivity) { dailyVideoList ->
-                                    val existingVideoPaths = dailyVideoList.map { it.videoPath }.toSet()
-                                    if (existingVideoPaths.isNotEmpty()) {
-                                        val list = existingVideoPaths.toList()
-                                        list.forEach {
-                                            if (fileUtil.checkFileExists(it!!)) {
-                                                fileUtil.deleteFile(it)
-                                            }
-                                        }
-                                    }
-                                    dailyViewModel.deletePathVideoByDailyUuid(dailyEntity.dailyUUID.toString())
-                                }
-                            dailyViewModel.queryDailyAudioByUuid(dailyEntity.dailyUUID.toString())
-                                .observe(this@MainActivity) { dailyAudioList ->
-                                    val existingAudioPaths = dailyAudioList.map { it.audioPath }.toSet()
-                                    if (existingAudioPaths.isNotEmpty()) {
-                                        val list = existingAudioPaths.toList()
-                                        list.forEach {
-                                            if (fileUtil.checkFileExists(it!!)) {
-                                                fileUtil.deleteFile(it)
-                                            }
-                                        }
-                                    }
-                                    dailyViewModel.deletePathAudioByDailyUuid(dailyEntity.dailyUUID.toString())
-                                }
-                            dailyViewModel.deleteDaily(dailyEntity)
-                        }
-                        setNegativeButton(getString(R.string.recycler_bin)) { _, _ ->
-                            dailyViewModel.updateDaily(
-                                DailyEntity(
-                                    dailyEntity.id,
-                                    dailyEntity.title,
-                                    dailyEntity.content,
-                                    dailyEntity.dateTime,
-                                    dailyEntity.backgroundColorIndex,
-                                    dailyEntity.singlePassword,
-                                    dailyEntity.moodIndex,
-                                    dailyEntity.weatherIndex,
-                                    dailyEntity.dailyUUID,
-                                    true,
-                                    dailyEntity.dailyLabel,
-                                    isPinned = dailyEntity.isPinned
-                                )
-                            )
-                        }
-                        setNeutralButton(getString(R.string.cancel), null)
-                        create()
-                        show()
-                    }
-                }
-            }
-        })
-    }
 
     /**
      * 检查数据库中不存在的内容,并将它删除
@@ -2052,7 +1929,7 @@ class MainActivity : QRXActivity() {
         activityMainBinding.floatingActionButton.hide()
 
         lifecycleScope.launch {
-            delay(300)
+            delay(300.milliseconds)
             disableLightStatusBarWithAppBar()
             val enable = mainViewModel.enableAppBarOffsetChange.value ?: false
             if (!enable) {
