@@ -26,6 +26,10 @@
             android:name=".ui.settings.DailySettingsActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.search.SearchActivity"
+            android:exported="false"
+            android:label="@string/search" />
+        <activity
             android:name=".crash.CrashActivity"
             android:exported="false" />
         <activity
@@ -44,6 +48,7 @@
             android:exported="false" />
         <activity
             android:name=".ui.lock.UnlockActivity"
+            android:launchMode="singleTop"
             android:exported="false" />
         <activity
             android:name=".ui.webdav.WebDavBackupActivity"
