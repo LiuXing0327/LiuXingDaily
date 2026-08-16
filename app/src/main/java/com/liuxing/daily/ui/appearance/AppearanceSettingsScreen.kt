@@ -71,6 +71,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.android.material.color.DynamicColors
@@ -309,9 +312,19 @@ fun AppearanceSettingsScreen(
                                 maxItemsInEachRow = 7,
                             ) {
                                 themeOptions.forEach { info ->
+                                    val themeName = when (info.type) {
+                                        DailyThemeType.DEFAULT -> stringResource(R.string.color_label_purple)
+                                        DailyThemeType.RED -> stringResource(R.string.color_label_red)
+                                        DailyThemeType.GREEN -> stringResource(R.string.color_label_green)
+                                        DailyThemeType.BLUE -> stringResource(R.string.color_label_blue)
+                                        DailyThemeType.YELLOW -> stringResource(R.string.color_label_yellow)
+                                        DailyThemeType.PINK -> stringResource(R.string.color_label_pink)
+                                        DailyThemeType.CYAN -> stringResource(R.string.color_label_light_cyan)
+                                    }
                                     ComposeRoundTricolorView(
                                         info = info,
                                         isSelected = themeType == info.type,
+                                        contentDescription = themeName,
                                         onClick = {
                                             DailyThemeManager.updateThemeType(
                                                 context, info.type, info.id
@@ -329,7 +342,12 @@ fun AppearanceSettingsScreen(
 }
 
 @Composable
-fun ComposeRoundTricolorView(info: ThemeColorInfo, isSelected: Boolean, onClick: () -> Unit) {
+fun ComposeRoundTricolorView(
+    info: ThemeColorInfo,
+    isSelected: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -355,7 +373,11 @@ fun ComposeRoundTricolorView(info: ThemeColorInfo, isSelected: Boolean, onClick:
         .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
         .clickable(
             interactionSource = interactionSource, indication = null, onClick = onClick
-        ), contentAlignment = Alignment.Center) {
+        )
+        .semantics {
+            this.contentDescription = contentDescription
+            this.selected = isSelected
+        }, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(42.dp)) {
             drawArc(color = info.p, startAngle = 180f, sweepAngle = 180f, useCenter = true)
             drawArc(color = info.s, startAngle = 90f, sweepAngle = 90f, useCenter = true)
