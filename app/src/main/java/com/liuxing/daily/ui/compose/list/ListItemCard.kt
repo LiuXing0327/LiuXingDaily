@@ -120,17 +120,18 @@ fun ListItemCard(
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(currentShape)
             .clickable(
-                interactionSource = interactionSource, indication = null, onClick = onAction
+                interactionSource = interactionSource,/* indication = null,*/ onClick = onAction
             )) {
         ListItem(
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            headlineContent = {
-                when (val text = data.title) {
-                    is String -> if (text.isNotBlank()) Text(
-                        text, style = MaterialTheme.typography.titleMedium
+            leadingContent = data.icon?.let {
+                {
+                    Icon(
+                        it,
+                        null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
-
-                    is AnnotatedString -> Text(text, style = MaterialTheme.typography.titleMedium)
                 }
             },
             supportingContent = when (val text = data.supportingText) {
@@ -143,16 +144,6 @@ fun ListItemCard(
                 } else null
 
                 else -> null
-            },
-            leadingContent = data.icon?.let {
-                {
-                    Icon(
-                        it,
-                        null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
             },
             trailingContent = when (trailing) {
                 is ListItemTrailing.None -> null
@@ -181,7 +172,16 @@ fun ListItemCard(
                         )
                     }
                 }
-            })
+            }
+        ) {
+            when (val text = data.title) {
+                is String -> if (text.isNotBlank()) Text(
+                    text, style = MaterialTheme.typography.titleMedium
+                )
+
+                is AnnotatedString -> Text(text, style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 
