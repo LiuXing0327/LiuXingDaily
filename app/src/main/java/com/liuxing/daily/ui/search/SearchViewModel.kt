@@ -43,6 +43,7 @@ import java.util.Date
 import kotlin.time.Duration.Companion.milliseconds
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.mutableFloatStateOf
 import com.liuxing.daily.R
 
 /**
@@ -78,20 +79,20 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         private set
     var selectedFilter by mutableStateOf(SearchFilter.ALL)
         private set
-    var textSize by mutableStateOf(16f)
+    var textSize by mutableFloatStateOf(16f)
 
     // 渲染结果
-    private val _pinnedResults = mutableStateListOf<DailyEntity>()
-    val pinnedResults: List<DailyEntity> get() = _pinnedResults
+    val pinnedResults: List<DailyEntity>
+        field = mutableStateListOf<DailyEntity>()
 
-    private val _groupedResults = mutableStateListOf<SearchResultGroup>()
-    val groupedResults: List<SearchResultGroup> get() = _groupedResults
+    val groupedResults: List<SearchResultGroup>
+        field = mutableStateListOf<SearchResultGroup>()
 
-    private val _imageMap = mutableStateMapOf<String, String>()
-    val imageMap: Map<String, String> get() = _imageMap
+    val imageMap: Map<String, String>
+        field = mutableStateMapOf<String, String>()
 
-    private val _recentSearches = mutableStateListOf<String>()
-    val recentSearches: List<String> get() = _recentSearches
+    val recentSearches: List<String>
+        field = mutableStateListOf<String>()
 
     init {
         refreshSettings()
@@ -163,11 +164,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             SearchResultGroup(displayHeader, items)
         }
 
-        _pinnedResults.clear()
-        _pinnedResults.addAll(pinned)
+        pinnedResults.clear()
+        pinnedResults.addAll(pinned)
         
-        _groupedResults.clear()
-        _groupedResults.addAll(groups)
+        groupedResults.clear()
+        groupedResults.addAll(groups)
         
         viewModelScope.launch { loadImagesForResults(results) }
     }
@@ -197,8 +198,8 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
         withContext(Dispatchers.Main) {
-            _imageMap.clear()
-            _imageMap.putAll(mapping)
+            imageMap.clear()
+            imageMap.putAll(mapping)
         }
     }
 
@@ -208,12 +209,12 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     fun addRecentSearch(text: String) {
         if (text.isBlank()) return
-        _recentSearches.remove(text)
-        _recentSearches.add(0, text)
-        while (_recentSearches.size > 8) _recentSearches.removeAt(_recentSearches.lastIndex)
+        recentSearches.remove(text)
+        recentSearches.add(0, text)
+        while (recentSearches.size > 8) recentSearches.removeAt(recentSearches.lastIndex)
     }
     
     fun clearRecentSearches() {
-        _recentSearches.clear()
+        recentSearches.clear()
     }
 }

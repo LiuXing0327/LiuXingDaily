@@ -3,6 +3,7 @@ package com.liuxing.daily.adapter
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +20,8 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
 import com.liuxing.daily.listener.OnItemSelectedStateChangedListener
+import com.liuxing.daily.ui.compose.theme.CardStyle
+import com.liuxing.daily.ui.compose.theme.getCardStyle
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
@@ -31,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Date
+
 
 class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -245,6 +249,21 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             }
 
             holder.cardView.isChecked = selectMode && selectItems.contains(dailyEntity.dailyUUID)
+            holder.ivCardBg.maxHeight = ConstUtil.CARD_ILLUSTRATION_MAX_HEIGHT
+            holder.cardView.post({
+                val density = holder.itemView.resources
+                    .displayMetrics.density
+
+                // holder.ivCardBg.maxHeight = (holder.cardView.height / density).toInt()
+
+                Log.d(
+                    "CardHeight", ("number=" + position +", card=" + holder.cardView.height
+                            + "px / " + holder.cardView.height / density + "dp"
+                            + ", content=" + holder.cardView.height
+                            + ", bg=" + holder.ivCardBg.height
+                            + ", photo=" + holder.imageView.height)
+                )
+            })
 
             // 将原始索引传递给点击事件处理
             holder.itemView.setOnClickListener {
@@ -279,6 +298,7 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val tvContent: MaterialTextView = itemView.findViewById(R.id.tv_content)
         val tvDateTime: MaterialTextView = itemView.findViewById(R.id.tv_date_time)
         val cardView: MaterialCardView = itemView.findViewById(R.id.main_layout)
+        val ivCardBg: ImageView = itemView.findViewById(R.id.iv_card_bg)
         val ivMood: ImageView = itemView.findViewById(R.id.iv_mood)
         val ivWeather: ImageView = itemView.findViewById(R.id.iv_weather)
         val imageView: ImageView = itemView.findViewById(R.id.image_view)
@@ -337,26 +357,47 @@ class DailyAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     /**
-     * 设置背景颜色
+     * 设置日记卡片背景（纯色或插图）。
      *
-     * @param dailyEntity 日记 Entity
-     * @param holder 日记 Holder
+     * 根据 [dailyEntity] 中的背景颜色索引获取对应卡片样式 [CardStyle]：
+     * - [CardStyle.SolidColor]：隐藏背景插图 [DailyViewHolder.ivCardBg]，并结合透明度设置卡片背景颜色；
+     * - [CardStyle.Illustration]：卡片背景设为透明，并根据透明度配置显示背景插图 [DailyViewHolder.ivCardBg]。
+     *
+     * @param dailyEntity 日记 [DailyEntity]
+     * @param holder 日记 [DailyViewHolder]
      */
     private fun setBackgroundColor(dailyEntity: DailyEntity, holder: DailyViewHolder) {
         val backgroundColorIndex = dailyEntity.backgroundColorIndex
-        val baseColor = ContextCompat.getColor(
-            holder.cardView.context,
-            ConstUtil.backgroundColorList[backgroundColorIndex!!]
-        )
-        val alpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+        val alpha = sharedPreferences.getFloat(ConstUtil.CARD_ALPHA_KEY, 0.15F)
         this.alpha = alpha
         val wallPagerExists = File(ConstUtil.WALLPAPER_PATH).exists()
 
-        holder.cardView.setCardBackgroundColor(
-            if (backgroundColorIndex == 0 || !wallPagerExists) baseColor else ColorUtils.setAlphaComponent(
-                baseColor,
-                (alpha * 255).toInt()
-            )
-        )
+        when (val cardStyle = getCardStyle(holder.cardView.context, backgroundColorIndex)) {
+            is CardStyle.SolidColor -> {
+                holder.ivCardBg.visibility = View.GONE
+                holder.cardView.setCardBackgroundColor(
+                    if (backgroundColorIndex == 0 || backgroundColorIndex == null || !wallPagerExists) {
+                        cardStyle.colorInt
+                    } else {
+                        ColorUtils.setAlphaComponent(
+                            cardStyle.colorInt,
+                            (alpha * 255).toInt()
+                        )
+                    }
+                )
+            }
+
+            is CardStyle.Illustration -> {
+                holder.cardView.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                holder.ivCardBg.setImageResource(cardStyle.drawableRes)
+                holder.ivCardBg.alpha = alpha
+                holder.ivCardBg.visibility = View.VISIBLE
+            }
+
+            else -> {
+                holder.ivCardBg.visibility = View.GONE
+                holder.cardView.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
+        }
     }
 }

@@ -16,6 +16,8 @@ import androidx.preference.PreferenceManager
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.FragmentLookDailyPagerBinding
 import com.liuxing.daily.entity.DailyEntity
+import com.liuxing.daily.ui.compose.theme.CardStyle
+import com.liuxing.daily.ui.compose.theme.getCardStyle
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.audioRegex
@@ -95,7 +97,7 @@ class LookDailyPagerFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         binding = FragmentLookDailyPagerBinding.inflate(layoutInflater)
         return binding.root
@@ -364,111 +366,63 @@ class LookDailyPagerFragment : Fragment() {
     /**
      * 设置日记背景颜色
      */
-    private fun setDailyBackgroundColor() {
-        val alpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
-        val wallPagerExists = File(ConstUtil.WALLPAPER_PATH).exists()
-        val cardBackgroundColor = when (backgroundColorIndex) {
-            1 -> if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_2
+    private fun setDailyBackgroundColor(){
+        val alpha = sharedPreferences!!.getFloat(ConstUtil.CARD_ALPHA_KEY, 0.15F)
+        val wallpaperExists = File(ConstUtil.WALLPAPER_PATH).exists()
+
+        when(val cardStyle = getCardStyle(requireContext(), backgroundColorIndex, isFull = true)){
+            is CardStyle.SolidColor -> {
+                val colorRes = ConstUtil.backgroundColorList.getOrElse(backgroundColorIndex ?: 0){
+                    android.R.color.transparent
+                }
+                val colorInt = getWallpaperAdjustedColor(
+                    wallPaperExists = wallpaperExists,
+                    alpha = (alpha * 255).toInt(),
+                    colorId = colorRes
                 )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_2
-                    ), (alpha * 255).toInt()
-                )
+                binding.ivCardBg.visibility = View.GONE
+                binding.cardView.setCardBackgroundColor(colorInt)
             }
 
-            2 -> if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_3
-                )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_3
-                    ), (alpha * 255).toInt()
-                )
+            is CardStyle.Illustration -> {
+                binding.cardView.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                binding.ivCardBg.setImageResource(cardStyle.drawableRes)
+                // binding.ivCardBg.visibility = View.VISIBLE
             }
 
-            3 ->if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_4
-                )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_4
-                    ), (alpha * 255).toInt()
-                )
+            is CardStyle.Glass -> {
+                binding.ivCardBg.visibility = View.GONE
+                binding.cardView.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
             }
-
-            4 -> if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_5
-                )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_5
-                    ), (alpha * 255).toInt()
-                )
-            }
-
-            5 -> if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_6
-                )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_6
-                    ), (alpha * 255).toInt()
-                )
-            }
-
-            6 -> if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_7
-                )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_7
-                    ), (alpha * 255).toInt()
-                )
-            }
-
-            7 -> if (!wallPagerExists) {
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.color_8
-                )
-            } else {
-                ColorUtils.setAlphaComponent(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.color_8
-                    ), (alpha * 255).toInt()
-                )
-            }
-
-            else -> android.R.color.transparent
         }
-        binding.cardView.setCardBackgroundColor(cardBackgroundColor)
+    }
+
+    /**
+     * 根据壁纸是否存在,获取经过透明度调整的颜色
+     *
+     * @param wallPaperExists 壁纸是否存在
+     * @param alpha 卡片透明度
+     * @param colorId 需要返回的颜色资源 ID
+     */
+    private fun getWallpaperAdjustedColor(wallPaperExists: Boolean, alpha: Int, colorId: Int): Int {
+        return if (!wallPaperExists) getColor(colorId)
+        else if (colorId == android.R.color.transparent) getColor(colorId) // 如果是透明色，则不透明
+        else ColorUtils.setAlphaComponent(
+            getColor(colorId),
+            alpha
+        )
+    }
+
+    /**
+     * 返回与指定 id 相关的颜色值
+     *
+     * @param colorId 需要返回的颜色资源 ID.
+     */
+    private fun getColor(colorId: Int): Int {
+        return ContextCompat.getColor(
+            requireContext(),
+            colorId
+        )
     }
 
     /**

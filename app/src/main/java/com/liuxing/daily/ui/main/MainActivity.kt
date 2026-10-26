@@ -9,8 +9,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
@@ -67,6 +65,7 @@ import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
 import com.liuxing.daily.entity.DailyWithMedia
 import com.liuxing.daily.extension.rotateOnce
+import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.listener.DailyLikeFragment
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
@@ -87,6 +86,7 @@ import com.liuxing.daily.ui.recyclerbin.RecyclerBinFragment
 import com.liuxing.daily.ui.search.SearchScreen
 import com.liuxing.daily.ui.search.SearchViewModel
 import com.liuxing.daily.ui.settings.SettingsActivity
+import com.liuxing.daily.ui.updatelog.UpdateModalBottomSheet
 import com.liuxing.daily.util.BitmapUtil
 import com.liuxing.daily.util.CheckAppUpdateUtil
 import com.liuxing.daily.util.ConstUtil
@@ -95,6 +95,7 @@ import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.DateUtil.getCurrentDateTime
 import com.liuxing.daily.util.DateUtil.getDateString
 import com.liuxing.daily.util.DateUtil.getWeek
+import com.liuxing.daily.util.DownloadUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.LogUtil
@@ -104,7 +105,7 @@ import com.liuxing.daily.util.SnackbarUtil
 import com.liuxing.daily.util.StatusBarUtil
 import com.liuxing.daily.util.TextUtil
 import com.liuxing.daily.util.ThemeUtil
-import com.liuxing.daily.util.VersionUtil
+import com.liuxing.daily.viewmodel.AppUpdateViewModel
 import com.liuxing.daily.viewmodel.DailyViewModel
 import com.liuxing.daily.viewmodel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -113,15 +114,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.net.URL
 import java.util.Date
 import java.util.UUID
@@ -173,6 +167,7 @@ class MainActivity : QRXActivity() {
     private var isImporting = false
 
     private lateinit var mainViewModel: MainViewModel
+    private lateinit var appUpdateViewModel: AppUpdateViewModel
     private lateinit var onEnabledChangedListener: OnEnabledChangedListener
     private lateinit var bitmap: Bitmap
     private var wallpaperFileMD5 = ""
@@ -221,6 +216,9 @@ class MainActivity : QRXActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 清理旧的更新包
+        DownloadUtil.clearDownloadDirectory(this)
+
         enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -240,44 +238,7 @@ class MainActivity : QRXActivity() {
             SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
         DailyThemeManager.syncFromPreferences(this)
         MarkdownColor.init(this)
-        val okHttpClient = OkHttpClient()
-        val request = Request.Builder().url(ConstUtil.CHECK_APP_VERSION_URL).build()
-        val handler = Handler(Looper.getMainLooper())
 
-        okHttpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-/*                handler.post {
-                    e.printStackTrace()
-                    CheckAppUpdateUtil.checkFailedOrNoVersionDialog(
-                        this@MainActivity,
-                        getString(R.string.failed_to_check_for_updates)
-                    )
-                }*/
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    val jsonString = response.body?.string()
-                    val jsonObject = JSONObject(jsonString!!)
-                    val latestVersionCode = jsonObject.getInt("versionCode")
-                    val currentVersionCode = VersionUtil.getVersionCode(this@MainActivity)
-
-                    if (latestVersionCode > currentVersionCode) {
-                        handler.post {
-                            CheckAppUpdateUtil.checkUpdate(this@MainActivity)
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    /*handler.post {
-                        CheckAppUpdateUtil.checkFailedOrNoVersionDialog(
-                            this@MainActivity,
-                            getString(R.string.failed_to_check_for_updates)
-                        )
-                    }*/
-                }
-            }
-        })
         // 添加返回键回调
         onBackPressedDispatcher.addCallback(
             this,
@@ -286,6 +247,7 @@ class MainActivity : QRXActivity() {
         insertAutoDaily()
         initView()
         initData()
+        initUpdateOverlay()
         val agreed = sharedPreferences?.getBoolean(termsAndPrivacyAgreedKey, false) ?: false
         if (!agreed) {
             showPolicyDialog()
@@ -295,6 +257,40 @@ class MainActivity : QRXActivity() {
         if (!appPassword.isNullOrEmpty() && lock) {
             IntentUtil.startActivity(this, UnlockActivity::class.java)
             finish()
+        } else {
+            // 如果已解锁，则检查更新
+            CheckAppUpdateUtil.checkUpdate(this, appUpdateViewModel, isManual = false)
+        }
+    }
+
+    /**
+     * 初始化更新弹窗 Overlay
+     */
+    private fun initUpdateOverlay() {
+        activityMainBinding.composeUpdateOverlay.setContent {
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                UpdateModalBottomSheet(
+                    updateInfo = appUpdateViewModel.updateInfo,
+                    isChecking = appUpdateViewModel.isChecking,
+                    isDownloading = appUpdateViewModel.isDownloading,
+                    downloadProgress = appUpdateViewModel.downloadProgress,
+                    statusMessage = appUpdateViewModel.statusMessage,
+                    onUpdate = { url ->
+                        DownloadUtil.downloadApk(
+                            context = this,
+                            url = url,
+                            fileName = "Daily_Update_${appUpdateViewModel.updateInfo?.versionName}.apk",
+                            viewModel = appUpdateViewModel
+                        )
+                    },
+                    onDismiss = { appUpdateViewModel.dismissUpdate() }
+                )
+            }
         }
     }
 
@@ -398,7 +394,7 @@ class MainActivity : QRXActivity() {
         initSharePreferences()
         initSearchView()
         initSearchBar()
-        floatingOnClick()
+        initFloatingMenuButton()
         onDestinationChanged()
         setDailyData()
         getDailyLabel()
@@ -484,6 +480,56 @@ class MainActivity : QRXActivity() {
 
     private fun setOnEnableOnBackListener(onEnabledChangedListener: OnEnabledChangedListener) {
         this.onEnabledChangedListener = onEnabledChangedListener
+    }
+
+    /**
+     * 初始化悬浮按钮。
+     *
+     * mode = 1 ，则使用原来的 floatingActionButton，
+     * mode != 1 使用 composeFloatingMenuButton.
+     */
+    private fun initFloatingMenuButton() {
+        val mode = sharedPreferences?.getBoolean(ConstUtil.FLOATING_BUTTON_MODE_KEY, false) ?: false
+        if(mode){
+            activityMainBinding.floatingActionButton.setVisibility(true)
+            activityMainBinding.composeFloatingMenuButton.setVisibility(false)
+            floatingOnClick()
+            return
+        }
+        activityMainBinding.floatingActionButton.setVisibility(false)
+        activityMainBinding.composeFloatingMenuButton.setVisibility(true)
+        activityMainBinding.composeFloatingMenuButton.setContent {
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+                isAmoled = DailyThemeManager.isAmoled
+            ) {
+                DailyFloatingMenu(
+                    onTextClick = {
+                        IntentUtil.startActivity(
+                            this,
+                            AddDailyActivity::class.java,
+                            mapOf(
+                                "isDailyFragment" to isDailyFragment,
+                                "selectedYearMonthDay" to mainViewModel.selectedYearMonthDay.value
+                            )
+                        )
+                    },
+                    onDrawingClick = {
+                        IntentUtil.startActivity(
+                            this,
+                            AddDailyActivity::class.java,
+                            mapOf(
+                                "isDailyFragment" to isDailyFragment,
+                                "selectedYearMonthDay" to mainViewModel.selectedYearMonthDay.value,
+                                "startDrawActivity" to true
+                            )
+                        )
+                    }
+                )
+            }
+        }
     }
 
     /**
@@ -644,6 +690,7 @@ class MainActivity : QRXActivity() {
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
         mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
+        appUpdateViewModel = ViewModelProvider(this)[AppUpdateViewModel::class.java]
     }
 
     /**
@@ -1432,12 +1479,10 @@ class MainActivity : QRXActivity() {
      *         无效时返回 null。
      */
     fun getBitmap(): Bitmap? {
-        BitmapUtil.check { bitmap }.let {
-            return if (it) {
-                bitmap
-            } else {
-                null
-            }
+        return if (::bitmap.isInitialized && BitmapUtil.check { bitmap }) {
+            bitmap
+        } else {
+            safeWallpaperBitmap
         }
     }
 
@@ -1718,6 +1763,7 @@ class MainActivity : QRXActivity() {
             activityMainBinding.appBarLayout
         )
 
+        initFloatingMenuButton()
         refreshDailies()
     }
 
@@ -1734,12 +1780,9 @@ class MainActivity : QRXActivity() {
         val selectMode = dailyLikeFragment.getSelectMode()
         if (!selectMode) {
             // 不是多选模式，延迟 300 毫秒后执行 selectAllDailies.
-            CoroutineScope(Dispatchers.Main).launch {
-                lifecycleScope.launch {
-                    delay(300.milliseconds)
-
-                    selectAllDailies()
-                }
+            lifecycleScope.launch {
+                delay(300.milliseconds)
+                selectAllDailies()
             }
         }
     }
@@ -1749,14 +1792,17 @@ class MainActivity : QRXActivity() {
      */
     private fun setWallpaperAndStausBar() {
         if (File(ConstUtil.WALLPAPER_PATH).exists()) {
-            bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
-            activityMainBinding.wallpaper.setImageBitmap(bitmap)
-            setLightStausBarsFromBitmap(bitmap)
+            val decoded = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+            if (decoded != null) {
+                bitmap = decoded
+                activityMainBinding.wallpaper.setImageBitmap(bitmap)
+                setLightStausBarsFromBitmap(bitmap)
 
-            (this as QRXActivity).init(
-                activityMainBinding.wallpaper,
-                activityMainBinding.appBarLayout
-            )
+                (this as QRXActivity).init(
+                    activityMainBinding.wallpaper,
+                    activityMainBinding.appBarLayout
+                )
+            }
         }
     }
 
@@ -1926,7 +1972,7 @@ class MainActivity : QRXActivity() {
             activityMainBinding.contextualToolbarContainer, activityMainBinding.appBarLayout
         )
 
-        activityMainBinding.floatingActionButton.hide()
+        activityMainBinding.composeFloatingMenuButton.visibility = View.GONE
 
         lifecycleScope.launch {
             delay(300.milliseconds)
@@ -1991,8 +2037,8 @@ class MainActivity : QRXActivity() {
     private fun setUpContextualToolbar() {
         activityMainBinding.contextualToolbar.setNavigationOnClickListener {
             hideContextualToolbar()
-            val bitmapValid = BitmapUtil.check { bitmap }
-            if (bitmapValid) setLightStausBarsFromBitmap(bitmap)
+            val validBitmap = getBitmap()
+            if (validBitmap != null) setLightStausBarsFromBitmap(validBitmap)
         }
         activityMainBinding.contextualToolbar.inflateMenu(R.menu.menu_searchbar_contextual_toolbar)
 
@@ -2384,12 +2430,14 @@ class MainActivity : QRXActivity() {
      */
     fun showAddDailyButton() {
         if (isDailyFragment || isCalendarQueryDailyFragment) {
-            activityMainBinding.floatingActionButton.show()
+            activityMainBinding.composeFloatingMenuButton.visibility = View.VISIBLE
         }
     }
 
     /**
      * 隐藏添加日记的按钮。
      */
-    fun hideAddDailyButton() = activityMainBinding.floatingActionButton.hide()
+    fun hideAddDailyButton() {
+        activityMainBinding.composeFloatingMenuButton.visibility = View.GONE
+    }
 }

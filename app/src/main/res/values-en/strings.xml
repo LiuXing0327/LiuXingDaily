@@ -249,9 +249,6 @@
     <string name="body">Body</string>
     <string name="highlight">Highlight</string>
     <string name="text_color">Text color</string>
-    <string name="search_page_placeholder">Enter a keyword. Advanced search and combined filters will be added here next.</string>
-    <string name="search_page_title">The new search page is ready</string>
-    <string name="search_page_description">This is the first Compose-based search page. Next we can gradually add search history, combined filters, result lists, and highlight rendering here.</string>
     <string name="source_code">Source Code</string>
     <string name="local_backup">Local backup</string>
     <string name="all">All</string>
@@ -264,4 +261,12 @@
     <string name="card_opacity">Card Opacity</string>
     <string name="no_matching_content_found">No matching content found</string>
     <string name="leave_blank_for_no_encryption">Leave blank for no encryption</string>
+    <string name="downloading">Downloading...</string>
+    <string name="floating_button_create_new_journal">Create text diary by default.</string>
+    <string name="floating_button_create_supporting">Long press to create other types of diary entries.</string>
+    <string name="preset_wallpapers">Preset Wallpapers</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="preview_sample_entry">Sample Entry %1$d</string>
+    <string name="preview_card_opacity_effect">Preview card opacity effect</string>
 </resources>

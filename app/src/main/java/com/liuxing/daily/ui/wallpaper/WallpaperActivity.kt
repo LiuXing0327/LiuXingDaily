@@ -16,10 +16,12 @@
 
 package com.liuxing.daily.ui.wallpaper
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
+import androidx.annotation.DrawableRes
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -74,8 +76,11 @@ class WallpaperActivity : QRXActivity() {
                 var cardAlpha by remember {
                     mutableFloatStateOf(sharedPreferences.getFloat(ConstUtil.CARD_ALPHA_KEY, 0.7f))
                 }
+                var selectedBuiltInResId by remember {
+                    mutableStateOf(sharedPreferences.getInt("selected_builtin_wallpaper_res", 0))
+                }
 
-                val updateWallpaperState = { newBitmap: android.graphics.Bitmap? ->
+                val updateWallpaperState = { newBitmap: Bitmap? ->
                     wallpaper = newBitmap
                     if (newBitmap != null) {
                         StatusBarUtil.setLightStausBarsFromBitmap(newBitmap, wallpaperAlpha, window)
@@ -86,6 +91,7 @@ class WallpaperActivity : QRXActivity() {
                     wallpaperBitmap = wallpaper,
                     initialWallpaperAlpha = wallpaperAlpha,
                     initialCardAlpha = cardAlpha,
+                    selectedBuiltInResId = selectedBuiltInResId,
                     onWallpaperAlphaChange = { alpha ->
                         wallpaperAlpha = alpha
                         sharedPreferences.edit { putFloat(ConstUtil.WALLPAPER_ALPHA_KEY, alpha) }
@@ -102,7 +108,21 @@ class WallpaperActivity : QRXActivity() {
                     },
                     onDeleteWallpaperClick = {
                         FileUtil().deleteFile(ConstUtil.WALLPAPER_PATH)
+                        sharedPreferences.edit { remove("selected_builtin_wallpaper_res") }
+                        selectedBuiltInResId = 0
                         wallpaper = null
+                    },
+                    onSelectBuiltInWallpaperClick = { resId ->
+                        if (selectedBuiltInResId == resId) {
+                            FileUtil().deleteFile(ConstUtil.WALLPAPER_PATH)
+                            sharedPreferences.edit { remove("selected_builtin_wallpaper_res") }
+                            selectedBuiltInResId = 0
+                            wallpaper = null
+                        } else {
+                            saveBuiltInWallpaper(resId)
+                            sharedPreferences.edit { putInt("selected_builtin_wallpaper_res", resId) }
+                            selectedBuiltInResId = resId
+                        }
                     },
                     ::finish
                 )
@@ -114,7 +134,24 @@ class WallpaperActivity : QRXActivity() {
         }
     }
 
-    private var onWallpaperUpdated: ((android.graphics.Bitmap?) -> Unit)? = null
+    private var onWallpaperUpdated: ((Bitmap?) -> Unit)? = null
+
+    private fun saveBuiltInWallpaper(@DrawableRes drawableRes: Int) {
+        try {
+            val bitmap = BitmapFactory.decodeResource(resources, drawableRes)
+            val file = File(ConstUtil.WALLPAPER_PATH)
+            if (file.parentFile?.exists() == false) {
+                file.parentFile?.mkdirs()
+            }
+            file.outputStream().use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+            }
+            this.wallpaperBitmap = bitmap
+            onWallpaperUpdated?.invoke(bitmap)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     private fun saveWallpaper(uri: Uri) {
         try {
@@ -127,6 +164,7 @@ class WallpaperActivity : QRXActivity() {
                     inputStream.copyTo(outputStream)
                 }
                 val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+                sharedPreferences.edit { remove("selected_builtin_wallpaper_res") }
                 this.wallpaperBitmap = bitmap
                 onWallpaperUpdated?.invoke(bitmap)
             }

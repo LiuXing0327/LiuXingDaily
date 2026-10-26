@@ -28,6 +28,7 @@ import com.liuxing.daily.databinding.ActivityLookDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.ui.edit.EditDailyActivity
 import com.liuxing.daily.util.ConstUtil
+import com.liuxing.daily.util.ConstUtil.illustrationThemeFullList
 import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.HashUtil
@@ -169,8 +170,14 @@ class LookDailyActivity : AppCompatActivity() {
                                 tempSignalPasswordMap[dailyId] = originalSignalPassword
                             }
                             invalidateOptionsMenu()
+
+                            val backgroundColorIndex = dailyEntity.backgroundColorIndex ?: 0
+                            setWallpaper(backgroundColorIndex)
                         }
                     })
+
+                    val backgroundColorIndex = dailyEntity.backgroundColorIndex ?: 0
+                    setWallpaper(backgroundColorIndex)
 
                     originalSignalPasswordMap = mutableMapOf(
                         dailyEntity.id!! to originalSignalPassword
@@ -510,15 +517,39 @@ class LookDailyActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        verifyPassword()
+    }
+
+    /**
+     * Set wallpaper.
+     *
+     * @param backgroundColorIndex Background color index.
+     */
+    private fun setWallpaper(backgroundColorIndex: Int) {
+        setWallpaperAlpha()
+        // If the background color index greater than or equal to 100,
+        // then set it as illustration wallpaper.
+        if(backgroundColorIndex >= 100){
+            val wallpaperResId =
+                illustrationThemeFullList.getOrNull(backgroundColorIndex - 100)
+                    ?: illustrationThemeFullList.first()
+            lookDailyBinding.wallpaper.setImageResource(wallpaperResId)
+            return
+        }
+        // This is the default wallpaper.
         if (File(ConstUtil.WALLPAPER_PATH).exists()) {
             val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
             setLightStausBarsFromBitmap(bitmap)
             lookDailyBinding.wallpaper.setImageBitmap(bitmap)
         }
+    }
+
+    /**
+     * Set wallpaper alpha.
+     */
+    private fun setWallpaperAlpha() {
         val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         lookDailyBinding.wallpaper.alpha = wallpaperAlpha
-
-        verifyPassword()
     }
 
     /**

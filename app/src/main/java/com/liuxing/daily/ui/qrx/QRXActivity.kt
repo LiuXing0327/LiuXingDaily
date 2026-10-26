@@ -48,7 +48,7 @@ open class QRXActivity : AppCompatActivity() {
 
     protected lateinit var wallpaperBitmap: Bitmap
     val safeWallpaperBitmap: Bitmap?
-        get() = if (::wallpaperBitmap.isInitialized) wallpaperBitmap else null
+        get() = if (::wallpaperBitmap.isInitialized && !wallpaperBitmap.isRecycled) wallpaperBitmap else null
 
     private val mainViewModel by lazy {
         ViewModelProvider(this)[MainViewModel::class.java]
@@ -65,6 +65,8 @@ open class QRXActivity : AppCompatActivity() {
     private var cardAlpha = 0.7f
     val safeCardAlpha
         get() = cardAlpha
+
+    private var offsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
 
     /**
      * 初始化
@@ -84,7 +86,7 @@ open class QRXActivity : AppCompatActivity() {
 
         initView()
 
-        val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+        val wallpaperAlpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
         setWallpaperAlpha(wallpaperAlpha)
     }
 
@@ -95,10 +97,9 @@ open class QRXActivity : AppCompatActivity() {
      * @param dailyList 日记数据列表。
      */
     fun init(dailyListView: RecyclerView, dailyList: List<DailyEntity>) {
-        if (::wallpaperBitmap.isInitialized) {
-            dailyListView.setLightStausBarsFromBitmap(dailyList) {
-                setLightStausBarsFromBitmap(wallpaperBitmap, wallpaperAlpha, window)
-            }
+        val bitmap = safeWallpaperBitmap ?: return
+        dailyListView.setLightStausBarsFromBitmap(dailyList) {
+            setLightStausBarsFromBitmap(bitmap, wallpaperAlpha, window)
         }
     }
 
@@ -107,16 +108,17 @@ open class QRXActivity : AppCompatActivity() {
      */
     fun initCompose() {
         if (File(ConstUtil.WALLPAPER_PATH).checkFileExistsToPath()) {
-            val wallpaperAlpha = sharedPreferences!!.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
+            val wallpaperAlpha = sharedPreferences.getFloat(ConstUtil.WALLPAPER_ALPHA_KEY, 0.15F)
             this.wallpaperAlpha = wallpaperAlpha
 
-            val cardAlpha = sharedPreferences!!.getFloat(ConstUtil.CARD_ALPHA_KEY,0.7f)
+            val cardAlpha = sharedPreferences.getFloat(ConstUtil.CARD_ALPHA_KEY,0.7f)
             this.cardAlpha = cardAlpha
             try {
                 val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
-                this.wallpaperBitmap = bitmap
-
-                setLightStausBarsFromBitmap(bitmap, wallpaperAlpha, window)
+                if (bitmap != null) {
+                    this.wallpaperBitmap = bitmap
+                    setLightStausBarsFromBitmap(bitmap, wallpaperAlpha, window)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -131,9 +133,13 @@ open class QRXActivity : AppCompatActivity() {
      * 初始化 View.
      */
     private fun initView() {
-        appBarLayout.addOnOffsetChangedListener { _, _ ->
-            val offsetChange = mainViewModel.enableAppBarOffsetChange.value ?: true
-            checkStatusBarColor(offsetChange)
+        if (offsetChangedListener == null && ::appBarLayout.isInitialized) {
+            val listener = AppBarLayout.OnOffsetChangedListener { _, _ ->
+                val offsetChange = mainViewModel.enableAppBarOffsetChange.value ?: true
+                checkStatusBarColor(offsetChange)
+            }
+            offsetChangedListener = listener
+            appBarLayout.addOnOffsetChangedListener(listener)
         }
     }
 
@@ -141,12 +147,11 @@ open class QRXActivity : AppCompatActivity() {
      * 检查状态栏颜色。
      */
     fun checkStatusBarColor(offsetChange: Boolean) {
-        if (::wallpaperBitmap.isInitialized) {
-            getBitmap(wallpaperBitmap)?.let { bitmap ->
-                if (offsetChange) checkStatusBarColor(
-                    appBarLayout, window, bitmap, wallpaperAlpha
-                )
-            }
+        val bitmap = safeWallpaperBitmap ?: return
+        getBitmap(bitmap)?.let { validBitmap ->
+            if (offsetChange) checkStatusBarColor(
+                appBarLayout, window, validBitmap, wallpaperAlpha
+            )
         }
     }
 
@@ -165,9 +170,14 @@ open class QRXActivity : AppCompatActivity() {
      */
     private fun setWallpaperAndStausBar() {
         if (File(ConstUtil.WALLPAPER_PATH).checkFileExistsToPath()) {
-            wallpaperBitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
-            wallpaper.setImageBitmap(wallpaperBitmap)
-            setLightStausBarsFromBitmap(wallpaperBitmap, wallpaperAlpha, window)
+            val bitmap = BitmapFactory.decodeFile(ConstUtil.WALLPAPER_PATH)
+            if (bitmap != null) {
+                wallpaperBitmap = bitmap
+                if (::wallpaper.isInitialized) {
+                    wallpaper.setImageBitmap(wallpaperBitmap)
+                }
+                setLightStausBarsFromBitmap(wallpaperBitmap, wallpaperAlpha, window)
+            }
         }
     }
 

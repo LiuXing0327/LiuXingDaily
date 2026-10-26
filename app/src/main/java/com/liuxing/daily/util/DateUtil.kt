@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024-2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.liuxing.daily.util
 
 import android.content.Context
@@ -12,6 +28,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
+import com.liuxing.daily.extension.formatDateTimeWeek
 
 object DateUtil {
 
@@ -125,5 +142,63 @@ object DateUtil {
         val endMillis = startNextMillis - 1L
 
         return startMillis to endMillis
+    }
+
+    /**
+     * 选择日期时间
+     */
+    fun selectDateTime(
+        activity: androidx.appcompat.app.AppCompatActivity,
+        initialDate: Date,
+        onDateTimeSelected: (String) -> Unit
+    ) {
+        val datePicker = com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker()
+            .setTitleText(activity.getString(R.string.select_date))
+            .setSelection(initialDate.time)
+            .build()
+
+        val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val initialTime = timeFormatter.format(initialDate)
+        val hour = initialTime.split(":")[0].toInt()
+        val minute = initialTime.split(":")[1].toInt()
+
+        val timePicker = com.google.android.material.timepicker.MaterialTimePicker.Builder()
+            .setTimeFormat(com.google.android.material.timepicker.TimeFormat.CLOCK_24H)
+            .setHour(hour)
+            .setMinute(minute)
+            .setTitleText(activity.getString(R.string.select_time))
+            .build()
+
+        datePicker.show(activity.supportFragmentManager, datePicker.tag)
+
+        datePicker.addOnPositiveButtonClickListener { selection ->
+            val calendar = java.util.Calendar.getInstance()
+            calendar.timeInMillis = selection
+            
+            val year = calendar.get(java.util.Calendar.YEAR)
+            val month = calendar.get(java.util.Calendar.MONTH) + 1
+            val day = calendar.get(java.util.Calendar.DAY_OF_MONTH)
+            
+            val dateSep = if (activity.getString(R.string.daily) == "日记") "/" else "-"
+            val newSelectedDateString = "%d%s%02d%s%02d".format(year, dateSep, month, dateSep, day)
+
+            timePicker.show(activity.supportFragmentManager, timePicker.tag)
+
+            timePicker.addOnPositiveButtonClickListener {
+                val selectedHour = timePicker.hour
+                val selectedMinute = timePicker.minute
+                val newSelectedTime = "%02d:%02d".format(selectedHour, selectedMinute)
+
+                val week = getWeek(activity, "$newSelectedDateString $newSelectedTime")
+
+                onDateTimeSelected(
+                    activity.formatDateTimeWeek(
+                        newSelectedDateString,
+                        newSelectedTime,
+                        week
+                    )
+                )
+            }
+        }
     }
 }
