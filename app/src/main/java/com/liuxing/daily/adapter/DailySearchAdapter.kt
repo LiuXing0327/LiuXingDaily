@@ -16,6 +16,8 @@ import com.liuxing.daily.R
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.OnItemLongClickListener
+import com.liuxing.daily.ui.compose.theme.CardStyle
+import com.liuxing.daily.ui.compose.theme.getCardStyle
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
 import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_DAILY
@@ -23,6 +25,7 @@ import com.liuxing.daily.util.ConstUtil.VIEW_TYPE_HEADER
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HighlightUtil
+import com.liuxing.daily.util.LogUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.TextUtil.replaceTag
 import java.util.Date
@@ -270,6 +273,7 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val tvContent: MaterialTextView = itemView.findViewById(R.id.tv_content)
         val tvDateTime: MaterialTextView = itemView.findViewById(R.id.tv_date_time)
         val cardView: MaterialCardView = itemView.findViewById(R.id.main_layout)
+        val ivCardBg: ImageView = itemView.findViewById(R.id.iv_card_bg)
         val ivMood: ImageView = itemView.findViewById(R.id.iv_mood)
         val ivWeather: ImageView = itemView.findViewById(R.id.iv_weather)
         val imageView: ImageView = itemView.findViewById(R.id.image_view)
@@ -286,19 +290,34 @@ class DailySearchAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
     /**
-     * 设置背景颜色
+     * 设置日记卡片背景（纯色或插图）。
      *
-     * @param dailyEntity 日记 Entity
-     * @param holder 日记 Holder
+     * 根据 [dailyEntity] 中的背景颜色索引获取对应卡片样式 [CardStyle]：
+     * - [CardStyle.SolidColor]：隐藏背景插图 [DailyViewHolder.ivCardBg]，并结合透明度设置卡片背景颜色；
+     * - [CardStyle.Illustration]：卡片背景设为透明，并根据透明度配置显示背景插图 [DailyViewHolder.ivCardBg]。
+     *
+     * @param dailyEntity 日记 [DailyEntity]
+     * @param holder 日记 [DailyViewHolder]
      */
     private fun setBackgroundColor(dailyEntity: DailyEntity, holder: DailyViewHolder) {
         val backgroundColorIndex = dailyEntity.backgroundColorIndex
-        holder.cardView.setCardBackgroundColor(
-            ContextCompat.getColor(
-                holder.cardView.context,
-                ConstUtil.backgroundColorList[backgroundColorIndex!!]
-            )
-        )
+        when (val cardStyle = getCardStyle(holder.cardView.context, backgroundColorIndex)) {
+            is CardStyle.SolidColor -> {
+                holder.ivCardBg.visibility = View.GONE
+                holder.cardView.setCardBackgroundColor(cardStyle.colorInt)
+            }
+
+            is CardStyle.Illustration -> {
+                holder.cardView.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                holder.ivCardBg.setImageResource(cardStyle.drawableRes)
+                holder.ivCardBg.visibility = View.VISIBLE
+            }
+
+            else -> {
+                holder.ivCardBg.visibility = View.GONE
+                holder.cardView.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+            }
+        }
     }
 
 }
