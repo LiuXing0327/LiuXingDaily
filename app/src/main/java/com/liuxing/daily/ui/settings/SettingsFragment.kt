@@ -39,6 +39,7 @@ import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -65,6 +66,7 @@ import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
 import com.liuxing.daily.util.IntentUtil
 import com.liuxing.daily.util.MaterialAlertDialogUtil
+import com.liuxing.daily.viewmodel.AppUpdateViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,7 +76,7 @@ import java.io.FileOutputStream
 
 private const val ABOUT_ITEM_SELECT_COUNT = 4
 private const val UPDATE_ITEM_SELECT_COUNT = 2
-private const val DAILY_ITEM_SELECT_COUNT = 8
+private const val DAILY_ITEM_SELECT_COUNT = 9
 private const val APPEARANCE_ITEM_SELECT_COUNT = 3
 
 private const val DATA_ITEM_SELECT_COUNT = 2
@@ -92,7 +94,7 @@ private enum class DailyItemKey(val key: String) {
     DISPLAYED_BY_YEAR_MONTH("switch_preference_header_display"), AUTO_SAVE("switch_preference_auto_save"), DELETE_TO_RECYCLER(
         "switch_delete_to_recycler_bin_daily"
     ),
-    TURN_OFF_IMAGE_DISPLAY(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY), AUTO_DELETE_RECYCLER_BIN("auto_delete_recycler_bin_daily"), TEXT_SPACING(
+    TURN_OFF_IMAGE_DISPLAY(ConstUtil.DAILY_LIST_FIRST_IMAGE_DISPLAY_KEY), FLOATING_BUTTON_MODE(ConstUtil.FLOATING_BUTTON_MODE_KEY), AUTO_DELETE_RECYCLER_BIN("auto_delete_recycler_bin_daily"), TEXT_SPACING(
         "text_line_spacing_preference"
     ),
     TEXT_SIZE("text_font_size_preference"), DAILY_SETTINGS("daily_settings_preference")
@@ -122,6 +124,9 @@ class SettingsFragment : Fragment() {
 
     private val sharedPreferences: SharedPreferences by lazy {
         PreferenceManager.getDefaultSharedPreferences(requireContext())
+    }
+    private val appUpdateViewModel by lazy {
+        ViewModelProvider(requireActivity())[AppUpdateViewModel::class.java]
     }
     private val binding by lazy {
         FragmentSettingsBinding.inflate(layoutInflater)
@@ -235,7 +240,7 @@ class SettingsFragment : Fragment() {
 
                     DailyItemKey.DAILY_SETTINGS -> startActivity(DailySettingsActivity::class.java)
 
-                    UpdateItemKey.CHECK_UPDATE -> CheckAppUpdateUtil.checkUpdate(requireContext())
+                    UpdateItemKey.CHECK_UPDATE -> CheckAppUpdateUtil.checkUpdate(requireContext(), appUpdateViewModel)
 
                     UpdateItemKey.UPDATE_LOG -> startActivity(UpdateLogActivity::class.java)
 
@@ -442,11 +447,22 @@ class SettingsFragment : Fragment() {
         )
 
         settingsDataList.add(
+            BaseListItemData.SwitchItem(
+                key = DailyItemKey.FLOATING_BUTTON_MODE.key,
+                iconResource = R.drawable.outline_edit_vd_24,
+                text = getString(R.string.floating_button_create_new_journal),
+                checked = getCheckedValue(DailyItemKey.FLOATING_BUTTON_MODE.key, false),
+                indexInSelection = 4,
+                selectionCount = DAILY_ITEM_SELECT_COUNT
+            )
+        )
+
+        settingsDataList.add(
             BaseListItemData.SliderItem(
                 DailyItemKey.AUTO_DELETE_RECYCLER_BIN,
                 R.drawable.outline_auto_delete_preference_24,
                 getString(R.string.regularly_automatically_delete_the_diaries_in_the_recycle_bin),
-                4,
+                5,
                 DAILY_ITEM_SELECT_COUNT,
                 valueTo = (dayKeys.size - 1).toFloat(),
                 value = dayKeys.indexOf(autoDeleteIndex).coerceAtLeast(0).toFloat(),
@@ -460,7 +476,7 @@ class SettingsFragment : Fragment() {
                 R.drawable.outline_vertical_distribute_24,
                 getString(R.string.text_line_spacing),
                 true,
-                5,
+                6,
                 DAILY_ITEM_SELECT_COUNT,
                 textLineSpacingValue(sharedPreferences).toString()
             )
@@ -472,7 +488,7 @@ class SettingsFragment : Fragment() {
                 R.drawable.outline_text_increase_24,
                 getString(R.string.text_font_size),
                 true,
-                6,
+                7,
                 DAILY_ITEM_SELECT_COUNT,
                 textSizeValue(sharedPreferences).toString()
             )
@@ -484,7 +500,7 @@ class SettingsFragment : Fragment() {
                 R.drawable.baseline_notes_preference_24,
                 getString(R.string.daily_settings),
                 true,
-                7,
+                8,
                 DAILY_ITEM_SELECT_COUNT,
                 getString(R.string.management_diary_related_functions)
             )
