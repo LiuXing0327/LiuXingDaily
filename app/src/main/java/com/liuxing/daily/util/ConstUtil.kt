@@ -99,12 +99,25 @@ object ConstUtil {
         R.string.color_label_transparent,
         R.string.color_label_purple,
         R.string.color_label_red,
-        R.string.color_label_light_cyan,
         R.string.color_label_green,
         R.string.color_label_blue,
         R.string.color_label_yellow,
         R.string.color_label_pink,
         R.string.color_label_light_cyan
+    )
+
+    // 日记插画背景列表（对应索引 100，101，102...）
+    val illustrationThemeFullList = listOf(
+        R.drawable.daily_card_full__illustration1
+    )
+    val illustrationThemeList = listOf(
+        R.drawable.daily_card_illustration1
+    )
+
+    // 壁纸预设资源与对应背景壁纸资源的映射表
+    val backgroundWallpaperMap = mapOf(
+        R.drawable.soft_pink_wallpaper_presets to R.drawable.bg_wallpaper_default_01
+
     )
 
     // 媒体标签正则
@@ -127,4 +140,10 @@ object ConstUtil {
 
     // 用户协议与隐私政策
     const val TERMS_AND_PRIVACY_AGREED_KEY = "terms_and_privacy_agreed"
+
+    // 悬浮按钮模式键 (0: 悬浮菜单, 1: 直接添加)
+    const val FLOATING_BUTTON_MODE_KEY = "floating_button_mode"
+
+    // 日记列表卡片插画最大高度
+    const val CARD_ILLUSTRATION_MAX_HEIGHT = 170
 }
