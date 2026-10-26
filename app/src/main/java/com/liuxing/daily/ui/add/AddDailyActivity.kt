@@ -1,19 +1,14 @@
 ﻿package com.liuxing.daily.ui.add
 
 import android.app.Activity
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
-import android.view.View
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
@@ -21,44 +16,28 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
-import androidx.core.view.MenuHost
-import androidx.core.view.MenuProvider
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isGone
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
 import com.liuxing.daily.R
-import com.liuxing.daily.adapter.ChangeDailyCardColorAdapter
-import com.liuxing.daily.adapter.MoodAdapter
 import com.liuxing.daily.adapter.SelectDailyLabelAdapter
-import com.liuxing.daily.adapter.WeatherAdapter
-import com.liuxing.daily.databinding.ActivityAddDailyBinding
 import com.liuxing.daily.entity.DailyEntity
 import com.liuxing.daily.entity.DailyLabelEntity
-import com.liuxing.daily.extension.formatDateString
-import com.liuxing.daily.extension.formatDateTimeWeek
 import com.liuxing.daily.extension.getExternalPicturesFilesDir
-import com.liuxing.daily.extension.setVisibility
 import com.liuxing.daily.extension.toMonthDay
 import com.liuxing.daily.listener.OnEnabledChangedListener
 import com.liuxing.daily.listener.OnItemClickListener
 import com.liuxing.daily.listener.StringChangedListener
+import com.liuxing.daily.ui.compose.theme.DailyTheme
+import com.liuxing.daily.ui.compose.theme.DailyThemeManager
 import com.liuxing.daily.ui.draw.DrawImageActivity
 import com.liuxing.daily.ui.settings.DailySettingsConst
 import com.liuxing.daily.util.ConstUtil
@@ -66,10 +45,9 @@ import com.liuxing.daily.util.CopyUtil
 import com.liuxing.daily.util.DateUtil
 import com.liuxing.daily.util.FileUtil
 import com.liuxing.daily.util.HashUtil
+import com.liuxing.daily.util.ImageUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.SharedPreferencesUtil.autoSaveDailySharedPreferences
-import com.liuxing.daily.util.SnackbarUtil
-import com.liuxing.daily.util.SoftHideKeyBoardUtil
 import com.liuxing.daily.util.StringUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.view.DailyRichText
@@ -81,28 +59,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Date
 import java.util.UUID
 
 private const val BACK_GROUND_COLOR_INDEX = "backgroundColorIndex"
 private const val MOOD_INDEX = "moodIndex"
-private const val TEMP_MOOD_INDEX = "tempMoodIndex"
 private const val WEATHER_INDEX = "weatherIndex"
-private const val TEMP_WEATHER_INDEX = "tempWeatherIndex"
 private const val DAILY_LABEL = "dailyLabel"
 private const val SELECT_IMAGE = 0
 private const val TAKE_IMAGE = 1
 
 class AddDailyActivity : AppCompatActivity() {
 
-    private lateinit var activityAddDailyBinding: ActivityAddDailyBinding
-    private var backgroundColorIndex = 0
     private lateinit var dailyViewModel: DailyViewModel
-    private var singlePassword: String? = ""
-    private var moodIndex = 0
-    private var tempMoodIndex = 0
-    private var weatherIndex = 0
-    private var tempWeatherIndex = 0
-    private val dailyUuid = UUID.randomUUID().toString()
+    private var dailyUuid = UUID.randomUUID().toString()
     private val imageList = mutableSetOf<String>()
     private val videoList = mutableSetOf<String>()
     private val audioList = mutableSetOf<String>()
@@ -111,7 +81,6 @@ class AddDailyActivity : AppCompatActivity() {
     private val tempAudioList = mutableSetOf<String>()
     private lateinit var dailyTextInputEdit: DailyTextInputEdit
     private var dailyLabelList = mutableListOf<String>()
-    private var dailyLabel: String = ""
     private lateinit var mainViewModel: MainViewModel
     private var drawImageName = ""
     private lateinit var onEnabledChangedListener: OnEnabledChangedListener
@@ -125,31 +94,125 @@ class AddDailyActivity : AppCompatActivity() {
     private lateinit var stringChangedListener: StringChangedListener
     private lateinit var imagePath: String
 
+    private val addDailyViewModel by lazy {
+        ViewModelProvider(this)[AddDailyViewModel::class.java]
+    }
+
+    private val isAutoStartDrawActivity by lazy {
+        intent.getBooleanExtra("startDrawActivity", false)
+    }
+
+    private var isFirstDraw = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         ThemeUtil.applyTheme(this)
-        activityAddDailyBinding = ActivityAddDailyBinding.inflate(layoutInflater)
-        setContentView(activityAddDailyBinding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
-            insets
+
+        DailyThemeManager.syncFromPreferences(this)
+
+        initViewModel()
+        if (savedInstanceState == null) {
+            setDateTime()
+            loadLabel()
         }
-        initView()
+
+        if (savedInstanceState == null && isAutoStartDrawActivity) {
+            startDrawActivity()
+        }
+
+        setContent {
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                AddDailyScreen(
+                    uiState = addDailyViewModel.uiState,
+                    onBack = { isDailyNull() },
+                    onSave = { saveDaily() },
+                    onTitleChange = {
+                        val limitedTitle = checkedTitleLength(it)
+                        addDailyViewModel.updateTitle(limitedTitle)
+                        val totalCount =
+                            limitedTitle.length + (if (::dailyTextInputEdit.isInitialized) dailyTextInputEdit.getWordCount() else 0)
+                        addDailyViewModel.updateWordCount(totalCount)
+                        val hasChanges = contentIsNotNull()
+                        addDailyViewModel.updateCanSave(hasChanges)
+                        onBackPressedCallback.isEnabled = hasChanges
+                    },
+                    onBoldClick = { dailyTextInputEdit.toggleBoldText() },
+                    onItalicClick = { dailyTextInputEdit.toggleItalicText() },
+                    onListClick = { dailyTextInputEdit.toggleBulletList() },
+                    onOrderedListClick = { dailyTextInputEdit.toggleOrderedList() },
+                    onTodoListClick = { dailyTextInputEdit.toggleTodoList() },
+                    onDateTimeClick = { selectDateTime() },
+                    onMoodClick = { addDailyViewModel.showMoodSheet(true) },
+                    onWeatherClick = { addDailyViewModel.showWeatherSheet(true) },
+                    onLabelClick = { showLabelDialog() },
+                    onMoreFormattingClick = { addDailyViewModel.toggleFormattingBar() },
+                    onLockClick = { showLockDialog() },
+                    onDrawingClick = {
+                        startDrawActivity()
+                    },
+                    onColorClick = { addDailyViewModel.showColorSheet(true) },
+                    onUnderlineClick = { dailyTextInputEdit.toggleUnderlineText() },
+                    onStrikethroughClick = { dailyTextInputEdit.toggleStrikethroughText() },
+                    onTextColorClick = { showColorPickerDialog(false) },
+                    onHighlightColorClick = { showColorPickerDialog(true) },
+                    onTextSizeClick = { showFontPresetDialog() },
+                    onHeadingClick = { showHeadingDialog() },
+                    onQuoteClick = { dailyTextInputEdit.applyBlockQuote() },
+                    onAlignLeftClick = { dailyTextInputEdit.applyNormalAlignment() },
+                    onAlignCenterClick = { dailyTextInputEdit.applyCenterAlignment() },
+                    onRuleClick = { dailyTextInputEdit.insertHorizontalRule() },
+                    onLinkClick = { showLinkDialog() },
+                    onAddImageClick = { showAddImageDialog() },
+                    onAddVideoClick = { openVideoPicker() },
+                    onAddAudioClick = { openAudioPicker() },
+                    onTitleVisibilityClick = {
+                        addDailyViewModel.updateTitleVisibility(!addDailyViewModel.uiState.isTitleVisible)
+                    },
+                    onColorDismiss = { addDailyViewModel.showColorSheet(false) },
+                    onColorSelect = { position ->
+                        addDailyViewModel.updateBackgroundColor(position)
+                        onBackPressedCallback.isEnabled = contentIsNotNull()
+                    },
+                    onMoodDismiss = { addDailyViewModel.showMoodSheet(false) },
+                    onMoodSelect = { position ->
+                        setMoodIcon(position)
+                        onBackPressedCallback.isEnabled = contentIsNotNull()
+                    },
+                    onWeatherDismiss = { addDailyViewModel.showWeatherSheet(false) },
+                    onWeatherSelect = { position ->
+                        setWeatherIcon(position)
+                        onBackPressedCallback.isEnabled = contentIsNotNull()
+                    },
+                    editorFactory = { editor ->
+                        dailyTextInputEdit = editor
+                        setupEditor(editor)
+                        editor.setEditContent(addDailyViewModel.uiState.content)
+                    })
+            }
+        }
+
+        // 默认隐藏标题输入框
+        val showTitle =
+            SharedPreferencesUtil.getBoolean(this, DailySettingsConst.TITLE_SWITCH_KEY, false)
+        addDailyViewModel.updateTitleVisibility(showTitle)
+
         initData(savedInstanceState)
-        // 添加返回键回调
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     /**
-     * 初始化视图
+     * 设置日记编辑器
+     *
+     * @param editor 日记编辑器
      */
-    private fun initView() {
-        SoftHideKeyBoardUtil(this)
-        activityAddDailyBinding.tvDailyCount.text = "0${getString(R.string.word)}"
-        dailyTextInputEdit = findViewById(R.id.input_content)
-        dailyTextInputEdit.setImageDeletionListener(object :
+    private fun setupEditor(editor: DailyTextInputEdit) {
+        editor.setImageDeletionListener(object :
             DailyTextInputEdit.ImageDeletionListener {
             override fun onImageDeleted(imagePath: String) {
                 dailyViewModel.deleteSelectPathImage(imagePath)
@@ -159,7 +222,7 @@ class AddDailyActivity : AppCompatActivity() {
                 }
             }
         })
-        dailyTextInputEdit.setVideoDeletionListener(object :
+        editor.setVideoDeletionListener(object :
             DailyTextInputEdit.VideoDeletionListener {
             override fun onVideoDeleted(videoPath: String) {
                 if (FileUtil().checkFileExists(videoPath)) {
@@ -167,9 +230,8 @@ class AddDailyActivity : AppCompatActivity() {
                     videoList.remove(videoPath)
                 }
             }
-
         })
-        dailyTextInputEdit.setAudioDeletionListener(object :
+        editor.setAudioDeletionListener(object :
             DailyTextInputEdit.AudioDeletionListener {
             override fun onAudioDeleted(audioPath: String) {
                 if (FileUtil().checkFileExists(audioPath)) {
@@ -177,557 +239,49 @@ class AddDailyActivity : AppCompatActivity() {
                     audioList.remove(audioPath)
                 }
             }
-
         })
 
         val textLineSpacingValue = sharedPreferences.getFloat("text_line_spacing_preference", 0F)
-        dailyTextInputEdit.setLineSpacing(textLineSpacingValue,1F)
+        editor.setLineSpacing(textLineSpacingValue, 1F)
 
         val textSize = sharedPreferences.getFloat(ConstUtil.TEXT_SIZE_KEY, 16F)
-        activityAddDailyBinding.inputTitle.textSize = textSize + 4
-        dailyTextInputEdit.textSize = textSize
+        editor.textSize = textSize
+        addDailyViewModel.updateTitleFontSize(textSize + 4)
+        addDailyViewModel.updateContentFontSize(textSize)
 
-        enableOnBack()
-        onEnabledChangedListener.onEnableChanged(contentIsNotNull())
-        activityAddDailyBinding.inputTitle.addTextChangedListener {
-            onEnabledChangedListener.onEnableChanged(contentIsNotNull())
+        editor.addTextChangedListener { _: android.text.Editable? ->
+            addDailyViewModel.updateContent(editor.getExportText())
+            // 计算标题 + 正文的总字数
+            val totalCount = addDailyViewModel.uiState.title.length + editor.getWordCount()
+            addDailyViewModel.updateWordCount(totalCount)
+            val hasChanges = contentIsNotNull()
+            addDailyViewModel.updateCanSave(hasChanges)
+            onBackPressedCallback.isEnabled = hasChanges
         }
-        activityAddDailyBinding.inputContent.addTextChangedListener {
-            onEnabledChangedListener.onEnableChanged(contentIsNotNull())
-        }
 
-        // 默认隐藏标题输入框
-        val showTitle =
-            SharedPreferencesUtil.getBoolean(this, DailySettingsConst.TITLE_SWITCH_KEY, false)
-        activityAddDailyBinding.inputTitleContainer?.setVisibility(showTitle)
-
-        loadLabel()
-
-        activityAddDailyBinding.actionBtnSave.setOnClickListener {
-            isDailyNull()
-        }
+        // 初始状态更新
+        val initialCount = addDailyViewModel.uiState.title.length + editor.getWordCount()
+        addDailyViewModel.updateWordCount(initialCount)
+        addDailyViewModel.updateCanSave(contentIsNotNull())
     }
 
     /**
      * 加载标签
      */
     private fun loadLabel() {
-        dailyLabel = intent.getStringExtra(DAILY_LABEL) ?: ""
-
-        if (dailyLabel.isEmpty()) return
-
-        activityAddDailyBinding.tvLabel.text = dailyLabel
-        activityAddDailyBinding.lLabel.visibility = View.VISIBLE
+        val label = intent.getStringExtra(DAILY_LABEL) ?: ""
+        if (label.isEmpty()) return
+        addDailyViewModel.updateLabel(label)
+        addDailyViewModel.showLabel(true)
     }
 
     /**
      * 初始化数据
      */
     private fun initData(savedInstanceState: Bundle?) {
-        setActionBar()
-        setupFloatingRichTextToolbar()
-        initMenu()
-        setDailyCount()
-        initViewModel()
-        setDateTime()
-        selectDateTime()
-        checkedTitleLength()
-        restoreIndex(savedInstanceState)
         setDailyLabel()
+        restoreIndex(savedInstanceState)
     }
-
-    /**
-     * 设置工具栏
-     */
-    private fun setActionBar() {
-        setSupportActionBar(activityAddDailyBinding.toolbar)
-        this.supportActionBar?.setDisplayShowTitleEnabled(false)
-        this.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-    }
-
-    /**
-     * 初始化菜单
-     */
-    private fun initMenu() {
-        val menuHost: MenuHost = this
-        menuHost.addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.menu_add_daily, menu)
-                menu.findItem(R.id.item_save).isVisible = false
-/*                when {
-                    activityAddDailyBinding.inputTitle.text!!.trim()
-                        .isEmpty() && dailyTextInputEdit.text!!.trim()
-                        .isEmpty() && imageList.isEmpty() -> {
-                        menu.findItem(R.id.item_save).setVisible(false)
-                        invalidateOptionsMenu()
-                    }
-
-                    else -> {
-                        menu.findItem(R.id.item_save).setVisible(true)
-                        invalidateOptionsMenu()
-                    }
-                }*/
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                when (menuItem.itemId) {
-                    android.R.id.home -> isDailyNull()
-
-                    R.id.item_change_background_color -> {
-                        val view =
-                            LayoutInflater.from(this@AddDailyActivity)
-                                .inflate(R.layout.dialog_change_daily_card_color, null)
-                        val materialAlertDialogBuilder =
-                            MaterialAlertDialogBuilder(this@AddDailyActivity)
-                        materialAlertDialogBuilder.setTitle(getString(R.string.change_color))
-                        materialAlertDialogBuilder.setView(view)
-                        materialAlertDialogBuilder.setPositiveButton(
-                            getString(R.string.close),
-                            null
-                        )
-                        val dialog = materialAlertDialogBuilder.create()
-                        dialog.show()
-                        val colorRecycler = view.findViewById<RecyclerView>(R.id.color_recycler)
-                        colorRecycler.layoutManager = GridLayoutManager(this@AddDailyActivity, 3)
-                        colorRecycler.adapter =
-                            ChangeDailyCardColorAdapter(
-                                ConstUtil.backgroundColorList,
-                                backgroundColorIndex
-                            ) { selectedColor, position ->
-                                backgroundColorIndex = position
-                            activityAddDailyBinding.main.setBackgroundColor(
-                                ContextCompat.getColor(
-                                    this@AddDailyActivity,
-                                    selectedColor
-                                )
-                            )
-                            activityAddDailyBinding.toolbar.setBackgroundColor(
-                                ContextCompat.getColor(
-                                    this@AddDailyActivity,
-                                    selectedColor
-                                )
-                            )
-                                dialog.dismiss()
-                        }
-                    }
-
-                    R.id.item_save -> isDailyNull()
-
-                    R.id.item_on_lock -> {
-                        when {
-                            sharedPreferences.getString("forget_password_key", "") == "" -> {
-                                val inflate =
-                                    layoutInflater.inflate(
-                                        R.layout.dialog_input_password_layout,
-                                        null
-                                    )
-                                val inputPasswordLayout =
-                                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
-                                val inputPassword =
-                                    inflate.findViewById<TextInputEditText>(R.id.input_password)
-                                inputPasswordLayout.hint = getString(R.string.key)
-                                MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                                    setTitle(getString(R.string.key))
-                                    setView(inflate)
-                                    setPositiveButton(
-                                        getString(R.string.sure),
-                                        object : DialogInterface.OnClickListener {
-                                            override fun onClick(
-                                                dialog: DialogInterface?,
-                                                which: Int
-                                            ) {
-                                                when {
-                                                    inputPassword.text.toString() == "" -> {
-                                                        SnackbarUtil.showSnackbarShort(
-                                                            activityAddDailyBinding.inputContent.rootView,
-                                                            getString(R.string.please_enter_the_key_to_reset_your_password_if_you_forget_it)
-                                                        )
-                                                    }
-
-                                                    else -> {
-                                                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                                                            setMessage(getString(R.string.the_key_was_set_successfully_please_keep_it_in_mind))
-                                                            setPositiveButton(
-                                                                getString(R.string.sure), null
-                                                            )
-                                                            create()
-                                                            show()
-                                                        }
-                                                        sharedPreferences.edit {
-                                                            putString(
-                                                                "forget_password_key",
-                                                                HashUtil.hashSHA256(inputPassword.text.toString())
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                        })
-                                    setNeutralButton(
-                                        getString(R.string.cancel)
-                                    ) { dialog, which ->
-                                        SnackbarUtil.showSnackbarShort(
-                                            activityAddDailyBinding.inputContent.rootView,
-                                            getString(R.string.please_enter_the_key_to_reset_your_password_if_you_forget_it)
-                                        )
-                                    }
-                                        .setCancelable(false)
-                                        .create()
-                                    show()
-                                }
-                            }
-
-                            else -> {
-                                val inflate =
-                                    layoutInflater.inflate(
-                                        R.layout.dialog_input_password_layout,
-                                        null
-                                    )
-                                val inputPasswordLayout =
-                                    inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
-                                val inputPassword =
-                                    inflate.findViewById<TextInputEditText>(R.id.input_password)
-                                inputPasswordLayout.hint = getString(R.string.locked)
-                                inputPassword.setText(singlePassword)
-                                MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                                    setTitle(getString(R.string.locked))
-                                    setView(inflate)
-                                    setPositiveButton(
-                                        getString(R.string.sure),
-                                        object : DialogInterface.OnClickListener {
-                                            override fun onClick(
-                                                dialog: DialogInterface?,
-                                                which: Int
-                                            ) {
-                                                singlePassword = inputPassword.text.toString()
-                                            }
-
-                                        })
-                                    setNeutralButton(getString(R.string.cancel), null)
-                                        .setCancelable(false)
-                                        .create()
-                                    show()
-                                }
-                            }
-                        }
-                    }
-
-                    R.id.item_mood -> {
-                        val inflate =
-                            LayoutInflater.from(this@AddDailyActivity)
-                                .inflate(R.layout.dialog_mood_layout, null)
-                        val recyclerView = inflate.findViewById<RecyclerView>(R.id.recycler_view)
-                        val gridLayoutManager = GridLayoutManager(this@AddDailyActivity, 3)
-                        recyclerView.layoutManager = gridLayoutManager
-                        val moodAdapter = MoodAdapter(this@AddDailyActivity)
-                        recyclerView.adapter = moodAdapter
-                        val dialog: AlertDialog?
-                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                            setTitle(
-                                getString(R.string.mood)
-                            )
-                            setView(inflate)
-                            setPositiveButton(getString(R.string.cancel), null)
-                            create()
-                            dialog = show()
-                        }
-                        moodAdapter.setOnItemClickListener(object : OnItemClickListener {
-                            override fun onItemClick(position: Int) {
-                                setMoodIcon(position)
-                                dialog?.dismiss()
-                            }
-
-                        })
-                    }
-
-                    R.id.item_weather -> {
-                        val inflate = LayoutInflater.from(this@AddDailyActivity)
-                            .inflate(R.layout.dialog_weather_layout, null)
-                        val recyclerView = inflate.findViewById<RecyclerView>(R.id.recycler_view)
-                        val gridLayoutManager = GridLayoutManager(this@AddDailyActivity, 3)
-                        recyclerView.layoutManager = gridLayoutManager
-                        val weatherAdapter = WeatherAdapter(this@AddDailyActivity)
-                        recyclerView.adapter = weatherAdapter
-                        val dialog: AlertDialog
-                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                            setTitle(getString(R.string.weather))
-                            setView(inflate)
-                            setPositiveButton(getString(R.string.cancel), null)
-                            create()
-                            dialog = show()
-                        }
-                        weatherAdapter.setOnItemClickListener(object : OnItemClickListener {
-                            override fun onItemClick(position: Int) {
-                                setWeatherIcon(position)
-                                dialog.dismiss()
-                            }
-                        })
-                    }
-
-                    R.id.item_add_image -> {
-                        val addImageOptions = arrayOf(getString(R.string.select_image),
-                            getString(R.string.take_image))
-                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                            setTitle(getString(R.string.add_image))
-                            setItems(addImageOptions) { _, which ->
-                                when (which) {
-                                    SELECT_IMAGE -> {
-                                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                                            type = "image/*"
-                                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                                            addCategory(Intent.CATEGORY_OPENABLE)
-                                        }
-                                        addLauncher.launch(intent)
-                                    }
-
-                                    TAKE_IMAGE -> {
-                                        openCamera()
-                                    }
-                                }
-                            }
-                            setPositiveButton(getString(R.string.cancel), null)
-                            create()
-                            show()
-                        }
-
-                    }
-
-                    R.id.item_add_video -> {
-                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                            setType("video/*")
-                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                            addCategory(Intent.CATEGORY_OPENABLE)
-                        }
-                        addLauncher.launch(intent)
-                    }
-
-                    R.id.item_add_audio -> {
-                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                            setType("audio/*")
-                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                            addCategory(Intent.CATEGORY_OPENABLE)
-                        }
-                        addLauncher.launch(intent)
-                    }
-
-                    R.id.item_label -> {
-                        val view =
-                            layoutInflater.inflate(R.layout.dialog_select_daily_label_layout, null)
-                        val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
-                        val linearLayoutManager = LinearLayoutManager(this@AddDailyActivity)
-                        recyclerView.layoutManager = linearLayoutManager
-                        val selectDailyLabelAdapter = SelectDailyLabelAdapter(dailyLabelList)
-                        recyclerView.adapter = selectDailyLabelAdapter
-                        MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                            setTitle(getString(R.string.label))
-                            setView(view)
-                            setPositiveButton(getString(R.string.not_add)) { _, _ ->
-                                dailyLabel = ""
-                                activityAddDailyBinding.lLabel?.visibility = View.GONE
-                            }
-                            setNegativeButton(getString(R.string.new_label)) { _, _ ->
-                                showLabelInputDialog()
-                            }
-                            setNeutralButton(getString(R.string.cancel), null)
-                            val dialog = create()
-                            dialog.show()
-                            selectDailyLabelAdapter.setOnItemClickListener(object :
-                                OnItemClickListener {
-                                override fun onItemClick(position: Int) {
-                                    dailyLabel = dailyLabelList[position]
-                                    activityAddDailyBinding.tvLabel?.text = dailyLabel
-                                    activityAddDailyBinding.lLabel?.visibility = View.VISIBLE
-                                    dialog.dismiss()
-                                }
-
-                            })
-                        }
-                    }
-
-                    R.id.item_drawing -> {
-                        val intent = Intent(this@AddDailyActivity, DrawImageActivity::class.java)
-                        addDrawImageLauncher.launch(intent)
-                    }
-                }
-
-                return true
-            }
-        })
-    }
-
-    /**
-     * 开启摄像头
-     */
-    private fun openCamera() {
-        val externalPicturesFilesDir = getExternalPicturesFilesDir()
-        val imageName = UUID.randomUUID().toString() + ".jpg"
-        val file = File(externalPicturesFilesDir, imageName)
-
-        imagePath = file.absolutePath
-
-        val imageUri = FileProvider.getUriForFile(
-            this,
-            "${packageName}.fileprovider",
-            file
-        )
-
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
-            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        }
-
-        takeImageLauncher.launch(intent)
-    }
-
-    private val takeImageLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                tempImageList.clear()
-                imageList.add(imagePath)
-                tempImageList.add(imagePath)
-                if (tempImageList.isNotEmpty()) {
-                    dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
-                    dailyTextInputEdit.insertImages(tempImageList.toList())
-                }
-                tempImageList.clear()
-            }
-        }
-
-    private val addDrawImageLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                drawImageName =
-                    result.data?.getStringExtra("draw_image_name") ?: ""
-            }
-        }
-
-    /**
-     * 显示输入标签的对话框
-     */
-    private fun showLabelInputDialog() {
-        val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
-        val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
-        val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
-        MaterialAlertDialogBuilder(this,R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
-            setTitle(getString(R.string.create_label))
-            setView(view)
-            setPositiveButton(getString(R.string.sure)) { dialog, which ->
-                val label = inputLabel.text.toString()
-                if (label.isNotEmpty()) {
-                    addDailyLabel(label)
-                }
-            }
-            setNegativeButton(getString(R.string.cancel), null)
-            val dialog = create()
-            dialog.show()
-            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            positiveButton.isEnabled = false
-            inputLabel.addTextChangedListener {
-                val inputText = it.toString()
-                val input = dailyLabelList.any { labels ->
-                    labels == inputText
-                }
-                inputLabelLayout.error = when {
-                    inputText.isEmpty() -> getString(R.string.the_label_is_empty)
-                    input -> getString(R.string.the_label_already_exists)
-                    else -> null
-                }
-                positiveButton.isEnabled = inputText.isNotEmpty() && !input
-            }
-        }
-    }
-
-    /**
-     * 创建日记标签
-     *
-     * @param label 标签
-     */
-    private fun addDailyLabel(label: String) {
-        dailyViewModel.insertDailyLabel(DailyLabelEntity(label = label))
-    }
-
-    /**
-     * 设置日记标签
-     */
-    private fun setDailyLabel() {
-        dailyViewModel.queryAllDailyLabel().observe(this) { dailyLabelList ->
-            this.dailyLabelList.clear()
-            val sortedBy = dailyLabelList.sortedBy { it.label?.lowercase() }
-            sortedBy.forEach {
-                it.label?.let { it1 -> this.dailyLabelList.add(it1) }
-            }
-        }
-    }
-
-    /**
-     * 设置心情图标
-     */
-    private fun setMoodIcon(position: Int) {
-        if (position == ConstUtil.moodList.size - 1) {
-            moodIndex = 0
-            tempMoodIndex = 0
-            activityAddDailyBinding.ivMood.visibility = View.GONE
-        } else {
-            activityAddDailyBinding.ivMood.setImageDrawable(
-                ContextCompat.getDrawable(
-                    this@AddDailyActivity,
-                    ConstUtil.moodList[position]
-                )
-            )
-            activityAddDailyBinding.ivMood.contentDescription = getString(ConstUtil.moodLabelList[position])
-            moodIndex = position + 1
-            tempMoodIndex = 1
-            activityAddDailyBinding.ivMood.visibility = View.VISIBLE
-        }
-    }
-
-    /**
-     * 设置天气图标
-     */
-    private fun setWeatherIcon(position: Int) {
-        if (position == ConstUtil.weatherList.size - 1) {
-            weatherIndex = 0
-            tempWeatherIndex = 0
-            activityAddDailyBinding.ivWeather.visibility = View.GONE
-        } else {
-            activityAddDailyBinding.ivWeather.visibility = View.VISIBLE
-            activityAddDailyBinding.ivWeather.setImageDrawable(
-                ContextCompat.getDrawable(
-                    this@AddDailyActivity,
-                    ConstUtil.weatherList[position]
-                )
-            )
-            activityAddDailyBinding.ivWeather.contentDescription = getString(ConstUtil.weatherLabelList[position])
-            weatherIndex = position + 1
-            tempWeatherIndex = 1
-        }
-    }
-
-    /**
-     * 设置日记字数
-     */
-    private fun setDailyCount() {
-        dailyTextInputEdit.addTextChangedListener {
-            "${getDailyCount()}${getString(R.string.word)}".also {
-                activityAddDailyBinding.tvDailyCount.text = it
-            }
-        }
-        activityAddDailyBinding.inputTitle.addTextChangedListener {
-            "${getDailyCount()}${getString(R.string.word)}".also {
-                activityAddDailyBinding.tvDailyCount.text = it
-            }
-        }
-    }
-
-    /**
-     * 获取日记字数
-     */
-    private fun getDailyCount(): Int =
-        activityAddDailyBinding.inputTitle.text!!.length.plus(dailyTextInputEdit.getWordCount())
 
     /**
      * 初始化视图模型
@@ -735,6 +289,14 @@ class AddDailyActivity : AppCompatActivity() {
     private fun initViewModel() {
         dailyViewModel = DailyViewModel(this.application)
         mainViewModel = ViewModelProvider(this)[MainViewModel::class.java]
+    }
+
+    /**
+     * 打开绘图 Activity.
+     */
+    private fun startDrawActivity() {
+        val intent = Intent(this@AddDailyActivity, DrawImageActivity::class.java)
+        addDrawImageLauncher.launch(intent)
     }
 
     /**
@@ -748,23 +310,21 @@ class AddDailyActivity : AppCompatActivity() {
         sharedPreferences.edit { putLong("switch_preference_auto_save_id", 0) }
         isSystemExit = false
 
+        val uiState = addDailyViewModel.uiState
         dailyViewModel.insertDaily(
                 DailyEntity(
-                    title = activityAddDailyBinding.inputTitle.text.toString(),
+                    title = uiState.title,
                     content = dailyTextInputEdit.getExportText(),
-                    dateTime = DateUtil.dateStringToDate(
-                        activityAddDailyBinding.tvDateTime.text.toString(),
-                        0
+                    dateTime = DateUtil.dateStringToDate(uiState.dateTimeText, 0),
+                    backgroundColorIndex = uiState.backgroundColorIndex,
+                    singlePassword = if (uiState.singlePassword.isEmpty()) "" else HashUtil.hashSHA256(
+                        uiState.singlePassword
                     ),
-                    backgroundColorIndex = backgroundColorIndex,
-                    singlePassword = HashUtil.hashSHA256(singlePassword.toString()),
-                    moodIndex = moodIndex,
-                    weatherIndex = weatherIndex,
+                    moodIndex = if (uiState.moodIndex == ConstUtil.moodList.size - 1) 0 else uiState.moodIndex + 1,
+                    weatherIndex = if (uiState.weatherIndex == ConstUtil.weatherList.size - 1) 0 else uiState.weatherIndex + 1,
                     dailyUUID = dailyUuid,
-                    dailyLabel = dailyLabel,
-                    monthDay = DateUtil.dateStringToDate(
-                        activityAddDailyBinding.tvDateTime.text.toString(), 0
-                    ).toMonthDay()
+                    dailyLabel = uiState.label,
+                    monthDay = DateUtil.dateStringToDate(uiState.dateTimeText, 0).toMonthDay()
                 )
             )
             finish()
@@ -774,7 +334,7 @@ class AddDailyActivity : AppCompatActivity() {
      * 监听返回键
      */
     private val onBackPressedCallback: OnBackPressedCallback =
-        object : OnBackPressedCallback(true) {
+        object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 isDailyNull()
             }
@@ -789,22 +349,13 @@ class AddDailyActivity : AppCompatActivity() {
 
         setStringChangedListener(object : StringChangedListener {
             override fun onStringChanged(newString: String) {
-                activityAddDailyBinding.tvDateTime.text = newString
+                addDailyViewModel.updateDateTime(newString)
             }
-
         })
 
-        val dateString = DateUtil.getDateString(
-            0,
-            DateUtil.getCurrentDate()
-        )
-
-        val selectedDateString = "$selectedYearMonthDay ${
-            DateUtil.getDateString(
-                2,
-                DateUtil.getCurrentDate()
-            )
-        }"
+        val dateString = DateUtil.getDateString(0, DateUtil.getCurrentDate())
+        val selectedDateString =
+            "$selectedYearMonthDay ${DateUtil.getDateString(2, DateUtil.getCurrentDate())}"
 
         val defaultDateTime =
             if (isDailyFragment || selectedYearMonthDay.isNullOrEmpty()) "$dateString ${
@@ -827,50 +378,11 @@ class AddDailyActivity : AppCompatActivity() {
      * 选择日期时间
      */
     private fun selectDateTime() {
-        val datePicker =
-            MaterialDatePicker.Builder.datePicker().setTitleText(getString(R.string.select_date))
-                .setSelection(
-                    MaterialDatePicker.todayInUtcMilliseconds()
-                ).build()
-
-        val time = DateUtil.getDateString(2, DateUtil.getCurrentDate())
-        val hour = time.split(":")[0].toInt()
-        val minute = time.split(":")[1].toInt()
-        val timePicker =
-            MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setHour(hour)
-                .setMinute(minute)
-                .setTitleText(getString(R.string.select_time)).build()
-
-        activityAddDailyBinding.tvDateTime.setOnClickListener {
-            datePicker.show(supportFragmentManager, datePicker.tag)
-        }
-
-        var newSelectedDateString = ""
-        var newSelectedTime = ""
-        datePicker.addOnPositiveButtonClickListener {
-            newSelectedDateString = datePicker.headerText.replace(
-                Regex("[年月]"), if (getString(R.string.daily) == "日记") "/" else "-"
-            )
-            newSelectedDateString = newSelectedDateString.replace("日", "")
-            newSelectedDateString = newSelectedDateString.formatDateString()
-
-            timePicker.show(supportFragmentManager, timePicker.tag)
-        }
-
-        timePicker.addOnPositiveButtonClickListener { _ ->
-            val hour = timePicker.hour
-            val minute = timePicker.minute
-            newSelectedTime = "%02d:%02d".format(hour, minute)
-
-            val week = DateUtil.getWeek(this, "$newSelectedDateString $newSelectedTime")
-
-            stringChangedListener.onStringChanged(
-                formatDateTimeWeek(
-                    newSelectedDateString,
-                    newSelectedTime,
-                    week
-                )
-            )
+        val dateTimeString = addDailyViewModel.uiState.dateTimeText
+        val initialDate = DateUtil.dateStringToDate(dateTimeString, 0)
+        DateUtil.selectDateTime(this, Date(initialDate)) { newDateTime ->
+            addDailyViewModel.updateDateTime(newDateTime)
+            addDailyViewModel.updateCanSave(contentIsNotNull())
         }
     }
 
@@ -914,19 +426,6 @@ class AddDailyActivity : AppCompatActivity() {
 
     }
 
-    private fun setOnEnabledChangedListener(onEnabledChangedListener: OnEnabledChangedListener) {
-        this.onEnabledChangedListener = onEnabledChangedListener
-    }
-
-    private fun enableOnBack() {
-        setOnEnabledChangedListener(object : OnEnabledChangedListener {
-            override fun onEnableChanged(enable: Boolean) {
-                onBackPressedCallback.isEnabled = enable
-            }
-
-        })
-    }
-
     /**
      * 不保存则删除应用私有目录下对应的图片
      */
@@ -967,22 +466,10 @@ class AddDailyActivity : AppCompatActivity() {
      * 判断主要内容是否不为空
      */
     private fun contentIsNotNull(): Boolean {
-        return activityAddDailyBinding.inputTitle.text!!.trim()
-            .isNotEmpty() || dailyTextInputEdit.text!!.trim()
+        val uiState = addDailyViewModel.uiState
+        return uiState.title.trim().isNotEmpty() || dailyTextInputEdit.text!!.trim()
             .isNotEmpty() || imageList.isNotEmpty() || videoList.isNotEmpty() || audioList.isNotEmpty()
     }
-
-    /**
-     * 检查标题长度
-     */
-    private fun checkedTitleLength() =
-        activityAddDailyBinding.inputTitle.addTextChangedListener { s ->
-            StringUtil.checkedEditContentLength(
-                s,
-                30,
-                activityAddDailyBinding.inputTitle
-            )
-        }
 
     override fun onStart() {
         super.onStart()
@@ -992,174 +479,114 @@ class AddDailyActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         if (isSystemExit && autoSave && contentIsNotNull()) {
+            val uiState = addDailyViewModel.uiState
             autoSaveDailySharedPreferences(
-                this, 0,
-                activityAddDailyBinding.inputTitle.text.toString(),
+                this,
+                0,
+                uiState.title,
                 dailyTextInputEdit.getExportText(),
-                DateUtil.dateStringToDate(
-                    activityAddDailyBinding.tvDateTime.text.toString(),
-                    0
-                ),
-                backgroundColorIndex,
-                singlePassword.toString(),
-                moodIndex,
-                weatherIndex,
+                DateUtil.dateStringToDate(uiState.dateTimeText, 0),
+                uiState.backgroundColorIndex,
+                uiState.singlePassword,
+                if (uiState.moodIndex == ConstUtil.moodList.size - 1) 0 else uiState.moodIndex + 1,
+                if (uiState.weatherIndex == ConstUtil.weatherList.size - 1) 0 else uiState.weatherIndex + 1,
                 dailyUuid,
                 imageList.isNotEmpty(),
-                dailyLabel,
+                uiState.label,
                 videoList.isNotEmpty(),
-                audioList.isNotEmpty()
+                audioList.isNotEmpty(),
+                false
             )
         }
     }
 
-    companion object {
-        private var isSystemExit = false
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val uiState = addDailyViewModel.uiState
+        outState.putString("daily_uuid", dailyUuid)
+        outState.putInt(BACK_GROUND_COLOR_INDEX, uiState.backgroundColorIndex)
+        outState.putInt(MOOD_INDEX, uiState.moodIndex)
+        outState.putInt(WEATHER_INDEX, uiState.weatherIndex)
+        outState.putString(DAILY_LABEL, uiState.label)
     }
 
     /**
-     * 添加启动器
+     * 恢复索引
      */
-    private val addLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-        object : ActivityResultCallback<ActivityResult> {
-            override fun onActivityResult(result: ActivityResult) {
-                try {
-                    if (result.resultCode != Activity.RESULT_OK) return
-                    val data = result.data ?: return
+    private fun restoreIndex(savedInstanceState: Bundle?) {
+        if (savedInstanceState != null) {
+            val restoredUuid = savedInstanceState.getString("daily_uuid", "")
+            if (restoredUuid.isNotEmpty()) dailyUuid = restoredUuid
+
+            val backgroundColorIndex = savedInstanceState.getInt(BACK_GROUND_COLOR_INDEX)
+            addDailyViewModel.updateBackgroundColor(backgroundColorIndex)
+
+            val moodIndex = savedInstanceState.getInt(MOOD_INDEX, -1)
+            if (moodIndex != -1) addDailyViewModel.updateMood(moodIndex)
+
+            val weatherIndex = savedInstanceState.getInt(WEATHER_INDEX, -1)
+            if (weatherIndex != -1) addDailyViewModel.updateWeather(weatherIndex)
+
+            val label = savedInstanceState.getString(DAILY_LABEL) ?: ""
+            addDailyViewModel.updateLabel(label)
+            addDailyViewModel.showLabel(label.isNotEmpty())
+        }
+    }
+
+    /**
+     * 开启摄像头
+     */
+    private fun openCamera() {
+        val externalPicturesFilesDir = getExternalPicturesFilesDir()
+        val imageName = UUID.randomUUID().toString() + ".jpg"
+        val file = File(externalPicturesFilesDir, imageName)
+        imagePath = file.absolutePath
+        val imageUri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        takeImageLauncher.launch(intent)
+    }
+
+    private val takeImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                tempImageList.clear()
+                imageList.add(imagePath)
+                tempImageList.add(imagePath)
+                if (tempImageList.isNotEmpty()) {
+                    dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+                    dailyTextInputEdit.insertImages(tempImageList.toList())
+                }
+                tempImageList.clear()
+            }
+        }
+
+    internal val addDrawImageLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val wasFirstDraw = isFirstDraw
+            isFirstDraw = false
+            if (result.resultCode == RESULT_OK) {
+                drawImageName = result.data?.getStringExtra(ImageUtil.DRAW_IMAGE) ?: ""
+                if (drawImageName.isNotEmpty()) {
+                    val imageDir =
+                        "${getExternalFilesDir(Environment.DIRECTORY_PICTURES)}/$drawImageName"
                     tempImageList.clear()
-                    tempVideoList.clear()
-                    tempAudioList.clear()
-                    data.clipData?.let { clipData ->
-                        for (i in 0 until clipData.itemCount) {
-                            val uri = clipData.getItemAt(i).uri
-                            selectUri(uri)
-                        }
-                    } ?: data.data?.let { uri ->
-                        selectUri(uri)
-                    }
+                    imageList.add(imageDir)
+                    tempImageList.add(imageDir)
                     if (tempImageList.isNotEmpty()) {
                         dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
                         dailyTextInputEdit.insertImages(tempImageList.toList())
                     }
-                    if (tempVideoList.isNotEmpty()) {
-                        dailyViewModel.insertDailyVideoPath(dailyUuid, tempVideoList.toList())
-                        dailyTextInputEdit.insertVideos(tempVideoList.toList())
-                    }
-                    if (tempAudioList.isNotEmpty()) {
-                        dailyViewModel.insertDailyAudioPath(dailyUuid, tempAudioList.toList())
-                        dailyTextInputEdit.insertAudio(tempAudioList.toList())
-                    }
-                    tempImageList.clear()
-                    tempVideoList.clear()
-                    tempAudioList.clear()
-                } catch (e: Exception) {
-                    MaterialAlertDialogBuilder(this@AddDailyActivity).apply {
-                        setMessage(getString(R.string.add_failed))
-                        setPositiveButton(getString(R.string.sure), null)
-                        create()
-                        show()
-                    }
+                    drawImageName = ""
                 }
-            }
-        })
-
-    /**
-     * 选择 uri
-     *
-     * @param uri 文件
-     */
-    private fun selectUri(uri: Uri) {
-        val type = contentResolver.getType(uri)
-        type?.let {
-            when {
-                it.startsWith("image/") -> {
-                    addImage(uri)
-                }
-
-                it.startsWith("video/") -> {
-                    addVideo(uri)
-                }
-
-                it.startsWith("audio/") -> {
-                    addAudio(uri)
-                }
+            } else if (isAutoStartDrawActivity && wasFirstDraw) {
+                // 如果是自动启动绘画且在第一次绘画时点取消，则直接退出添加界面
+                finish()
             }
         }
-    }
-
-    /**
-     * 添加图片
-     *
-     * @param uri 图片
-     */
-    private fun addImage(uri: Uri) {
-        val copyImageToMyAppDir =
-            CopyUtil.copyImageToMyAppDir(this@AddDailyActivity, uri)
-        imageList.add(copyImageToMyAppDir)
-        tempImageList.add(copyImageToMyAppDir)
-    }
-
-    /**
-     * 添加视频
-     *
-     * @param uri 视频
-     */
-    private fun addVideo(uri: Uri) {
-        val copyImageToMyAppDir =
-            CopyUtil.copyVideoToMyAppDir(this@AddDailyActivity, uri)
-        videoList.add(copyImageToMyAppDir)
-        tempVideoList.add(copyImageToMyAppDir)
-    }
-
-    /**
-     * 添加音频
-     *
-     * @param uri 音频
-     */
-    private fun addAudio(uri: Uri) {
-        val copyAudioToMyAppDir = CopyUtil.copyAudioToMyAppDir(this, uri)
-        audioList.add(copyAudioToMyAppDir)
-        tempAudioList.add(copyAudioToMyAppDir)
-    }
-
-    /** 设置浮动富文本工具栏 */
-    private fun setupFloatingRichTextToolbar() {
-        val buttonActions =
-            mapOf(
-                R.id.action_btn_b to { dailyTextInputEdit.toggleBoldText() }, // 粗体
-                R.id.action_btn_i to { dailyTextInputEdit.toggleItalicText() }, // 斜体
-                R.id.action_btn_c to { toggleRichTextToolbarVisibility() }, // 切换富文本工具栏可见性
-                R.id.action_btn_u to { dailyTextInputEdit.toggleUnderlineText() }, // 下划线
-                R.id.action_btn_s to { dailyTextInputEdit.toggleStrikethroughText() }, // 删除线
-                R.id.action_btn_tc to { showColorPickerDialog(false) }, // 文字颜色
-                R.id.action_btn_bc to { showColorPickerDialog(true) }, // 背景高亮
-                R.id.action_btn_size to { showFontPresetDialog() }, // 字号
-                R.id.action_btn_title to { showHeadingDialog() }, // 标题样式
-                R.id.action_btn_list to { showListDialog() }, // 列表与待办
-                R.id.action_btn_quote to { dailyTextInputEdit.applyBlockQuote() }, // 引用
-                R.id.action_btn_align_left to { dailyTextInputEdit.applyNormalAlignment() }, // 左对齐
-                R.id.action_btn_align_center to { dailyTextInputEdit.applyCenterAlignment() }, // 居中对齐
-                R.id.action_btn_h to { dailyTextInputEdit.insertHorizontalRule() }, // 分割线
-                R.id.action_btn_link to { showLinkDialog() }) // 超链接
-
-        buttonActions.forEach { (id, action) ->
-            findViewById<MaterialButton>(id).setOnClickListener {
-                action.invoke()
-            }
-        }
-    }
-
-    /** 切换富文本工具栏可见性 */
-    private fun toggleRichTextToolbarVisibility() {
-        with(activityAddDailyBinding.rtaContainer.floatingToolbarLayout) {
-            if (isGone) {
-                setVisibility(true)
-            } else {
-                setVisibility(false)
-            }
-        }
-    }
 
     /** 显示颜色选择器对话框 */
     private fun showColorPickerDialog(isHighlight: Boolean) {
@@ -1167,19 +594,16 @@ class AddDailyActivity : AppCompatActivity() {
         val colorPickerLayout = layoutInflater.inflate(R.layout.color_picker_layout, null)
         val colorPickerView =
             colorPickerLayout.findViewById<ColorPickerView>(R.id.color_picker_view)
-        colorPickerView.onColorChanged = { color ->
-            selectedColor = color
-        }
-        MaterialAlertDialogBuilder(this).setTitle(if (isHighlight) getString(R.string.highlight) else getString(
-            R.string.text_color
-        ))
+        colorPickerView.onColorChanged = { color -> selectedColor = color }
+        MaterialAlertDialogBuilder(this).setTitle(
+            if (isHighlight) getString(R.string.highlight) else getString(
+                R.string.text_color
+            )
+        )
             .setView(colorPickerLayout).setNegativeButton(getString(R.string.cancel), null)
             .setPositiveButton(getString(R.string.sure)) { _, _ ->
-                if (isHighlight) {
-                    dailyTextInputEdit.applyHighlightColor(selectedColor)
-                } else {
-                    dailyTextInputEdit.applyTextColor(selectedColor)
-                }
+                if (isHighlight) dailyTextInputEdit.applyHighlightColor(selectedColor)
+                else dailyTextInputEdit.applyTextColor(selectedColor)
             }.show()
     }
 
@@ -1204,19 +628,6 @@ class AddDailyActivity : AppCompatActivity() {
         }.show()
     }
 
-    /** 显示列表与待办对话框 */
-    private fun showListDialog() {
-        val items = arrayOf(getString(R.string.bullet_list),
-            getString(R.string.ordered_list), getString(R.string.todo_list))
-        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.list_and_todo)).setItems(items) { _, which ->
-            when (which) {
-                0 -> dailyTextInputEdit.toggleBulletList()
-                1 -> dailyTextInputEdit.toggleOrderedList()
-                2 -> dailyTextInputEdit.toggleTodoList()
-            }
-        }.show()
-    }
-
     /** 显示超链接对话框 */
     private fun showLinkDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
@@ -1224,84 +635,288 @@ class AddDailyActivity : AppCompatActivity() {
         val input = dialogView.findViewById<TextInputEditText>(R.id.input_label)
         inputLayout.hint = getString(R.string.hyperlink)
         input.setText("https://")
-
         MaterialAlertDialogBuilder(this).setTitle(getString(R.string.insert_hyperlink)).setView(dialogView)
             .setNegativeButton(getString(R.string.cancel), null)
             .setPositiveButton(getString(R.string.sure)) { _, _ ->
                 val url = input.text?.toString()?.trim().orEmpty()
-                if (url.isNotEmpty()) {
-                    dailyTextInputEdit.applyLink(url)
-                }
+                if (url.isNotEmpty()) dailyTextInputEdit.applyLink(url)
             }.show()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(BACK_GROUND_COLOR_INDEX, backgroundColorIndex)
-        outState.putInt(MOOD_INDEX, moodIndex)
-        outState.putInt(TEMP_MOOD_INDEX, tempMoodIndex)
-        outState.putInt(WEATHER_INDEX, weatherIndex)
-        outState.putInt(TEMP_WEATHER_INDEX, tempWeatherIndex)
-        outState.putString(DAILY_LABEL, dailyLabel)
+    /**
+     * 显示上锁对话框
+     */
+    private fun showLockDialog() {
+        val currentPassword = addDailyViewModel.uiState.singlePassword
+        // 如果还没有设置过找回密码的 Key，先引导设置 Key
+        if (sharedPreferences.getString("forget_password_key", "") == "") {
+            val inflate = layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
+            val inputPasswordLayout =
+                inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+            val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
+            inputPasswordLayout.hint = getString(R.string.key)
+            MaterialAlertDialogBuilder(this).apply {
+                setTitle(getString(R.string.key))
+                setView(inflate)
+                setPositiveButton(getString(R.string.sure)) { _, _ ->
+                    val key = inputPassword.text.toString()
+                    if (key.isNotEmpty()) {
+                        sharedPreferences.edit {
+                            putString("forget_password_key", HashUtil.hashSHA256(key))
+                        }
+                        // 设置完 Key 后再次弹出设置密码的窗口
+                        showLockDialog()
+                    }
+                }
+                setNeutralButton(getString(R.string.cancel), null)
+                setCancelable(false)
+                create()
+                show()
+            }
+            return
+        }
+
+        val inflate = layoutInflater.inflate(R.layout.dialog_input_password_layout, null)
+        val inputPasswordLayout = inflate.findViewById<TextInputLayout>(R.id.input_password_layout)
+        val inputPassword = inflate.findViewById<TextInputEditText>(R.id.input_password)
+        inputPasswordLayout.hint = getString(R.string.locked)
+        inputPassword.setText(currentPassword)
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle(getString(R.string.locked))
+            setView(inflate)
+            setPositiveButton(getString(R.string.sure)) { _, _ ->
+                addDailyViewModel.updateSinglePassword(inputPassword.text.toString())
+                onBackPressedCallback.isEnabled = contentIsNotNull()
+            }
+            setNeutralButton(getString(R.string.cancel), null)
+            setCancelable(false)
+            create()
+            show()
+        }
     }
 
     /**
-     * 恢复索引
+     * 显示所有标签对话框
      */
-    private fun restoreIndex(savedInstanceState: Bundle?) {
-        if (savedInstanceState != null) {
-            backgroundColorIndex = savedInstanceState.getInt(BACK_GROUND_COLOR_INDEX)
-            activityAddDailyBinding.main.setBackgroundColor(
-                ContextCompat.getColor(
-                    this@AddDailyActivity,
-                    ConstUtil.backgroundColorList[backgroundColorIndex]
-                )
-            )
-            activityAddDailyBinding.toolbar.setBackgroundColor(
-                ContextCompat.getColor(
-                    this@AddDailyActivity,
-                    ConstUtil.backgroundColorList[backgroundColorIndex]
-                )
-            )
-
-            val moodIndex = savedInstanceState.getInt(MOOD_INDEX)
-            val tempMoodIndex = savedInstanceState.getInt(TEMP_MOOD_INDEX)
-            if (tempMoodIndex != 0) {
-                if (moodIndex == 0) setMoodIcon(ConstUtil.moodList.size - 1) else setMoodIcon(
-                    moodIndex - 1
-                )
+    private fun showLabelDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_select_daily_label_layout, null)
+        val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        val selectDailyLabelAdapter = SelectDailyLabelAdapter(dailyLabelList)
+        recyclerView.adapter = selectDailyLabelAdapter
+        MaterialAlertDialogBuilder(this).apply {
+            setTitle(getString(R.string.label))
+            setView(view)
+            setPositiveButton(getString(R.string.not_add)) { _, _ ->
+                addDailyViewModel.updateLabel("")
+                addDailyViewModel.showLabel(false)
+                onBackPressedCallback.isEnabled = contentIsNotNull()
             }
+            setNegativeButton(getString(R.string.new_label)) { _, _ -> showLabelInputDialog() }
+            setNeutralButton(getString(R.string.cancel), null)
+            val dialog = create()
+            dialog.show()
+            selectDailyLabelAdapter.setOnItemClickListener(object : OnItemClickListener {
+                override fun onItemClick(position: Int) {
+                    addDailyViewModel.updateLabel(dailyLabelList[position])
+                    addDailyViewModel.showLabel(true)
+                    onBackPressedCallback.isEnabled = contentIsNotNull()
+                    dialog.dismiss()
+                }
+            })
+        }
+    }
 
-            val weatherIndex = savedInstanceState.getInt(WEATHER_INDEX)
-            val tempWeatherIndex = savedInstanceState.getInt(TEMP_WEATHER_INDEX)
-            if (tempWeatherIndex != 0) {
-                if (weatherIndex == 0) setWeatherIcon(ConstUtil.weatherList.size - 1) else setWeatherIcon(
-                    weatherIndex - 1
-                )
+    /**
+     * 显示输入标签的对话框
+     */
+    private fun showLabelInputDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_input_label_layout, null)
+        val inputLabel = view.findViewById<TextInputEditText>(R.id.input_label)
+        val inputLabelLayout = view.findViewById<TextInputLayout>(R.id.input_label_layout)
+        MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_App_MaterialAlertDialog).apply {
+            setTitle(getString(R.string.create_label))
+            setView(view)
+            setPositiveButton(getString(R.string.sure)) { _, _ ->
+                val label = inputLabel.text.toString()
+                if (label.isNotEmpty()) addDailyLabel(label)
             }
-
-            dailyLabel = savedInstanceState.getString(DAILY_LABEL) ?: ""
-            activityAddDailyBinding.tvLabel.text = dailyLabel
-            activityAddDailyBinding.lLabel.visibility = if (dailyLabel.isNotEmpty()) {
-                View.VISIBLE
-            } else {
-                View.GONE
+            setNegativeButton(getString(R.string.cancel), null)
+            val dialog = create()
+            dialog.show()
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.isEnabled = false
+            inputLabel.addTextChangedListener { s: android.text.Editable? ->
+                val inputText = s.toString()
+                val exists = dailyLabelList.contains(inputText)
+                inputLabelLayout.error = when {
+                    inputText.isEmpty() -> getString(R.string.the_label_is_empty)
+                    exists -> getString(R.string.the_label_already_exists)
+                    else -> null
+                }
+                positiveButton.isEnabled = inputText.isNotEmpty() && !exists
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (drawImageName.isEmpty()) return
-        tempImageList.clear()
-        val imageDir = "${getExternalFilesDir(Environment.DIRECTORY_PICTURES)}/$drawImageName"
-        imageList.add(imageDir)
-        tempImageList.add(imageDir)
-        if (tempImageList.isNotEmpty()) {
-            dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
-            dailyTextInputEdit.insertImages(tempImageList.toList())
+    /**
+     * 创建日记标签
+     *
+     * @param label 标签
+     */
+    private fun addDailyLabel(label: String) {
+        dailyViewModel.insertDailyLabel(DailyLabelEntity(label = label))
+    }
+
+    /**
+     * 设置日记标签
+     */
+    private fun setDailyLabel() {
+        dailyViewModel.queryAllDailyLabel().observe(this) { list ->
+            this.dailyLabelList.clear()
+            this.dailyLabelList.addAll(list.mapNotNull { it.label }.sortedBy { it.lowercase() })
         }
-        drawImageName = ""
-        tempImageList.clear()
+    }
+
+    /**
+     * 设置心情图标
+     */
+    private fun setMoodIcon(position: Int) {
+        addDailyViewModel.updateMood(position)
+    }
+
+    /**
+     * 设置天气图标
+     */
+    private fun setWeatherIcon(position: Int) {
+        addDailyViewModel.updateWeather(position)
+    }
+
+    /**
+     * 添加启动器
+     */
+    private val addLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+        object : ActivityResultCallback<ActivityResult> {
+            override fun onActivityResult(result: ActivityResult) {
+                try {
+                    if (result.resultCode != Activity.RESULT_OK) return
+                    val data = result.data ?: return
+                    tempImageList.clear()
+                    tempVideoList.clear()
+                    tempAudioList.clear()
+                    data.clipData?.let { clipData ->
+                        for (i in 0 until clipData.itemCount) {
+                            selectUri(clipData.getItemAt(i).uri)
+                        }
+                    } ?: data.data?.let { selectUri(it) }
+                    if (tempImageList.isNotEmpty()) {
+                        dailyViewModel.insertDailyImagePath(dailyUuid, tempImageList.toList())
+                        dailyTextInputEdit.insertImages(tempImageList.toList())
+                    }
+                    if (tempVideoList.isNotEmpty()) {
+                        dailyViewModel.insertDailyVideoPath(dailyUuid, tempVideoList.toList())
+                        dailyTextInputEdit.insertVideos(tempVideoList.toList())
+                    }
+                    if (tempAudioList.isNotEmpty()) {
+                        dailyViewModel.insertDailyAudioPath(dailyUuid, tempAudioList.toList())
+                        dailyTextInputEdit.insertAudio(tempAudioList.toList())
+                    }
+                } catch (e: Exception) {
+                    MaterialAlertDialogBuilder(this@AddDailyActivity).setMessage(getString(R.string.add_failed))
+                        .setPositiveButton(getString(R.string.sure), null).show()
+                }
+            }
+        })
+
+    /**
+     * 选择 uri
+     *
+     * @param uri 文件
+     */
+    private fun selectUri(uri: Uri) {
+        val type = contentResolver.getType(uri) ?: return
+        when {
+            type.startsWith("image/") -> {
+                val path = CopyUtil.copyImageToMyAppDir(this, uri)
+                imageList.add(path)
+                tempImageList.add(path)
+            }
+
+            type.startsWith("video/") -> {
+                val path = CopyUtil.copyVideoToMyAppDir(this, uri)
+                videoList.add(path)
+                tempVideoList.add(path)
+            }
+
+            type.startsWith("audio/") -> {
+                val path = CopyUtil.copyAudioToMyAppDir(this, uri)
+                audioList.add(path)
+                tempAudioList.add(path)
+            }
+        }
+    }
+
+    /** 打开视频选择器 */
+    private fun openVideoPicker() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "video/*"
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
+        addLauncher.launch(intent)
+    }
+
+    /** 打开音频选择器 */
+    private fun openAudioPicker() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "audio/*"
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
+        addLauncher.launch(intent)
+    }
+
+    /**
+     * 显示添加图片对话框
+     *
+     * [SELECT_IMAGE] 选择图片,
+     * [TAKE_IMAGE] 拍摄图片
+     */
+    private fun showAddImageDialog() {
+        val items = arrayOf(getString(R.string.select_image), getString(R.string.take_image))
+        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.add_image))
+            .setItems(items) { _, which ->
+                when (which) {
+                    SELECT_IMAGE -> {
+                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                            type = "image/*"
+                            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                        }
+                        addLauncher.launch(intent)
+                    }
+
+                    TAKE_IMAGE -> openCamera()
+                }
+            }.setPositiveButton(getString(R.string.cancel), null).show()
+    }
+
+    /**
+     * 检查标题长度
+     *
+     * @param title 标题
+     *
+     * @return 检查后的标题
+     */
+    private fun checkedTitleLength(title: String): String {
+        return StringUtil.checkStringLength(title, 30)
+    }
+
+    companion object {
+        private var isSystemExit = true
     }
 }
