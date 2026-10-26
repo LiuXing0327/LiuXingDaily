@@ -15,8 +15,8 @@ configure<ApplicationExtension> {
         applicationId = "com.liuxing.daily"
         minSdk = 26
         targetSdk = 37
-        versionCode = 29
-        versionName = "3.0.0"
+        versionCode = 30
+        versionName = "3.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
