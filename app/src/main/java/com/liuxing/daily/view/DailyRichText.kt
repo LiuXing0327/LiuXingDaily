@@ -1,5 +1,17 @@
 /*
- * Copyright (c) 2026 流星
+ * Copyright 2026 流星
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.liuxing.daily.view
@@ -264,6 +276,7 @@ object DailyRichText {
             .forEach { span ->
                 splitSpan(editable, span, start, end) { TodoSpan(span.checked) }
             }
+        removeStrikeSpans(editable, start, end)
     }
 
     /**
@@ -303,6 +316,9 @@ object DailyRichText {
             }
             .sortedWith(compareBy<Pair<Int, Int>> { it.first }.thenBy { it.second })
 
+        removeQuoteSpans(editable, 0, editable.length)
+        removeAnnotations(editable, 0, editable.length) { it == "blockquote" }
+
         if (quoteRanges.isEmpty()) return
 
         val mergedRanges = mutableListOf<Pair<Int, Int>>()
@@ -315,8 +331,6 @@ object DailyRichText {
             }
         }
 
-        removeQuoteSpans(editable, 0, editable.length)
-        removeAnnotations(editable, 0, editable.length) { it == "blockquote" }
         mergedRanges.forEach { (start, end) ->
             applyQuoteSpans(editable, start, end)
         }
@@ -492,6 +506,13 @@ object DailyRichText {
         if (safeEnd <= safeStart) return
         editable.setSpan(TodoSpan(checked), safeStart, safeEnd, Spannable.SPAN_PARAGRAPH)
         addAnnotation(editable, safeStart, safeEnd, "todo:$checked", Spannable.SPAN_PARAGRAPH)
+
+        // 待办打勾后自动添加删除线，取消打勾则移除
+        if (checked) {
+            editable.setSpan(StrikethroughSpan(), safeStart, safeEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        } else {
+            removeStrikeSpans(editable, safeStart, safeEnd)
+        }
     }
 
     /** 为分割线占位字符挂上可视分割线 Span。 */
@@ -796,7 +817,7 @@ object DailyRichText {
     }
 
     /** 判断某个 Annotation 是否属于段落类语义。 */
-    private fun isBlockAnnotation(value: String): Boolean {
+    internal fun isBlockAnnotation(value: String): Boolean {
         return value == "ul" ||
                 value.startsWith("ol:") ||
                 value.startsWith("todo:") ||
@@ -877,7 +898,7 @@ object DailyRichText {
     }
 
     /** 找出某一行里最后生效的指定 Annotation。 */
-    private fun findLatestAnnotation(
+    internal fun findLatestAnnotation(
         editable: Editable,
         lineStart: Int,
         lineEnd: Int,
@@ -885,10 +906,16 @@ object DailyRichText {
     ): Annotation? {
         return editable.getSpans(lineStart, lineEnd, Annotation::class.java)
             .filter { annotation ->
-                annotation.key == ANNOTATION_KEY &&
-                        predicate(annotation.value) &&
-                        editable.getSpanStart(annotation) < lineEnd &&
-                        editable.getSpanEnd(annotation) > lineStart
+                if (annotation.key != ANNOTATION_KEY || !predicate(annotation.value)) return@filter false
+
+                val spanStart = editable.getSpanStart(annotation)
+                val spanEnd = editable.getSpanEnd(annotation)
+
+                if (isBlockAnnotation(annotation.value)) {
+                    spanStart <= lineStart && spanEnd > lineStart
+                } else {
+                    spanStart < lineEnd && spanEnd > lineStart
+                }
             }
             .maxWithOrNull(
                 compareBy<Annotation> { editable.getSpanStart(it) }
