@@ -16,25 +16,34 @@
 
 package com.liuxing.daily.ui.compose.button
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
+import androidx.compose.material3.ButtonShapes
+import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconButtonShapes
+import androidx.compose.material3.IconToggleButtonColors
+import androidx.compose.material3.IconToggleButtonShapes
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.liuxing.daily.R
 
 @Composable
 fun ExpressiveButton(
@@ -46,39 +55,85 @@ fun ExpressiveButton(
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "buttonScale"
-    )
-
-    val corner by animateDpAsState(
-        targetValue = if (isPressed) 28.dp else 16.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "buttonCorner"
-    )
-
     Button(
         onClick = onClick,
-        modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        },
+        modifier = modifier,
         enabled = enabled,
-        shape = RoundedCornerShape(corner),
+        shapes = ButtonShapes(
+            shape = CircleShape,
+            pressedShape = RoundedCornerShape(12.dp)
+        ),
         colors = colors,
         elevation = elevation,
-        interactionSource = interactionSource,
         contentPadding = contentPadding,
+        content = content
+    )
+}
+
+@Composable
+fun ExpressiveIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    content: @Composable () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        shapes = IconButtonShapes(
+            shape = CircleShape,
+            pressedShape = RoundedCornerShape(12.dp)
+        ),
+        colors = colors,
+        content = content
+    )
+}
+
+/**
+ * 返回图标按钮
+ */
+@Composable
+fun ExpressiveBackButton(
+    onBack: () -> Unit
+) {
+    FilledTonalIconButton(
+        onClick = onBack,
+        modifier = Modifier
+            .padding(8.dp)
+            .size(40.dp),
+        colors = IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f)
+        )
+    ) {
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(R.string.back)
+        )
+    }
+}
+
+@Composable
+fun ExpressiveIconToggleButton(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: IconToggleButtonColors = IconButtonDefaults.filledIconToggleButtonColors(),
+    content: @Composable () -> Unit
+) {
+    FilledIconToggleButton(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        enabled = enabled,
+        shapes = IconToggleButtonShapes(
+            shape = CircleShape,
+            pressedShape = RoundedCornerShape(12.dp),
+            checkedShape = RoundedCornerShape(12.dp)
+        ),
+        colors = colors,
         content = content
     )
 }
