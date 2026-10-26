@@ -18,6 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.ActivityDrawImageBinding
 import com.liuxing.daily.listener.UndoRedoListener
+import com.liuxing.daily.util.ImageUtil
 import com.liuxing.daily.util.ThemeUtil
 import com.liuxing.daily.view.DrawView
 import com.liuxing.library.ColorPickerView
@@ -223,7 +224,7 @@ class DrawImageActivity : AppCompatActivity() {
             val width = binding.drawView.width
             val height = binding.drawView.height
             saveImage(width, height, binding.drawView)
-            intent.putExtra("draw_image_name", imageName)
+            intent.putExtra(ImageUtil.DRAW_IMAGE, imageName)
             setResult(RESULT_OK, intent)
             finish()
         }
