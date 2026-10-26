@@ -63,4 +63,9 @@
             app:navGraph="@navigation/settings_navigation" />
 
     </androidx.core.widget.NestedScrollView>
+
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_update_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
