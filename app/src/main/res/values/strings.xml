@@ -190,7 +190,7 @@
     <string name="data">数据</string>
     <string name="data_management">数据管理</string>
     <string name="export">导出</string>
-    <string name="crash_prompt_message">醒悟遇到一个意外错误，是否将错误报告发送给开发者？(仅包含技术信息，不含隐私)</string>
+    <string name="crash_prompt_message">醒悟遇到一个意外错误，是否将错误报告发送给开发者？</string>
     <string name="send_report">发送报告</string>
     <string name="exit_application">退出应用</string>
     <string name="monday">星期一</string>
@@ -254,9 +254,6 @@
     <string name="body">正文</string>
     <string name="highlight">背景高亮</string>
     <string name="text_color">文字颜色</string>
-    <string name="search_page_placeholder">输入关键字，后续会在这里接入高级搜索与组合筛选。</string>
-    <string name="search_page_title">新搜索页已准备好</string>
-    <string name="search_page_description">这是 Compose 搜索页的第一步。后续可以逐步接入搜索历史、组合筛选、搜索结果和高亮显示。</string>
     <string name="source_code">开源地址</string>
     <string name="local_backup">本地备份</string>
     <string name="all">全部</string>
@@ -269,4 +266,12 @@
     <string name="card_opacity">卡片不透明度</string>
     <string name="no_matching_content_found">未找到匹配内容</string>
     <string name="leave_blank_for_no_encryption">不加密请留空</string>
+    <string name="downloading">正在下载...</string>
+    <string name="floating_button_create_new_journal">默认创建文本日记</string>
+    <string name="floating_button_create_supporting">长按可以创建其他类型的日记</string>
+    <string name="preset_wallpapers">内置壁纸</string>
+    <string name="expand">展开</string>
+    <string name="collapse">折叠</string>
+    <string name="preview_sample_entry">示例条目 %1$d</string>
+    <string name="preview_card_opacity_effect">预览卡片透明度效果</string>
 </resources>
