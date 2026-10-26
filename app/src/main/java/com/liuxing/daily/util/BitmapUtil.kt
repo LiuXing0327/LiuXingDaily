@@ -15,12 +15,11 @@ object BitmapUtil {
      * @return true：有效
      *         else：无效
      */
-    fun check(bitmapProvider: () -> Bitmap): Boolean {
+    fun check(bitmapProvider: () -> Bitmap?): Boolean {
         return try {
             val bmp = bitmapProvider()
             bmp != null && !bmp.isRecycled
-            true
-        } catch (e: UninitializedPropertyAccessException) {
+        } catch (_: Throwable) {
             false
         }
     }
