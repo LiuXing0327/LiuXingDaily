@@ -6,22 +6,30 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.NavHostFragment
 import com.liuxing.daily.R
 import com.liuxing.daily.databinding.SettingsActivityBinding
 import com.liuxing.daily.ui.appearance.AppearanceConst
+import com.liuxing.daily.ui.compose.theme.DailyTheme
+import com.liuxing.daily.ui.compose.theme.DailyThemeManager
 import com.liuxing.daily.ui.qrx.QRXActivity
+import com.liuxing.daily.ui.updatelog.UpdateModalBottomSheet
+import com.liuxing.daily.util.DownloadUtil
 import com.liuxing.daily.util.SharedPreferencesUtil
 import com.liuxing.daily.util.ThemeUtil
+import com.liuxing.daily.viewmodel.AppUpdateViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class SettingsActivity : QRXActivity() {
 
     private lateinit var activityBinding: SettingsActivityBinding
+    private lateinit var appUpdateViewModel: AppUpdateViewModel
     private var currentThemeColorId: Int = 0
 
     /**
@@ -65,7 +73,40 @@ class SettingsActivity : QRXActivity() {
         currentThemeColorId = SharedPreferencesUtil.getInt(this, "theme_color_id", 0)
         currentDynamicColorChecked =
             SharedPreferencesUtil.getBoolean(this, AppearanceConst.DYNAMIC_COLOR_SWITCH_KEY, false)
+        appUpdateViewModel = ViewModelProvider(this)[AppUpdateViewModel::class.java]
+        initUpdateOverlay()
         // qrx()
+    }
+
+    /**
+     * 初始化更新弹窗 Overlay
+     */
+    private fun initUpdateOverlay() {
+        activityBinding.composeUpdateOverlay.setContent {
+            DailyTheme(
+                themeType = DailyThemeManager.currentThemeType,
+                themeMode = DailyThemeManager.themeMode,
+                isAmoled = DailyThemeManager.isAmoled,
+                dynamicColor = DailyThemeManager.isDynamicColor,
+            ) {
+                UpdateModalBottomSheet(
+                    updateInfo = appUpdateViewModel.updateInfo,
+                    isChecking = appUpdateViewModel.isChecking,
+                    isDownloading = appUpdateViewModel.isDownloading,
+                    downloadProgress = appUpdateViewModel.downloadProgress,
+                    statusMessage = appUpdateViewModel.statusMessage,
+                    onUpdate = { url ->
+                        DownloadUtil.downloadApk(
+                            context = this,
+                            url = url,
+                            fileName = "Daily_Update_${appUpdateViewModel.updateInfo?.versionName}.apk",
+                            viewModel = appUpdateViewModel
+                        )
+                    },
+                    onDismiss = { appUpdateViewModel.dismissUpdate() }
+                )
+            }
+        }
     }
 
     fun qrx() {
@@ -75,7 +116,7 @@ class SettingsActivity : QRXActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 while (true) {
-                    delay(300)
+                    delay(300.milliseconds)
                     qrx.checkStatusBarColor(true)
                 }
             }
