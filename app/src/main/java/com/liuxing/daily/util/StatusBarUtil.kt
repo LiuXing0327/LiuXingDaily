@@ -18,7 +18,6 @@ package com.liuxing.daily.util
 
 import android.graphics.Bitmap
 import android.view.Window
-import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
 import androidx.palette.graphics.Palette
@@ -35,17 +34,24 @@ object StatusBarUtil {
      * @param wallpaperAlpha 壁纸透明度
      * @param window 当前 Activity 的 window
      */
-    fun setLightStausBarsFromBitmap(bitmap: Bitmap, wallpaperAlpha: Float, window: Window) {
-        Palette.from(bitmap).maximumColorCount(7).setRegion(0, 0, bitmap.width, 100)
-            .generate { palette ->
-                val mostUsed = palette?.swatches?.maxByOrNull { it.population }
-                mostUsed?.let { swatch ->
-                    val isDark = ColorUtils.calculateLuminance(swatch.rgb) < 0.5
-                    val wallpaperAlpha = wallpaperAlpha
-                    val insetsController =
-                        WindowCompat.getInsetsController(window, window.decorView)
-                    insetsController.isAppearanceLightStatusBars = !isDark && wallpaperAlpha > 0.5f
+    fun setLightStausBarsFromBitmap(bitmap: Bitmap?, wallpaperAlpha: Float, window: Window) {
+        if (bitmap == null || bitmap.isRecycled || bitmap.width <= 0 || bitmap.height <= 0) return
+        val regionBottom = 100.coerceAtMost(bitmap.height)
+        if (regionBottom <= 0) return
+        try {
+            Palette.from(bitmap).maximumColorCount(7).setRegion(0, 0, bitmap.width, regionBottom)
+                .generate { palette ->
+                    val mostUsed = palette?.swatches?.maxByOrNull { it.population }
+                    mostUsed?.let { swatch ->
+                        val isDark = ColorUtils.calculateLuminance(swatch.rgb) < 0.5
+                        val insetsController =
+                            WindowCompat.getInsetsController(window, window.decorView)
+                        insetsController.isAppearanceLightStatusBars =
+                            !isDark && wallpaperAlpha > 0.5f
+                    }
                 }
-            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
