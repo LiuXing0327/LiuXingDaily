@@ -30,6 +30,7 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
+import android.text.util.Linkify
 import androidx.core.graphics.toColorInt
 import com.liuxing.daily.markdown.span.BulletSpan
 import com.liuxing.daily.markdown.span.HorizontalRuleSpan
@@ -66,6 +67,7 @@ object DailyRichText {
      * 解析导入的标签文本，并为 builder 挂上对应的可视 Span 和 Annotation。
      */
     fun applyMarkup(builder: SpannableStringBuilder) {
+        applyPlainUrls(builder)
         applyListTags(builder)
         applyTodoTags(builder)
         applySimpleTag(builder, "b") { listOf(StyleSpan(Typeface.BOLD)) }
@@ -986,4 +988,8 @@ object DailyRichText {
         }
         return -1
     }
+
+    /** 将纯文本网址转换为链接*/
+    private fun applyPlainUrls(builder: SpannableStringBuilder) =
+        Linkify.addLinks(builder, Linkify.WEB_URLS)
 }

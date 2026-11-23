@@ -339,7 +339,6 @@ class LookDailyPagerFragment : Fragment() {
         }
         binding.tvLabel.text = dailyLabel
 
-        Linkify.addLinks(dailyTextView, Linkify.WEB_URLS)
 
         val textLineSpacingValue =
             sharedPreferences?.getFloat("text_line_spacing_preference", 0F)
